@@ -422,7 +422,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-
 </div>
 
 <script>
-const APP_VERSION='1.4.0';
+const APP_VERSION='1.4.1';
 const APP_DATE='2026-04-01';
 const MONTHS=['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
 const CAT_ICONS={transport:'🚗',navigo:'🚇',km:'🛣️',logiciel:'💻',formation:'📚',materiel:'🎭',repas:'🍽️',agent:'🤝',conges:'🌴',autre:'📦'};
@@ -704,10 +704,11 @@ async function processFile(file){
   const base64=await fileToBase64(file);
   const isPdf=file.type==='application/pdf';
   const prompts={
-    bulletin:'Analyse ce bulletin de salaire intermittent français. JSON pur uniquement:\n{"type":"bulletin","employeur":"","mois":"","annee":0,"cachets":0,"salaire_brut":0,"net_imposable":0,"net_percu":0,"pas_preleve":0,"taux_pas":0,"h_cachets":0,"h_totales":0}\nNull si absent.',
-    contrat:'Analyse ce contrat intermittent. JSON pur:\n{"type":"contrat","employeur":"","poste":"","date_debut":"","date_fin":"","cachets":0,"cachet_brut":0,"h_prevues":0,"lieu":""}',
-    frais:'Analyse ce justificatif de frais. JSON pur:\n{"type":"frais","date":"","nature":"","fournisseur":"","montant_ttc":0,"categorie":"transport","description":""}',
-    autre:'Analyse pour intermittent du spectacle. JSON pur avec toutes infos financières.'
+    bulletin:'Analyse ce bulletin de salaire français pour intermittent du spectacle. JSON pur uniquement:\n{"type":"bulletin","employeur":"","mois":"","annee":0,"cachets":0,"salaire_brut":0,"net_imposable":0,"net_percu":0,"pas_preleve":0,"taux_pas":0,"h_cachets":0,"h_totales":0,"conges_payes":0}\nIMPORTANT: "cachets" est un NOMBRE ENTIER (ex: 1, 2, 3) PAS un montant en euros. Ne JAMAIS arrondir les montants, toujours garder toutes les decimales exactes (ex: 4714.45 et non 4714, 118.32 et non 118). Null si absent. JSON uniquement.',
+    contrat:'Analyse ce contrat de travail intermittent du spectacle. JSON pur uniquement:\n{"type":"contrat","employeur":"","poste":"","date_debut":"","date_fin":"","cachets":0,"cachet_brut":0,"h_prevues":0,"lieu":"","nature_contrat":""}\nIMPORTANT: "cachets" est un nombre entier. Ne jamais arrondir les montants. Null si absent. JSON uniquement.',
+    aem:'Analyse cette Attestation Employeur Mensuelle (AEM) pour intermittent du spectacle. JSON pur uniquement:\n{"type":"aem","employeur":"","mois":"","annee":0,"nb_cachets":0,"nb_heures":0,"nb_jours":0,"salaire_brut":0,"periode_debut":"","periode_fin":""}\nIMPORTANT: "nb_cachets" est un nombre entier. Ne jamais arrondir les montants. Null si absent. JSON uniquement.',
+    conges:'Analyse ce document de Conges Spectacle (AUDIENS ou autre caisse). JSON pur uniquement:\n{"type":"conges","organisme":"","beneficiaire":"","periode":"","montant_verse":0,"date_versement":"","nb_jours":0,"reference":""}\nNe jamais arrondir les montants, toujours toutes les decimales. Null si absent. JSON uniquement.',
+    frais:'Analyse ce justificatif de frais professionnel (facture, ticket, recu). JSON pur uniquement:\n{"type":"frais","date":"","nature":"","fournisseur":"","montant_ttc":0,"montant_ht":0,"tva":0,"categorie":"transport","description":""}\nNe jamais arrondir les montants. Null si absent. JSON uniquement.'
   };
   const content=[];
   if(isPdf)content.push({type:'document',source:{type:'base64',media_type:'application/pdf',data:base64}});
