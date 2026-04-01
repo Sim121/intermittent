@@ -10,882 +10,433 @@
 <title>Intermittent</title>
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><rect width='180' height='180' rx='40' fill='%231a1a18'/><text x='90' y='125' font-size='90' text-anchor='middle'>🎭</text></svg>">
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
-<style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{--bg:#F5F2EC;--bg2:#EDE9E0;--surface:#FFF;--border:#D8D3C8;--border2:#E8E4DC;--ink:#1a1a18;--ink2:#3d3d38;--muted:#8a8578;--gold:#B8922A;--gold-light:#F0E4C0;--green:#2D6A4F;--green-light:#D8F0E4;--red:#C0392B;--red-light:#FAE0DC;--blue:#1a4a7a;--blue-light:#DCE8F5;--r:16px;--r-sm:10px;--safe-top:env(safe-area-inset-top,44px);--safe-bottom:env(safe-area-inset-bottom,20px)}
-html{height:100%}
-body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-height:100dvh;overflow-x:hidden;-webkit-font-smoothing:antialiased}
-.app-header{position:sticky;top:0;z-index:90;background:rgba(245,242,236,0.93);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);padding:calc(var(--safe-top) + 10px) 20px 14px;border-bottom:1px solid var(--border2)}
-.header-inner{display:flex;align-items:center;justify-content:space-between;gap:10px}
-.app-logo{font-family:'Playfair Display',serif;font-size:22px;font-weight:900;letter-spacing:-.5px;white-space:nowrap}
-.app-logo span{color:var(--gold)}
-.header-right{display:flex;align-items:center;gap:8px}
-.sync-status{display:flex;align-items:center;gap:5px;font-family:'DM Mono',monospace;font-size:10px;padding:4px 10px;border-radius:20px;border:1px solid var(--border);background:var(--bg2);cursor:pointer;-webkit-tap-highlight-color:transparent;white-space:nowrap}
-.sync-dot{width:6px;height:6px;border-radius:50%;background:var(--border);transition:background .3s}
-.sync-dot.ok{background:var(--green)}.sync-dot.syncing{background:var(--gold);animation:pulse 1s infinite}.sync-dot.error{background:var(--red)}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
-.bottom-nav{position:fixed;bottom:0;left:0;right:0;z-index:100;background:rgba(255,255,255,0.95);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:1px solid var(--border2);padding:8px 0 calc(var(--safe-bottom) + 4px);display:flex}
-.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:none;cursor:pointer;padding:6px 2px;-webkit-tap-highlight-color:transparent;transition:transform .15s}
-.nav-btn:active{transform:scale(.92)}
-.nav-btn .nav-icon{font-size:20px;line-height:1;transition:transform .2s cubic-bezier(.34,1.56,.64,1)}
-.nav-btn.active .nav-icon{transform:scale(1.15)}
-.nav-btn .nav-label{font-size:9px;font-weight:600;color:var(--muted);letter-spacing:.2px;transition:color .15s}
-.nav-btn.active .nav-label{color:var(--gold)}
-.page{display:none}.page.active{display:block}
-.page-wrap{padding:0 0 calc(var(--safe-bottom) + 80px)}
-.section{padding:20px 16px 0}
-.section-title{font-family:'Playfair Display',serif;font-size:26px;font-weight:900;letter-spacing:-.5px;line-height:1.1;margin-bottom:4px}
-.section-title .accent{color:var(--gold)}
-.section-sub{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:20px}
-.card{background:var(--surface);border:1px solid var(--border2);border-radius:var(--r);padding:18px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.04)}
-.card-label{font-family:'DM Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:6px}
-.card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
-.card-head-title{font-family:'DM Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);display:flex;align-items:center;gap:6px}
-.card-head-title::before{content:'';display:block;width:6px;height:6px;border-radius:2px;background:var(--gold)}
-.stat-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
-.stat-row.three{grid-template-columns:1fr 1fr 1fr}
-.stat-card{background:var(--surface);border:1px solid var(--border2);border-radius:var(--r-sm);padding:14px;box-shadow:0 1px 3px rgba(0,0,0,.03)}
-.stat-card .lbl{font-family:'DM Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin-bottom:6px}
-.stat-card .val{font-family:'Playfair Display',serif;font-size:20px;font-weight:700;letter-spacing:-.5px}
-.stat-card .val.gold{color:var(--gold)}.stat-card .val.green{color:var(--green)}.stat-card .val.red{color:var(--red)}.stat-card .val.blue{color:var(--blue)}
-.stat-card .sub{font-size:10px;color:var(--muted);margin-top:2px}
-.field{margin-bottom:14px}
-.field label{display:block;font-family:'DM Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin-bottom:6px}
-.field input,.field select,.field textarea{width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--r-sm);padding:12px 14px;font-size:15px;color:var(--ink);font-family:'DM Sans',sans-serif;appearance:none;-webkit-appearance:none;transition:border-color .15s}
-.field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--gold);background:#fff}
-.field textarea{resize:vertical;min-height:80px}
-.field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:13px 20px;border-radius:var(--r-sm);font-size:14px;font-weight:600;cursor:pointer;border:none;font-family:'DM Sans',sans-serif;transition:all .15s;-webkit-tap-highlight-color:transparent;white-space:nowrap}
-.btn:active{transform:scale(.97)}
-.btn-primary{background:var(--ink);color:#fff;width:100%}
-.btn-ghost{background:var(--bg2);color:var(--ink2);border:1px solid var(--border)}
-.btn-sm{padding:8px 14px;font-size:12px;border-radius:8px}
-.btn-danger{background:var(--red-light);color:var(--red);border:1px solid rgba(192,57,43,.2)}
-.tag{display:inline-block;padding:3px 9px;border-radius:20px;font-size:10px;font-weight:600;font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:.3px}
-.tag-green{background:var(--green-light);color:var(--green)}.tag-gold{background:var(--gold-light);color:var(--gold)}.tag-red{background:var(--red-light);color:var(--red)}.tag-gray{background:var(--bg2);color:var(--muted);border:1px solid var(--border)}.tag-blue{background:var(--blue-light);color:var(--blue)}
-.list-item{display:flex;align-items:flex-start;gap:12px;padding:14px 0;border-bottom:1px solid var(--border2)}
-.list-item:last-child{border-bottom:none;padding-bottom:0}.list-item:first-child{padding-top:0}
-.list-icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;background:var(--bg2)}
-.list-main{flex:1;min-width:0}.list-title{font-size:14px;font-weight:600;margin-bottom:2px}.list-sub{font-size:11px;color:var(--muted);font-family:'DM Mono',monospace}
-.list-right{text-align:right;flex-shrink:0}.list-amount{font-family:'Playfair Display',serif;font-size:16px;font-weight:700}.list-amount.green{color:var(--green)}.list-amount.red{color:var(--red)}
-.list-meta{font-size:10px;color:var(--muted);margin-top:2px;font-family:'DM Mono',monospace}
-.progress-wrap{margin:12px 0}.progress-label{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:6px;font-family:'DM Mono',monospace}
-.progress-bar{height:8px;background:var(--bg2);border-radius:4px;overflow:hidden;border:1px solid var(--border)}
-.progress-fill{height:100%;background:linear-gradient(90deg,var(--gold),#D4A832);border-radius:4px;transition:width .6s cubic-bezier(.34,1.2,.64,1)}
-.progress-fill.green{background:linear-gradient(90deg,var(--green),#3d8b69)}
-.divider{border:none;border-top:1px solid var(--border2);margin:16px 0}
-.upload-zone{border:2px dashed var(--border);border-radius:var(--r);padding:36px 20px;text-align:center;cursor:pointer;position:relative;background:var(--bg2);transition:all .2s}
-.upload-zone.active,.upload-zone:hover{border-color:var(--gold);background:var(--gold-light)}
-.upload-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
-.upload-emoji{font-size:40px;margin-bottom:12px}.upload-title{font-size:15px;font-weight:600;color:var(--ink2);margin-bottom:4px}.upload-sub{font-size:12px;color:var(--muted)}
-.alert{padding:12px 14px;border-radius:var(--r-sm);font-size:13px;margin-bottom:12px;display:flex;gap:8px;line-height:1.5}
-.alert-warn{background:var(--gold-light);border:1px solid rgba(184,146,42,.3);color:#7a5c10}
-.alert-ok{background:var(--green-light);border:1px solid rgba(45,106,79,.3);color:var(--green)}
-.alert-err{background:var(--red-light);border:1px solid rgba(192,57,43,.3);color:var(--red)}
-.alert-info{background:var(--blue-light);border:1px solid rgba(26,74,122,.2);color:var(--blue)}
-.loader{display:inline-block;width:18px;height:18px;border:2px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:spin .7s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-.loading-block{text-align:center;padding:32px;color:var(--muted)}
-.loading-block .loader{width:28px;height:28px;border-width:3px;margin-bottom:12px}
-.empty{text-align:center;padding:40px 20px;color:var(--muted)}.empty-icon{font-size:36px;margin-bottom:10px}.empty-text{font-size:13px;line-height:1.5}
-.month-scroll{display:flex;gap:8px;overflow-x:auto;padding:0 16px 12px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
-.month-scroll::-webkit-scrollbar{display:none}
-.month-tab{flex-shrink:0;padding:7px 14px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;border:1.5px solid var(--border);background:var(--surface);color:var(--muted);-webkit-tap-highlight-color:transparent;transition:all .15s;font-family:'DM Sans',sans-serif}
-.month-tab.active{background:var(--ink);color:#fff;border-color:var(--ink)}
-.type-pills{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
-.pill{padding:8px 14px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;border:1.5px solid var(--border);background:var(--surface);color:var(--muted);-webkit-tap-highlight-color:transparent;transition:all .15s;font-family:'DM Sans',sans-serif}
-.pill.active{background:var(--ink);color:#fff;border-color:var(--ink)}
-.sheet-overlay{position:fixed;inset:0;background:rgba(26,26,24,.4);z-index:200;display:none;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
-.sheet-overlay.show{display:block}
-.bottom-sheet{position:fixed;bottom:0;left:0;right:0;z-index:201;background:var(--surface);border-radius:20px 20px 0 0;padding:0 16px calc(var(--safe-bottom) + 20px);max-height:92dvh;overflow-y:auto;transform:translateY(100%);transition:transform .35s cubic-bezier(.32,.72,0,1)}
-.bottom-sheet.show{transform:translateY(0)}
-.sheet-handle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:12px auto 20px}
-.sheet-title{font-family:'Playfair Display',serif;font-size:20px;font-weight:700;margin-bottom:20px}
-.toast{position:fixed;top:calc(var(--safe-top) + 70px);left:50%;transform:translateX(-50%) translateY(-12px);z-index:999;background:var(--ink);color:#fff;padding:11px 18px;border-radius:24px;font-size:13px;font-weight:500;white-space:nowrap;opacity:0;transition:all .3s cubic-bezier(.34,1.4,.64,1);pointer-events:none;box-shadow:0 4px 20px rgba(0,0,0,.2)}
-.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-.frais-cat-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border2)}
-.frais-cat-row:last-child{border-bottom:none}.frais-cat-icon{font-size:20px;width:28px;text-align:center}.frais-cat-name{flex:1;font-size:13px;font-weight:500}.frais-cat-amt{font-family:'Playfair Display',serif;font-size:15px;font-weight:700}
-.settings-row{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--border2)}
-.settings-row:last-child{border-bottom:none}.settings-label{font-size:14px;font-weight:500}.settings-sub{font-size:11px;color:var(--muted);margin-top:2px}
-/* CONTRAT */
-.contrat-card{background:var(--surface);border:1px solid var(--border2);border-radius:var(--r);padding:16px;margin-bottom:10px;cursor:pointer;transition:all .15s;box-shadow:0 1px 4px rgba(0,0,0,.04)}
-.contrat-card:active{transform:scale(.99);box-shadow:none}
-.contrat-card.paye{border-left:4px solid var(--green)}
-.contrat-card.en-attente{border-left:4px solid var(--red)}
-.contrat-card.inconnu{border-left:4px solid var(--border)}
-.contrat-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
-.contrat-employeur{font-size:15px;font-weight:700;line-height:1.2}
-.contrat-poste{font-size:11px;color:var(--muted);margin-top:2px}
-.contrat-dates{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);margin-bottom:10px}
-.contrat-stats{display:flex;gap:12px;flex-wrap:wrap}
-.contrat-stat{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted)}
-.contrat-stat strong{color:var(--ink);font-size:12px}
-.year-header{font-family:'Playfair Display',serif;font-size:20px;font-weight:700;padding:16px 16px 8px;letter-spacing:-.5px}
-.month-header{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:var(--bg2);border-top:1px solid var(--border2);border-bottom:1px solid var(--border2)}
-.month-header-name{font-size:13px;font-weight:700}
-.month-header-total{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted)}
-.month-contracts{padding:0 16px}
-/* DETAIL VIEW */
-.detail-view{position:fixed;inset:0;z-index:300;background:var(--bg);transform:translateX(100%);transition:transform .3s cubic-bezier(.32,.72,0,1);overflow-y:auto}
-.detail-view.show{transform:translateX(0)}
-.detail-header{position:sticky;top:0;background:rgba(245,242,236,0.93);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);padding:calc(var(--safe-top) + 10px) 16px 14px;border-bottom:1px solid var(--border2);display:flex;align-items:center;gap:12px}
-.detail-back{background:none;border:none;font-size:22px;cursor:pointer;padding:4px;-webkit-tap-highlight-color:transparent}
-.detail-title{font-family:'Playfair Display',serif;font-size:18px;font-weight:700;flex:1;line-height:1.2}
-.detail-body{padding:20px 16px calc(var(--safe-bottom) + 40px)}
-.paiement-toggle{display:flex;gap:8px;margin-bottom:16px}
-.paiement-btn{flex:1;padding:12px;border-radius:var(--r-sm);font-size:13px;font-weight:700;cursor:pointer;border:2px solid var(--border);background:var(--bg2);color:var(--muted);text-align:center;transition:all .15s;-webkit-tap-highlight-color:transparent}
-.paiement-btn.active-paye{background:var(--green-light);border-color:var(--green);color:var(--green)}
-.paiement-btn.active-attente{background:var(--red-light);border-color:var(--red);color:var(--red)}
-.ft-row{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border2)}
-.ft-row:last-child{border-bottom:none}
-.ft-label{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);text-transform:uppercase}
-.ft-value{font-size:14px;font-weight:700}
-/* SETUP BANNER */
-.setup-banner{background:linear-gradient(135deg,var(--gold-light),#fdf6e3);border:1px solid rgba(184,146,42,.3);border-radius:var(--r);padding:20px;margin:16px;display:none}
-.setup-banner.show{display:block}
-@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-.page.active .section{animation:fadeUp .3s ease both}
-.page.active .stat-row{animation:fadeUp .3s .05s ease both}
-</style>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<header class="app-header">
-  <div class="header-inner">
-    <div class="app-logo">🎭 Inter<span>mittent</span></div>
-    <div class="header-right">
-      <div class="sync-status" onclick="showPage('settings')" id="sync-status-btn">
-        <div class="sync-dot" id="sync-dot"></div>
-        <span id="sync-label">Sync</span>
-      </div>
-      <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);background:var(--bg2);padding:4px 10px;border-radius:20px;border:1px solid var(--border);" id="header-year">2026</div>
+<!-- ═══════════════════════════════════════
+     LOGIN SCREEN
+═══════════════════════════════════════ -->
+<div class="login-screen" id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">🎭</div>
+    <div class="login-title">Inter<span>mittent</span></div>
+    <div class="login-sub">Tableau de bord · Connexion</div>
+    <div class="login-error" id="login-error"></div>
+    <div class="field">
+      <label>Mot de passe</label>
+      <input type="password" id="login-password" placeholder="Ton mot de passe…" autocomplete="current-password">
+    </div>
+    <button class="btn btn-primary" id="login-btn" onclick="handleLogin()">Se connecter</button>
+    <div style="margin-top:16px;font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;">
+      Pas encore configuré ?<br>
+      <a href="#" onclick="document.getElementById('login-screen').style.display='none';document.getElementById('app-shell').style.display='block';showPage('settings');" style="color:var(--gold);">Accéder aux réglages →</a>
     </div>
   </div>
-</header>
-
-<div class="toast" id="toast"></div>
-
-<!-- SETUP BANNER -->
-<div class="setup-banner" id="setup-banner">
-  <div style="font-size:16px;font-weight:700;margin-bottom:8px;">⚙️ Configuration requise</div>
-  <div style="font-size:13px;color:var(--ink2);margin-bottom:14px;line-height:1.5;">Configure l'URL de ton Apps Script pour activer la sauvegarde Drive et le scan de documents.</div>
-  <button class="btn btn-primary" onclick="showPage('settings')">Configurer maintenant →</button>
 </div>
 
-<!-- ═══ PAGE BILAN ═══ -->
-<div class="page active" id="page-bilan"><div class="page-wrap"><div class="section">
-  <div class="section-title">Bilan <span class="accent">2026</span></div>
-  <div class="section-sub">Vue annuelle · Sauvegarde auto</div>
-  <div class="stat-row">
-    <div class="stat-card"><div class="lbl">Brut total</div><div class="val gold" id="b-brut">0 €</div><div class="sub" id="b-cachets">0 cachets</div></div>
-    <div class="stat-card"><div class="lbl">Net total</div><div class="val green" id="b-net">0 €</div><div class="sub">net perçu</div></div>
-  </div>
-  <div class="stat-row three">
-    <div class="stat-card"><div class="lbl">Heures</div><div class="val" id="b-heures">0 h</div><div class="sub">cumulées</div></div>
-    <div class="stat-card"><div class="lbl">PAS payé</div><div class="val red" id="b-pas">0 €</div><div class="sub">prélevé</div></div>
-    <div class="stat-card"><div class="lbl">Frais réels</div><div class="val blue" id="b-frais">0 €</div><div class="sub">déductibles</div></div>
-  </div>
-  <div class="card">
-    <div class="card-head"><div class="card-head-title">ARE estimée</div><span class="tag tag-gray" id="are-status-tag">non calculé</span></div>
-    <div style="display:flex;gap:16px;align-items:flex-end;">
-      <div><div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);margin-bottom:4px;">JOURNALIÈRE</div><div style="font-family:'Playfair Display',serif;font-size:28px;font-weight:700;color:var(--gold);" id="q-are-jour">— €</div></div>
-      <div><div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);margin-bottom:4px;">MENSUELLE ≈</div><div style="font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:var(--ink2);" id="q-are-mois">— €</div></div>
-    </div>
-    <div class="progress-wrap">
-      <div class="progress-label"><span>Progression vers les 507h</span><span id="q-heures-prog">0 / 507 h</span></div>
-      <div class="progress-bar"><div class="progress-fill" id="q-heures-fill" style="width:0%"></div></div>
-    </div>
-  </div>
-  <div class="card">
-    <div class="card-head"><div class="card-head-title">Foyer</div></div>
-    <div class="field-row">
-      <div><div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);margin-bottom:4px;">SIMON (toi)</div><div style="font-family:'Playfair Display',serif;font-size:20px;font-weight:700;" id="foyer-simon">— €</div></div>
-      <div><div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);margin-bottom:4px;">MATHILDE</div><div style="font-family:'Playfair Display',serif;font-size:20px;font-weight:700;" id="foyer-mathilde">— €</div></div>
-    </div>
-    <div style="margin-top:12px;font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);margin-bottom:4px;">TOTAL FOYER + ARE ANNUELLE</div>
-    <div style="font-family:'Playfair Display',serif;font-size:22px;font-weight:700;" id="foyer-reste">— €</div>
-  </div>
-  <div class="card">
-    <div class="card-head"><div class="card-head-title">Impôts</div><div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--gold);" id="b-taux-pas">—%</div></div>
-    <div class="field-row">
-      <div><div class="card-label">ESTIMÉ</div><div style="font-family:'Playfair Display',serif;font-size:22px;font-weight:700;" id="b-impots-estim">— €</div></div>
-      <div><div class="card-label">DÉJÀ PAYÉ</div><div style="font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:var(--green);" id="b-impots-payes">0 €</div></div>
-    </div>
-    <div style="margin-top:10px;"><div class="card-label">RESTANT ESTIMÉ</div><div style="font-family:'Playfair Display',serif;font-size:26px;font-weight:700;color:var(--red);" id="b-impots-reste">— €</div></div>
-  </div>
-</div></div></div>
+<!-- ═══════════════════════════════════════
+     APP SHELL
+═══════════════════════════════════════ -->
+<div id="app-shell" style="display:none;">
 
-<!-- ═══ PAGE CONTRATS ═══ -->
-<div class="page" id="page-contrats">
-  <div style="padding:20px 16px 0;display:flex;align-items:center;justify-content:space-between;">
-    <div><div class="section-title">Mes <span class="accent">contrats</span></div><div class="section-sub">Par mois · Clic pour détail</div></div>
-    <button class="btn btn-ghost btn-sm" onclick="openSheet('sheet-add-contrat')" style="flex-shrink:0;">＋ Ajouter</button>
-  </div>
-  <div id="contrats-list" style="padding-bottom:20px;"></div>
-</div>
+  <!-- TOAST -->
+  <div class="toast" id="toast"></div>
 
-<!-- ═══ PAGE FRANCE TRAVAIL ═══ -->
-<div class="page" id="page-ft"><div class="page-wrap"><div class="section">
-  <div class="section-title">France <span class="accent">Travail</span></div>
-  <div class="section-sub">Déclaration mensuelle</div>
-  <div class="alert alert-info">📅 Tu déclares le mois M en M+1, avant le 15.</div>
-  <div class="card">
-    <div class="card-head"><div class="card-head-title">Mois à déclarer</div></div>
-    <div class="field"><label>Mois de travail</label><select id="ft-mois-select" onchange="renderFT()"></select></div>
-  </div>
-  <div id="ft-content"></div>
-</div></div></div>
-
-<!-- ═══ PAGE SCAN ═══ -->
-<div class="page" id="page-scan"><div class="page-wrap"><div class="section">
-  <div class="section-title">Scanner un <span class="accent">doc</span></div>
-  <div class="section-sub">IA · Extraction automatique</div>
-  <div class="card">
-    <div class="card-head"><div class="card-head-title">Type de document</div></div>
-    <div class="type-pills">
-      <div class="pill active" onclick="setDocType(this,'bulletin')">📄 Bulletin</div>
-      <div class="pill" onclick="setDocType(this,'contrat')">📝 Contrat</div>
-      <div class="pill" onclick="setDocType(this,'aem')">📋 AEM</div>
-      <div class="pill" onclick="setDocType(this,'conges')">🌴 Congés</div>
-      <div class="pill" onclick="setDocType(this,'frais')">🧾 Frais</div>
+  <!-- ═══ SIDEBAR (desktop only) ═══ -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-icon">🎭</div>
+      <div class="sidebar-logo-title">Inter<span>mittent</span></div>
+      <div class="sidebar-logo-sub">Tableau de bord</div>
     </div>
-  </div>
-  <div class="card" id="scan-contrat-link-card" style="display:none;">
-    <div class="card-head"><div class="card-head-title">Rattacher à un contrat</div></div>
-    <div class="field"><label>Contrat associé (optionnel)</label>
-      <select id="scan-contrat-select"><option value="">— Aucun / créer nouveau —</option></select>
-    </div>
-  </div>
-  <div class="upload-zone" id="dropzone" ondragover="event.preventDefault();this.classList.add('active')" ondragleave="this.classList.remove('active')" ondrop="handleDrop(event)">
-    <input type="file" accept=".pdf,image/*" onchange="handleFile(event)" id="file-input">
-    <div class="upload-emoji">📂</div>
-    <div class="upload-title">Glisse ou touche pour parcourir</div>
-    <div class="upload-sub">PDF, JPG, PNG · Photo iPhone OK</div>
-  </div>
-  <div id="scan-loading" style="display:none;" class="card"><div class="loading-block"><div class="loader"></div><div style="font-size:13px;color:var(--muted);margin-top:12px;">Analyse IA en cours…</div></div></div>
-  <div id="scan-result-card" style="display:none;"></div>
-</div></div></div>
 
-<!-- ═══ PAGE FRAIS ═══ -->
-<div class="page" id="page-frais"><div class="page-wrap"><div class="section">
-  <div class="section-title">Frais <span class="accent">réels</span></div>
-  <div class="section-sub">Déductibles · Comparaison forfait</div>
-  <div class="stat-row">
-    <div class="stat-card"><div class="lbl">Total frais</div><div class="val gold" id="f-total">0 €</div><div class="sub">à déclarer</div></div>
-    <div class="stat-card"><div class="lbl">vs Forfait 10%</div><div class="val" id="f-compare">—</div><div class="sub" id="f-compare-sub">calcul en attente</div></div>
-  </div>
-  <div class="card">
-    <div class="card-head"><div class="card-head-title">Par catégorie</div><button class="btn btn-ghost btn-sm" onclick="openSheet('sheet-add-frais')">＋ Ajouter</button></div>
-    <div id="frais-by-cat"><div class="empty"><div class="empty-icon">🧾</div><div class="empty-text">Aucun frais</div></div></div>
-  </div>
-  <div class="month-scroll" id="frais-month-tabs"></div>
-  <div class="card" style="margin:0 16px 12px;">
-    <div class="card-head"><div class="card-head-title">Liste</div></div>
-    <div id="frais-list"><div class="empty"><div class="empty-icon">📋</div><div class="empty-text">Aucun frais</div></div></div>
-  </div>
-</div></div></div>
+    <nav class="sidebar-nav">
+      <div class="sidebar-section-label">Principal</div>
+      <div class="sidebar-item active" id="side-bilan" onclick="showPage('bilan')">
+        <span class="si-icon">📊</span> Bilan
+      </div>
+      <div class="sidebar-item" id="side-contrats" onclick="showPage('contrats')">
+        <span class="si-icon">📁</span> Contrats
+      </div>
+      <div class="sidebar-item" id="side-ft" onclick="showPage('ft')">
+        <span class="si-icon">🏛️</span> France Travail
+      </div>
 
-<!-- ═══ PAGE RÉGLAGES ═══ -->
-<div class="page" id="page-settings"><div class="page-wrap"><div class="section">
-  <div class="section-title"><span class="accent">Réglages</span></div>
-  <div class="section-sub">Apps Script · Fiscal · Données</div>
+      <div class="sidebar-section-label" style="margin-top:8px;">Outils</div>
+      <div class="sidebar-item" id="side-scan" onclick="showPage('scan')">
+        <span class="si-icon">📄</span> Scanner un doc
+      </div>
+      <div class="sidebar-item" id="side-frais" onclick="showPage('frais')">
+        <span class="si-icon">🧾</span> Frais réels
+      </div>
 
-  <!-- APPS SCRIPT -->
-  <div class="card" style="background:linear-gradient(135deg,#e8f4fd,#d2e9f5);border-color:rgba(26,74,122,.15);">
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
-      <div style="font-size:28px;">🔗</div>
-      <div><div style="font-size:15px;font-weight:700;">Google Apps Script</div><div style="font-size:12px;color:var(--blue);" id="apps-script-status">Non configuré</div></div>
+      <div class="sidebar-section-label" style="margin-top:8px;">Compte</div>
+      <div class="sidebar-item" id="side-settings" onclick="showPage('settings')">
+        <span class="si-icon">⚙️</span> Réglages
+      </div>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="sidebar-user">
+        <div class="sidebar-user-avatar">S</div>
+        <div style="font-size:13px;font-weight:500;">Simon</div>
+      </div>
+      <div class="sidebar-sync" onclick="syncToServer(true)">
+        <div class="sync-dot" id="desktop-sync-dot"></div>
+        <span id="desktop-sync-label">Sync</span>
+      </div>
+      <div class="sidebar-logout" onclick="handleLogout()">Se déconnecter</div>
     </div>
-    <div class="field"><label>URL de déploiement Apps Script</label><input type="text" id="apps-script-url" placeholder="https://script.google.com/macros/s/…/exec"></div>
-    <div style="display:flex;gap:8px;">
-      <button class="btn btn-primary" style="flex:1;" onclick="saveAppsScriptUrl()">Sauvegarder</button>
-      <button class="btn btn-ghost" onclick="testAppsScript()" id="test-as-btn">Tester</button>
-    </div>
-    <div id="as-test-result" style="margin-top:10px;"></div>
-    <div style="margin-top:14px;padding-top:14px;border-top:1px solid rgba(26,74,122,.15);">
-      <div style="font-size:12px;color:var(--blue);font-weight:600;margin-bottom:6px;">📋 Guide de configuration</div>
-      <div style="font-size:11px;color:var(--ink2);line-height:1.7;">
-        1. Va sur <strong>script.google.com</strong> → Nouveau projet<br>
-        2. Colle le contenu de <strong>Code.gs</strong><br>
-        3. ⚙️ Paramètres → Propriétés de script → Ajoute <code>CLAUDE_API_KEY</code><br>
-        4. Déployer → Nouveau déploiement → Web App<br>
-        &nbsp;&nbsp;&nbsp;• Exécuter en tant que : <strong>Moi</strong><br>
-        &nbsp;&nbsp;&nbsp;• Accès : <strong>Tout le monde</strong><br>
-        5. Copie l'URL et colle-la ci-dessus
+  </aside>
+
+  <!-- ═══ MAIN CONTENT ═══ -->
+  <div class="main-content">
+
+    <!-- MOBILE HEADER -->
+    <header class="app-header">
+      <div class="app-logo">🎭 Inter<span>mittent</span></div>
+      <div class="header-right">
+        <div class="sync-status" onclick="syncToServer(true)">
+          <div class="sync-dot" id="sync-dot"></div>
+          <span id="sync-label">Sync</span>
+        </div>
+        <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);background:var(--bg2);padding:4px 10px;border-radius:20px;border:1px solid var(--border);" id="header-year">2026</div>
+      </div>
+    </header>
+
+    <!-- ═══ PAGE BILAN ═══ -->
+    <div class="page active" id="page-bilan">
+      <div class="page-wrap">
+        <div class="section" style="padding-top:20px;">
+          <div class="section-title">Bilan <span class="accent">2026</span></div>
+          <div class="section-sub">Vue annuelle · Sauvegarde auto</div>
+        </div>
+        <div class="section">
+          <div class="stat-row">
+            <div class="stat-card"><div class="lbl">Brut total</div><div class="val gold" id="b-brut">0 €</div><div class="sub" id="b-cachets">0 cachets</div></div>
+            <div class="stat-card"><div class="lbl">Net total</div><div class="val green" id="b-net">0 €</div><div class="sub">net perçu</div></div>
+          </div>
+          <div class="stat-row three">
+            <div class="stat-card"><div class="lbl">Heures</div><div class="val" id="b-heures">0 h</div><div class="sub">cumulées</div></div>
+            <div class="stat-card"><div class="lbl">PAS payé</div><div class="val red" id="b-pas">0 €</div><div class="sub">prélevé</div></div>
+            <div class="stat-card"><div class="lbl">Frais réels</div><div class="val blue" id="b-frais">0 €</div><div class="sub">déductibles</div></div>
+          </div>
+          <div class="card">
+            <div class="card-head"><div class="card-head-title">ARE estimée</div><span class="tag tag-gray" id="are-status-tag">non calculé</span></div>
+            <div style="display:flex;gap:16px;align-items:flex-end;">
+              <div>
+                <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);margin-bottom:4px;">JOURNALIÈRE</div>
+                <div style="font-family:'Playfair Display',serif;font-size:28px;font-weight:700;color:var(--gold);" id="q-are-jour">— €</div>
+              </div>
+              <div>
+                <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);margin-bottom:4px;">MENSUELLE ≈</div>
+                <div style="font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:var(--ink2);" id="q-are-mois">— €</div>
+              </div>
+            </div>
+            <div class="progress-wrap">
+              <div class="progress-label"><span>Progression vers les 507h</span><span id="q-heures-prog">0 / 507 h</span></div>
+              <div class="progress-bar"><div class="progress-fill" id="q-heures-fill" style="width:0%"></div></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head"><div class="card-head-title">Foyer</div></div>
+            <div class="field-row">
+              <div>
+                <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);margin-bottom:4px;">SIMON (toi)</div>
+                <div style="font-family:'Playfair Display',serif;font-size:20px;font-weight:700;" id="foyer-simon">— €</div>
+              </div>
+              <div>
+                <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);margin-bottom:4px;">MATHILDE</div>
+                <div style="font-family:'Playfair Display',serif;font-size:20px;font-weight:700;" id="foyer-mathilde">— €</div>
+              </div>
+            </div>
+            <div style="margin-top:12px;font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);margin-bottom:4px;">TOTAL FOYER + ARE ANNUELLE</div>
+            <div style="font-family:'Playfair Display',serif;font-size:22px;font-weight:700;" id="foyer-reste">— €</div>
+          </div>
+          <div class="card">
+            <div class="card-head"><div class="card-head-title">Impôts</div><div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--gold);" id="b-taux-pas">—%</div></div>
+            <div class="field-row">
+              <div><div class="card-label">ESTIMÉ</div><div style="font-family:'Playfair Display',serif;font-size:22px;font-weight:700;" id="b-impots-estim">— €</div></div>
+              <div><div class="card-label">DÉJÀ PAYÉ</div><div style="font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:var(--green);" id="b-impots-payes">0 €</div></div>
+            </div>
+            <div style="margin-top:10px;"><div class="card-label">RESTANT ESTIMÉ</div><div style="font-family:'Playfair Display',serif;font-size:26px;font-weight:700;color:var(--red);" id="b-impots-reste">— €</div></div>
+          </div>
+        </div>
       </div>
     </div>
-  </div>
 
-  <!-- SAUVEGARDE -->
-  <div class="card">
-    <div class="card-head"><div class="card-head-title">Sauvegarde Drive</div><span class="tag tag-gray" id="last-sync-tag">—</span></div>
-    <div style="display:flex;gap:8px;">
-      <button class="btn btn-primary" style="flex:1;" onclick="syncToServer(true)">☁️ Sauvegarder</button>
-      <button class="btn btn-ghost" style="flex:1;" onclick="restoreFromServer()">📥 Restaurer</button>
+    <!-- ═══ PAGE CONTRATS ═══ -->
+    <div class="page" id="page-contrats">
+      <div style="padding:20px 16px 0;display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <div class="section-title">Mes <span class="accent">contrats</span></div>
+          <div class="section-sub">Par mois · Clic pour détail</div>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="openSheet('sheet-add-contrat')" style="flex-shrink:0;">＋ Ajouter</button>
+      </div>
+      <!-- Desktop : layout 2 colonnes -->
+      <div class="contracts-layout" id="contracts-layout" style="margin-top:16px;">
+        <div id="contrats-list"></div>
+        <!-- Panel détail desktop -->
+        <div class="contract-panel" id="desktop-detail-panel" style="display:none;">
+          <div class="card">
+            <div class="card-head">
+              <div class="card-head-title" id="detail-title-desktop">Sélectionne un contrat</div>
+              <div style="display:flex;gap:8px;">
+                <button class="btn btn-danger btn-sm" onclick="deleteCurrentContrat()">🗑️</button>
+                <button class="btn btn-ghost btn-sm" onclick="closeDetail()">✕</button>
+              </div>
+            </div>
+            <div id="desktop-detail-body">
+              <div class="empty" style="padding:32px;"><div class="empty-icon">👆</div><div class="empty-text">Clique sur un contrat<br>pour voir les détails</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
+
+    <!-- ═══ PAGE FRANCE TRAVAIL ═══ -->
+    <div class="page" id="page-ft">
+      <div class="page-wrap">
+        <div class="section" style="padding-top:20px;">
+          <div class="section-title">France <span class="accent">Travail</span></div>
+          <div class="section-sub">Déclaration mensuelle · Récap automatique</div>
+          <div class="alert alert-info">📅 Tu déclares le mois M en M+1, avant le 15.</div>
+          <div class="card">
+            <div class="card-head"><div class="card-head-title">Mois à déclarer</div></div>
+            <div class="field"><label>Mois de travail</label><select id="ft-mois-select" onchange="renderFT()"></select></div>
+          </div>
+          <div id="ft-content"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ PAGE SCAN ═══ -->
+    <div class="page" id="page-scan">
+      <div class="page-wrap">
+        <div class="section" style="padding-top:20px;">
+          <div class="section-title">Scanner un <span class="accent">doc</span></div>
+          <div class="section-sub">IA · Extraction automatique</div>
+        </div>
+        <div class="scan-layout">
+          <div class="section" style="padding-top:0;">
+            <div class="card">
+              <div class="card-head"><div class="card-head-title">Type de document</div></div>
+              <div class="type-pills">
+                <div class="pill active" onclick="setDocType(this,'bulletin')">📄 Bulletin</div>
+                <div class="pill" onclick="setDocType(this,'contrat')">📝 Contrat</div>
+                <div class="pill" onclick="setDocType(this,'aem')">📋 AEM</div>
+                <div class="pill" onclick="setDocType(this,'conges')">🌴 Congés</div>
+                <div class="pill" onclick="setDocType(this,'frais')">🧾 Frais</div>
+              </div>
+            </div>
+            <div class="card" id="scan-contrat-link-card" style="display:none;">
+              <div class="card-head"><div class="card-head-title">Rattacher à un contrat</div></div>
+              <div class="field"><label>Contrat associé (optionnel)</label>
+                <select id="scan-contrat-select"><option value="">— Aucun / nouveau contrat —</option></select>
+              </div>
+            </div>
+            <div class="upload-zone" id="dropzone"
+              ondragover="event.preventDefault();this.classList.add('active')"
+              ondragleave="this.classList.remove('active')"
+              ondrop="handleDrop(event)">
+              <input type="file" accept=".pdf,image/*" onchange="handleFile(event)" id="file-input">
+              <div class="upload-emoji">📂</div>
+              <div class="upload-title">Glisse ou touche pour parcourir</div>
+              <div class="upload-sub">PDF, JPG, PNG · Photo iPhone OK</div>
+            </div>
+          </div>
+          <div class="section" style="padding-top:0;">
+            <div id="scan-loading" style="display:none;" class="card">
+              <div class="loading-block"><div class="loader"></div><div style="font-size:13px;color:var(--muted);margin-top:12px;">Analyse IA en cours…</div></div>
+            </div>
+            <div id="scan-result-card" style="display:none;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ PAGE FRAIS ═══ -->
+    <div class="page" id="page-frais">
+      <div class="page-wrap">
+        <div class="section" style="padding-top:20px;">
+          <div class="section-title">Frais <span class="accent">réels</span></div>
+          <div class="section-sub">Déductibles · Comparaison forfait</div>
+          <div class="stat-row">
+            <div class="stat-card"><div class="lbl">Total frais</div><div class="val gold" id="f-total">0 €</div><div class="sub">à déclarer</div></div>
+            <div class="stat-card"><div class="lbl">vs Forfait 10%</div><div class="val" id="f-compare">—</div><div class="sub" id="f-compare-sub">calcul en attente</div></div>
+          </div>
+          <div class="card">
+            <div class="card-head"><div class="card-head-title">Par catégorie</div><button class="btn btn-ghost btn-sm" onclick="openSheet('sheet-add-frais')">＋ Ajouter</button></div>
+            <div id="frais-by-cat"><div class="empty"><div class="empty-icon">🧾</div><div class="empty-text">Aucun frais</div></div></div>
+          </div>
+          <div class="month-scroll" id="frais-month-tabs"></div>
+          <div class="card">
+            <div class="card-head"><div class="card-head-title">Liste</div></div>
+            <div id="frais-list"><div class="empty"><div class="empty-icon">📋</div><div class="empty-text">Aucun frais</div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ PAGE RÉGLAGES ═══ -->
+    <div class="page" id="page-settings">
+      <div class="page-wrap">
+        <div class="section" style="padding-top:20px;">
+          <div class="section-title"><span class="accent">Réglages</span></div>
+          <div class="section-sub">Apps Script · Fiscal · Données</div>
+
+          <!-- APPS SCRIPT -->
+          <div class="card" style="background:linear-gradient(135deg,#e8f4fd,#d2e9f5);border-color:rgba(26,74,122,.15);">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+              <div style="font-size:28px;">🔗</div>
+              <div><div style="font-size:15px;font-weight:700;">Google Apps Script</div><div style="font-size:12px;color:var(--blue);" id="apps-script-status">Non configuré</div></div>
+            </div>
+            <div class="field"><label>URL de déploiement</label><input type="text" id="apps-script-url" placeholder="https://script.google.com/macros/s/…/exec"></div>
+            <div style="display:flex;gap:8px;">
+              <button class="btn btn-primary" style="flex:1;" onclick="saveAppsScriptUrl()">Sauvegarder</button>
+              <button class="btn btn-ghost" onclick="testAppsScript()" id="test-as-btn">Tester</button>
+            </div>
+            <div id="as-test-result" style="margin-top:10px;"></div>
+          </div>
+
+          <!-- SAUVEGARDE -->
+          <div class="card">
+            <div class="card-head"><div class="card-head-title">Sauvegarde Drive</div><span class="tag tag-gray" id="last-sync-label">—</span></div>
+            <div style="display:flex;gap:8px;">
+              <button class="btn btn-primary" style="flex:1;" onclick="syncToServer(true)">☁️ Sauvegarder</button>
+              <button class="btn btn-ghost" style="flex:1;" onclick="loadFromServer()">📥 Restaurer</button>
+            </div>
+          </div>
+
+          <!-- FISCAL -->
+          <div class="card">
+            <div class="card-head"><div class="card-head-title">Paramètres fiscaux</div></div>
+            <div class="field"><label>Taux PAS actuel (%)</label><input type="number" id="cfg-taux-pas" placeholder="Ex: 14.6" step="0.1" oninput="saveConfig()"></div>
+            <div class="field"><label>Situation familiale</label>
+              <select id="cfg-situation" onchange="saveConfig()">
+                <option value="1">Célibataire (1 part)</option>
+                <option value="2" selected>Couple sans enfant (2 parts)</option>
+                <option value="2.5">Couple + 1 enfant</option>
+                <option value="3">Couple + 2 enfants</option>
+              </select>
+            </div>
+            <div class="field"><label>Revenus Mathilde (annuels, €)</label><input type="number" id="cfg-mathilde" placeholder="Ex: 21600" oninput="saveConfig()"></div>
+            <div class="field"><label>SJR ARE actuel (€/jour)</label><input type="number" id="cfg-sjr" placeholder="Ex: 63" step="0.01" oninput="saveConfig()"></div>
+            <div class="field"><label>ARE réellement touchée (€/mois)</label><input type="number" id="cfg-are-reel" placeholder="Ex: 1614" oninput="saveConfig()"></div>
+            <div class="field"><label>Date fin de droits ARE</label><input type="date" id="cfg-fin-droits" oninput="saveConfig()"></div>
+          </div>
+
+          <!-- DONNÉES -->
+          <div class="card">
+            <div class="card-head"><div class="card-head-title">Données locales</div></div>
+            <div class="settings-row"><div><div class="settings-label">Exporter JSON</div><div class="settings-sub">Sauvegarde locale</div></div><button class="btn btn-ghost btn-sm" onclick="exportData()">📤 Export</button></div>
+            <div class="settings-row"><div><div class="settings-label">Importer JSON</div><div class="settings-sub">Restaurer depuis fichier</div></div><button class="btn btn-ghost btn-sm" onclick="document.getElementById('import-file').click()">📥 Import</button></div>
+            <input type="file" id="import-file" accept=".json" style="display:none;" onchange="importData(event)">
+            <div class="settings-row"><div><div class="settings-label" style="color:var(--red);">Tout effacer</div><div class="settings-sub">Irréversible</div></div><button class="btn btn-danger btn-sm" onclick="clearAll()">🗑️ Effacer</button></div>
+          </div>
+
+          <div class="card" style="background:var(--gold-light);border-color:rgba(184,146,42,.3);">
+            <div style="font-size:20px;margin-bottom:8px;">📱</div>
+            <div style="font-size:14px;font-weight:600;margin-bottom:6px;">Installer sur iPhone</div>
+            <div style="font-size:12px;color:var(--ink2);line-height:1.6;">Safari → <strong>Partager</strong> → <strong>"Sur l'écran d'accueil"</strong></div>
+          </div>
+
+          <div style="text-align:center;padding:8px 0 16px;">
+            <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);">Version <span id="app-version-display"></span></div>
+            <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--border);margin-top:4px;" id="app-date-display"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /main-content -->
+
+  <!-- ═══ BOTTOM NAV (mobile) ═══ -->
+  <nav class="bottom-nav">
+    <button class="nav-btn active" id="nav-bilan" onclick="showPage('bilan')"><span class="nav-icon">📊</span><span class="nav-label">Bilan</span></button>
+    <button class="nav-btn" id="nav-contrats" onclick="showPage('contrats')"><span class="nav-icon">📁</span><span class="nav-label">Contrats</span></button>
+    <button class="nav-btn" id="nav-scan" onclick="showPage('scan')"><span class="nav-icon">📄</span><span class="nav-label">Scanner</span></button>
+    <button class="nav-btn" id="nav-ft" onclick="showPage('ft')"><span class="nav-icon">🏛️</span><span class="nav-label">Fr. Travail</span></button>
+    <button class="nav-btn" id="nav-frais" onclick="showPage('frais')"><span class="nav-icon">🧾</span><span class="nav-label">Frais</span></button>
+    <button class="nav-btn" id="nav-settings" onclick="showPage('settings')"><span class="nav-icon">⚙️</span><span class="nav-label">Réglages</span></button>
+  </nav>
+
+  <!-- ═══ SHEET OVERLAY ═══ -->
+  <div class="sheet-overlay" id="sheet-overlay" onclick="closeSheet()"></div>
+
+  <!-- SHEET : Ajouter contrat -->
+  <div class="bottom-sheet" id="sheet-add-contrat">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title" id="sheet-contrat-title">Nouveau contrat</div>
+    <div class="field"><label>Employeur</label><input type="text" id="c-emp" placeholder="Nom de la compagnie"></div>
+    <div class="field"><label>Poste / Nature</label><input type="text" id="c-poste" placeholder="Ex: Comédien, Metteur en scène…"></div>
+    <div class="field-row">
+      <div class="field"><label>Date début</label><input type="date" id="c-debut"></div>
+      <div class="field"><label>Date fin</label><input type="date" id="c-fin"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Nb cachets</label><input type="number" id="c-cachets" placeholder="0" min="0"></div>
+      <div class="field"><label>Heures totales</label><input type="number" id="c-heures" placeholder="0" step="0.5"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Salaire brut (€)</label><input type="number" id="c-brut" placeholder="0.00" step="0.01"></div>
+      <div class="field"><label>Net imposable (€)</label><input type="number" id="c-net-imp" placeholder="0.00" step="0.01"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Net perçu (€)</label><input type="number" id="c-net" placeholder="0.00" step="0.01"></div>
+      <div class="field"><label>PAS prélevé (€)</label><input type="number" id="c-pas" placeholder="0.00" step="0.01"></div>
+    </div>
+    <div class="field"><label>Référence fichier(s)</label><input type="text" id="c-ref" placeholder="Contrat.pdf, Bulletin.pdf…"></div>
+    <div class="field"><label>Commentaire</label><textarea id="c-comment" placeholder="Notes…"></textarea></div>
+    <button class="btn btn-primary" id="btn-save-contrat" onclick="addContrat()" style="margin-top:8px;">✓ Enregistrer</button>
   </div>
 
-  <!-- FISCAL -->
-  <div class="card">
-    <div class="card-head"><div class="card-head-title">Paramètres fiscaux</div></div>
-    <div class="field"><label>Taux PAS actuel (%)</label><input type="number" id="cfg-taux-pas" placeholder="Ex: 14.6" step="0.1" oninput="saveConfig()"></div>
-    <div class="field"><label>Situation familiale</label>
-      <select id="cfg-situation" onchange="saveConfig()">
-        <option value="1">Célibataire (1 part)</option>
-        <option value="2" selected>Couple sans enfant (2 parts)</option>
-        <option value="2.5">Couple + 1 enfant</option>
-        <option value="3">Couple + 2 enfants</option>
+  <!-- SHEET : Ajouter frais -->
+  <div class="bottom-sheet" id="sheet-add-frais">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">Ajouter un frais</div>
+    <div class="field"><label>Catégorie</label>
+      <select id="f-cat">
+        <option value="transport">🚗 Transport (SNCF, parking…)</option>
+        <option value="navigo">🚇 Navigo / Abonnement</option>
+        <option value="km">🛣️ Kilométrique</option>
+        <option value="logiciel">💻 Logiciels (Voxing Pro…)</option>
+        <option value="formation">📚 Formation</option>
+        <option value="materiel">🎭 Matériel & costumes</option>
+        <option value="repas">🍽️ Repas professionnels</option>
+        <option value="agent">🤝 Commission agent</option>
+        <option value="conges">🌴 Congés Spectacle</option>
+        <option value="autre">📦 Autre</option>
       </select>
     </div>
-    <div class="field"><label>Revenus Mathilde (annuels, €)</label><input type="number" id="cfg-mathilde" placeholder="Ex: 21600" oninput="saveConfig()"></div>
-    <div class="field"><label>SJR ARE actuel (€/jour)</label><input type="number" id="cfg-sjr" placeholder="Ex: 63" step="0.01" oninput="saveConfig()"></div>
-    <div class="field"><label>ARE réellement touchée (€/mois)</label><input type="number" id="cfg-are-reel" placeholder="Ex: 1614" oninput="saveConfig()"></div>
-    <div class="field"><label>Date fin de droits ARE</label><input type="date" id="cfg-fin-droits" oninput="saveConfig()"></div>
-  </div>
-
-  <!-- DONNÉES LOCALES -->
-  <div class="card">
-    <div class="card-head"><div class="card-head-title">Données locales</div></div>
-    <div class="settings-row"><div><div class="settings-label">Exporter JSON</div><div class="settings-sub">Sauvegarde locale</div></div><button class="btn btn-ghost btn-sm" onclick="exportData()">📤 Export</button></div>
-    <div class="settings-row"><div><div class="settings-label">Importer JSON</div><div class="settings-sub">Restaurer depuis fichier</div></div><button class="btn btn-ghost btn-sm" onclick="document.getElementById('import-file').click()">📥 Import</button></div>
-    <input type="file" id="import-file" accept=".json" style="display:none;" onchange="importData(event)">
-    <div class="settings-row"><div><div class="settings-label" style="color:var(--red);">Tout effacer</div><div class="settings-sub">Irréversible</div></div><button class="btn btn-danger btn-sm" onclick="clearAll()">🗑️ Effacer</button></div>
-  </div>
-
-  <div class="card" style="background:var(--gold-light);border-color:rgba(184,146,42,.3);">
-    <div style="font-size:20px;margin-bottom:8px;">📱</div>
-    <div style="font-size:14px;font-weight:600;margin-bottom:6px;">Installer sur iPhone</div>
-    <div style="font-size:12px;color:var(--ink2);line-height:1.6;">Safari → <strong>Partager</strong> → <strong>"Sur l'écran d'accueil"</strong></div>
-  </div>
-  <div style="text-align:center;padding:8px 0 16px;">
-    <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);">Version <span id="app-version-display"></span></div>
-    <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--border);margin-top:4px;" id="app-date-display"></div>
-  </div>
-</div></div></div>
-
-<!-- BOTTOM NAV -->
-<nav class="bottom-nav">
-  <button class="nav-btn active" id="nav-bilan" onclick="showPage('bilan')"><span class="nav-icon">📊</span><span class="nav-label">Bilan</span></button>
-  <button class="nav-btn" id="nav-contrats" onclick="showPage('contrats')"><span class="nav-icon">📁</span><span class="nav-label">Contrats</span></button>
-  <button class="nav-btn" id="nav-scan" onclick="showPage('scan')"><span class="nav-icon">📄</span><span class="nav-label">Scanner</span></button>
-  <button class="nav-btn" id="nav-ft" onclick="showPage('ft')"><span class="nav-icon">🏛️</span><span class="nav-label">Fr. Travail</span></button>
-  <button class="nav-btn" id="nav-frais" onclick="showPage('frais')"><span class="nav-icon">🧾</span><span class="nav-label">Frais</span></button>
-  <button class="nav-btn" id="nav-settings" onclick="showPage('settings')"><span class="nav-icon">⚙️</span><span class="nav-label">Réglages</span></button>
-</nav>
-
-<div class="sheet-overlay" id="sheet-overlay" onclick="closeSheet()"></div>
-
-<!-- SHEET : Ajouter contrat -->
-<div class="bottom-sheet" id="sheet-add-contrat">
-  <div class="sheet-handle"></div>
-  <div class="sheet-title" id="sheet-contrat-title">Nouveau contrat</div>
-  <div class="field"><label>Employeur</label><input type="text" id="c-emp" placeholder="Nom de la compagnie"></div>
-  <div class="field"><label>Poste / Nature</label><input type="text" id="c-poste" placeholder="Ex: Comédien, Metteur en scène…"></div>
-  <div class="field-row">
-    <div class="field"><label>Date début</label><input type="date" id="c-debut"></div>
-    <div class="field"><label>Date fin</label><input type="date" id="c-fin"></div>
-  </div>
-  <div class="field-row">
-    <div class="field"><label>Nb cachets</label><input type="number" id="c-cachets" placeholder="0" min="0"></div>
-    <div class="field"><label>Heures totales</label><input type="number" id="c-heures" placeholder="0" step="0.5"></div>
-  </div>
-  <div class="field-row">
-    <div class="field"><label>Salaire brut (€)</label><input type="number" id="c-brut" placeholder="0.00" step="0.01"></div>
-    <div class="field"><label>Net imposable (€)</label><input type="number" id="c-net-imp" placeholder="0.00" step="0.01"></div>
-  </div>
-  <div class="field-row">
-    <div class="field"><label>Net perçu (€)</label><input type="number" id="c-net" placeholder="0.00" step="0.01"></div>
-    <div class="field"><label>PAS prélevé (€)</label><input type="number" id="c-pas" placeholder="0.00" step="0.01"></div>
-  </div>
-  <div class="field"><label>Référence fichier(s)</label><input type="text" id="c-ref" placeholder="Contrat.pdf, Bulletin.pdf…"></div>
-  <div class="field"><label>Commentaire</label><textarea id="c-comment" placeholder="Notes…"></textarea></div>
-  <button class="btn btn-primary" id="btn-save-contrat" onclick="addContrat()" style="margin-top:8px;">✓ Enregistrer</button>
-</div>
-
-<!-- SHEET : Ajouter frais -->
-<div class="bottom-sheet" id="sheet-add-frais">
-  <div class="sheet-handle"></div>
-  <div class="sheet-title">Ajouter un frais</div>
-  <div class="field"><label>Catégorie</label>
-    <select id="f-cat">
-      <option value="transport">🚗 Transport (SNCF, parking…)</option>
-      <option value="navigo">🚇 Navigo / Abonnement</option>
-      <option value="km">🛣️ Kilométrique</option>
-      <option value="logiciel">💻 Logiciels (Voxing Pro…)</option>
-      <option value="formation">📚 Formation</option>
-      <option value="materiel">🎭 Matériel & costumes</option>
-      <option value="repas">🍽️ Repas professionnels</option>
-      <option value="agent">🤝 Commission agent</option>
-      <option value="conges">🌴 Congés Spectacle</option>
-      <option value="autre">📦 Autre</option>
-    </select>
-  </div>
-  <div class="field"><label>Description</label><input type="text" id="f-desc" placeholder="A/R Paris, Voxing Pro…"></div>
-  <div class="field-row">
-    <div class="field"><label>Date</label><input type="date" id="f-date"></div>
-    <div class="field"><label>Montant (€)</label><input type="number" id="f-montant" placeholder="0.00" step="0.01"></div>
-  </div>
-  <div class="field-row">
-    <div class="field"><label>KM</label><input type="number" id="f-km" placeholder="0"></div>
-    <div class="field"><label>Repas (nb)</label><input type="number" id="f-repas" placeholder="0"></div>
-  </div>
-  <div class="field"><label>Affilier à un contrat</label><select id="f-contrat-link"><option value="">— Aucun —</option></select></div>
-  <div class="field"><label>Référence fichier</label><input type="text" id="f-ref" placeholder="SNCF_260105.pdf"></div>
-  <button class="btn btn-primary" onclick="addFrais()" style="margin-top:8px;">✓ Enregistrer</button>
-</div>
-
-<!-- DETAIL VIEW -->
-<div class="detail-view" id="detail-view">
-  <div class="detail-header">
-    <button class="detail-back" onclick="closeDetail()">←</button>
-    <div class="detail-title" id="detail-title">Contrat</div>
-    <button class="btn btn-danger btn-sm" onclick="deleteCurrentContrat()">🗑️</button>
-  </div>
-  <div class="detail-body" id="detail-body"></div>
-</div>
-
-<script>
-const APP_VERSION='2.1.0';
-const APP_DATE='2026-04-01';
-const MONTHS=['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
-const CAT_ICONS={transport:'🚗',navigo:'🚇',km:'🛣️',logiciel:'💻',formation:'📚',materiel:'🎭',repas:'🍽️',agent:'🤝',conges:'🌴',autre:'📦'};
-const CAT_LABELS={transport:'Transport',navigo:'Navigo',km:'Kilométrique',logiciel:'Logiciels',formation:'Formation',materiel:'Matériel',repas:'Repas',agent:'Agent',conges:'Congés Spectacle',autre:'Autre'};
-
-let state={contrats:[],frais:[],config:{tauxPas:14.6,situation:2,mathilde:0,sjr:0,areReel:0,finDroits:''}};
-let currentDocType='bulletin',pendingScanData=null,activeSheet=null;
-let selectedMonthFrais='all',currentContratId=null;
-let syncDebounce=null;
-
-// ── APPS SCRIPT ──
-function getAppsScriptUrl(){return localStorage.getItem('apps-script-url')||'';}
-
-function saveAppsScriptUrl(){
-  const url=document.getElementById('apps-script-url').value.trim();
-  if(!url.includes('script.google.com')){toast('❌ URL invalide');return;}
-  localStorage.setItem('apps-script-url',url);
-  updateSyncUI();
-  toast('✅ URL sauvegardée');
-  loadFromServer(); // Charge les données immédiatement
-}
-
-async function appsScriptGet(params){
-  const url=getAppsScriptUrl();if(!url)throw new Error('Apps Script non configuré');
-  const q=new URLSearchParams(params).toString();
-  const r=await fetch(`${url}?${q}`,{redirect:'follow'});
-  return await r.json();
-}
-
-async function appsScriptPost(body){
-  const url=getAppsScriptUrl();if(!url)throw new Error('Apps Script non configuré');
-  const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),redirect:'follow'});
-  return await r.json();
-}
-
-async function testAppsScript(){
-  const btn=document.getElementById('test-as-btn');
-  btn.innerHTML='<div class="loader" style="width:14px;height:14px;"></div>';
-  try{
-    const res=await appsScriptGet({action:'ping'});
-    btn.textContent='Tester';
-    if(res.ok){
-      document.getElementById('as-test-result').innerHTML='<div class="alert alert-ok">✅ Connexion OK ! Version '+res.version+'</div>';
-      document.getElementById('apps-script-status').textContent='Connecté ✓';
-      updateSyncUI(true);
-    } else {
-      document.getElementById('as-test-result').innerHTML='<div class="alert alert-err">❌ Erreur: '+(res.error||'inconnue')+'</div>';
-    }
-  }catch(e){
-    btn.textContent='Tester';
-    document.getElementById('as-test-result').innerHTML='<div class="alert alert-err">❌ '+e.message+'</div>';
-  }
-}
-
-// ── SYNC ──
-function updateSyncUI(connected){
-  const dot=document.getElementById('sync-dot');
-  const lbl=document.getElementById('sync-label');
-  const hasUrl=!!getAppsScriptUrl();
-  if(connected||hasUrl){dot.className='sync-dot ok';lbl.textContent='Sync ✓';}
-  else{dot.className='sync-dot error';lbl.textContent='Config !';}
-  document.getElementById('setup-banner').classList.toggle('show',!hasUrl);
-}
-
-async function syncToServer(showToast=false){
-  const url=getAppsScriptUrl();if(!url)return;
-  setSyncStatus('syncing','Sync…');
-  try{
-    const res=await appsScriptPost({action:'saveData',data:state});
-    if(res.ok){
-      const ts=new Date().toLocaleString('fr-FR',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
-      document.getElementById('last-sync-tag').textContent=ts;
-      setSyncStatus('ok','Sync ✓');
-      if(showToast)toast('☁️ Sauvegardé sur Drive !');
-    } else {
-      setSyncStatus('error','Erreur');
-      if(showToast)toast('❌ Erreur sauvegarde: '+(res.error||'?'));
-    }
-  }catch(e){setSyncStatus('error','Erreur');if(showToast)toast('❌ '+e.message);}
-}
-
-async function loadFromServer(){
-  const url=getAppsScriptUrl();if(!url)return;
-  setSyncStatus('syncing','Chargement…');
-  try{
-    const res=await appsScriptGet({action:'getData'});
-    if(res.ok&&res.data){
-      const d=res.data;
-      if(d.contrats)state.contrats=d.contrats;
-      if(d.bulletins&&(!d.contrats||d.contrats.length===0)){
-        state.contrats=d.bulletins.map(b=>({id:b.id,employeur:b.employeur||'',poste:'',dateDebut:b.date,dateFin:b.date,cachets:b.cachets||0,heures:b.hTot||0,brutV:b.brutV||0,netImp:b.netImp||0,netV:b.netV||0,pasV:b.pasV||0,paye:b.nonPaye===0,ref:b.ref||'',comment:'',docs:[]}));
-      }
-      if(d.frais)state.frais=d.frais;
-      if(d.config)state.config={...state.config,...d.config};
-      saveLocal();
-      renderBilan();renderContrats();renderFrais();loadConfig();
-      setSyncStatus('ok','Sync ✓');
-      toast('✅ Données chargées depuis Drive');
-    } else if(res.ok&&!res.data){
-      setSyncStatus('ok','Sync ✓');
-    }
-  }catch(e){setSyncStatus('error','Erreur');toast('❌ Erreur chargement: '+e.message);}
-}
-
-async function restoreFromServer(){await loadFromServer();}
-
-function setSyncStatus(s,l){document.getElementById('sync-dot').className='sync-dot '+s;document.getElementById('sync-label').textContent=l;}
-
-function saveLocal(){localStorage.setItem('intermittent-v2',JSON.stringify(state));}
-
-function saveState(){
-  saveLocal();
-  if(getAppsScriptUrl()){clearTimeout(syncDebounce);syncDebounce=setTimeout(()=>syncToServer(false),3000);}
-}
-
-// ── NAVIGATION ──
-function showPage(id){
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
-  document.getElementById('page-'+id).classList.add('active');
-  document.getElementById('nav-'+id).classList.add('active');
-  if(id==='bilan')renderBilan();
-  if(id==='contrats')renderContrats();
-  if(id==='frais')renderFrais();
-  if(id==='ft')renderFTPage();
-}
-
-function toast(msg){const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),2800);}
-function openSheet(id){closeSheet(true);populateContratSelects();activeSheet=id;document.getElementById('sheet-overlay').classList.add('show');document.getElementById(id).classList.add('show');document.body.style.overflow='hidden';}
-function closeSheet(s){if(activeSheet){document.getElementById(activeSheet).classList.remove('show');activeSheet=null;}document.getElementById('sheet-overlay').classList.remove('show');document.body.style.overflow='';}
-
-function populateContratSelects(){
-  const opts=state.contrats.sort((a,b)=>b.dateDebut.localeCompare(a.dateDebut)).map(c=>`<option value="${c.id}">${c.employeur} (${fmtDate(c.dateDebut)})</option>`).join('');
-  const s1=document.getElementById('scan-contrat-select');if(s1)s1.innerHTML='<option value="">— Aucun / nouveau contrat —</option>'+opts;
-  const s2=document.getElementById('f-contrat-link');if(s2)s2.innerHTML='<option value="">— Aucun —</option>'+opts;
-}
-
-// ── DETAIL ──
-function openDetail(id){
-  currentContratId=id;
-  const c=state.contrats.find(x=>x.id===id);if(!c)return;
-  document.getElementById('detail-title').textContent=c.employeur||'Contrat';
-  renderDetailBody(c);
-  document.getElementById('detail-view').classList.add('show');
-  document.body.style.overflow='hidden';
-}
-function closeDetail(){document.getElementById('detail-view').classList.remove('show');document.body.style.overflow='';currentContratId=null;renderContrats();}
-
-function renderDetailBody(c){
-  const fraisLies=state.frais.filter(f=>f.contratId===c.id);
-  const totalFrais=fraisLies.reduce((s,f)=>s+f.montant,0);
-  const nbJours=c.dateDebut&&c.dateFin?Math.ceil((new Date(c.dateFin)-new Date(c.dateDebut))/(86400000))+1:0;
-  document.getElementById('detail-body').innerHTML=`
-    <div style="margin-bottom:16px;">
-      <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Statut paiement bulletin</div>
-      <div class="paiement-toggle">
-        <div class="paiement-btn ${c.paye===true?'active-paye':''}" onclick="togglePaiement('${c.id}',true)">✅ Payé</div>
-        <div class="paiement-btn ${c.paye===false?'active-attente':''}" onclick="togglePaiement('${c.id}',false)">⏳ En attente</div>
-      </div>
+    <div class="field"><label>Description</label><input type="text" id="f-desc" placeholder="A/R Paris, Voxing Pro…"></div>
+    <div class="field-row">
+      <div class="field"><label>Date</label><input type="date" id="f-date"></div>
+      <div class="field"><label>Montant (€)</label><input type="number" id="f-montant" placeholder="0.00" step="0.01"></div>
     </div>
-    <div class="card">
-      <div class="card-head"><div class="card-head-title">Informations</div></div>
-      <div class="ft-row"><span class="ft-label">Employeur</span><span class="ft-value">${c.employeur||'—'}</span></div>
-      <div class="ft-row"><span class="ft-label">Poste</span><span class="ft-value">${c.poste||'—'}</span></div>
-      <div class="ft-row"><span class="ft-label">Début</span><span class="ft-value">${fmtDate(c.dateDebut)}</span></div>
-      <div class="ft-row"><span class="ft-label">Fin</span><span class="ft-value">${fmtDate(c.dateFin)}</span></div>
-      <div class="ft-row"><span class="ft-label">Durée</span><span class="ft-value">${nbJours} jour${nbJours>1?'s':''}</span></div>
+    <div class="field-row">
+      <div class="field"><label>KM</label><input type="number" id="f-km" placeholder="0"></div>
+      <div class="field"><label>Repas (nb)</label><input type="number" id="f-repas" placeholder="0"></div>
     </div>
-    <div class="card">
-      <div class="card-head"><div class="card-head-title">Rémunération</div></div>
-      <div class="ft-row"><span class="ft-label">Cachets</span><span class="ft-value">${c.cachets||0}</span></div>
-      <div class="ft-row"><span class="ft-label">Heures</span><span class="ft-value">${c.heures||0} h</span></div>
-      <div class="ft-row"><span class="ft-label">Salaire brut</span><span class="ft-value" style="color:var(--gold)">${fmt(c.brutV)}</span></div>
-      <div class="ft-row"><span class="ft-label">Net imposable</span><span class="ft-value">${fmt(c.netImp)}</span></div>
-      <div class="ft-row"><span class="ft-label">Net perçu</span><span class="ft-value" style="color:var(--green)">${fmt(c.netV)}</span></div>
-      <div class="ft-row"><span class="ft-label">PAS prélevé</span><span class="ft-value" style="color:var(--red)">${fmt(c.pasV)}</span></div>
+    <div class="field"><label>Affilier à un contrat</label><select id="f-contrat-link"><option value="">— Aucun —</option></select></div>
+    <div class="field"><label>Référence fichier</label><input type="text" id="f-ref" placeholder="SNCF_260105.pdf"></div>
+    <button class="btn btn-primary" onclick="addFrais()" style="margin-top:8px;">✓ Enregistrer</button>
+  </div>
+
+  <!-- DETAIL VIEW (mobile slide-in) -->
+  <div class="detail-view" id="detail-view">
+    <div class="detail-header">
+      <button class="detail-back" onclick="closeDetail()">←</button>
+      <div class="detail-title" id="detail-title">Contrat</div>
+      <button class="btn btn-danger btn-sm" onclick="deleteCurrentContrat()">🗑️</button>
     </div>
-    <div class="card" style="background:var(--blue-light);border-color:rgba(26,74,122,.2);">
-      <div class="card-head"><div class="card-head-title" style="color:var(--blue);">À déclarer — France Travail</div></div>
-      <div class="ft-row"><span class="ft-label">Mois de déclaration</span><span class="ft-value" style="color:var(--blue);">${getMoisDeclaration(c.dateDebut)}</span></div>
-      <div class="ft-row"><span class="ft-label">Heures à déclarer</span><span class="ft-value">${c.heures||0} h</span></div>
-      <div class="ft-row"><span class="ft-label">Salaire brut à déclarer</span><span class="ft-value">${fmt(c.brutV)}</span></div>
-      <div class="ft-row"><span class="ft-label">Jours travaillés</span><span class="ft-value">${nbJours}</span></div>
-    </div>
-    <div class="card">
-      <div class="card-head"><div class="card-head-title">Frais affiliés</div><button class="btn btn-ghost btn-sm" onclick="closeDetail();setTimeout(()=>{openSheet('sheet-add-frais');document.getElementById('f-contrat-link').value='${c.id}'},150)">＋</button></div>
-      ${!fraisLies.length?'<div class="empty" style="padding:16px;"><div class="empty-text">Aucun frais affilié</div></div>':fraisLies.map(f=>`<div class="ft-row"><span class="ft-label">${CAT_ICONS[f.cat]||'📦'} ${f.desc||CAT_LABELS[f.cat]}</span><span class="ft-value">${fmt(f.montant)}</span></div>`).join('')}
-      ${fraisLies.length>0?`<div class="ft-row" style="border-top:2px solid var(--border);margin-top:4px;padding-top:12px;"><span class="ft-label" style="color:var(--ink);font-weight:700;">Total</span><span class="ft-value" style="color:var(--blue);">${fmt(totalFrais)}</span></div>`:''}
-    </div>
-    ${c.ref?`<div class="card"><div class="card-head"><div class="card-head-title">Documents</div></div><div style="font-family:'DM Mono',monospace;font-size:12px;line-height:1.8;color:var(--ink2);">${c.ref}</div></div>`:''}
-    ${c.comment?`<div class="card"><div class="card-head"><div class="card-head-title">Commentaire</div></div><div style="font-size:13px;line-height:1.6;">${c.comment}</div></div>`:''}
-    <button class="btn btn-ghost" onclick="editContrat('${c.id}')" style="width:100%;margin-bottom:10px;">✏️ Modifier</button>
-  `;
-}
+    <div class="detail-body" id="detail-body"></div>
+  </div>
 
-function getMoisDeclaration(dateStr){
-  if(!dateStr)return'—';
-  const d=new Date(dateStr);
-  const m=new Date(d.getFullYear(),d.getMonth()+1,1);
-  return`${MONTHS[m.getMonth()]} ${m.getFullYear()} (avant le 15)`;
-}
+</div><!-- /app-shell -->
 
-function togglePaiement(id,paye){
-  const c=state.contrats.find(x=>x.id===id);if(!c)return;
-  c.paye=paye;saveState();renderDetailBody(c);toast(paye?'✅ Marqué comme payé':'⏳ Marqué en attente');
-}
-
-function deleteCurrentContrat(){
-  if(!currentContratId)return;
-  const c=state.contrats.find(x=>x.id===currentContratId);
-  if(!confirm(`Supprimer le contrat "${c?.employeur||'ce contrat'}" ?`))return;
-  state.contrats=state.contrats.filter(x=>x.id!==currentContratId);
-  saveState();closeDetail();toast('🗑️ Contrat supprimé');
-}
-
-function editContrat(id){
-  const c=state.contrats.find(x=>x.id===id);if(!c)return;
-  document.getElementById('c-emp').value=c.employeur||'';
-  document.getElementById('c-poste').value=c.poste||'';
-  document.getElementById('c-debut').value=c.dateDebut||'';
-  document.getElementById('c-fin').value=c.dateFin||'';
-  document.getElementById('c-cachets').value=c.cachets||'';
-  document.getElementById('c-heures').value=c.heures||'';
-  document.getElementById('c-brut').value=c.brutV||'';
-  document.getElementById('c-net-imp').value=c.netImp||'';
-  document.getElementById('c-net').value=c.netV||'';
-  document.getElementById('c-pas').value=c.pasV||'';
-  document.getElementById('c-ref').value=c.ref||'';
-  document.getElementById('c-comment').value=c.comment||'';
-  document.getElementById('sheet-add-contrat').dataset.editId=id;
-  document.getElementById('sheet-contrat-title').textContent='Modifier le contrat';
-  document.getElementById('btn-save-contrat').textContent='✓ Mettre à jour';
-  closeDetail();openSheet('sheet-add-contrat');
-}
-
-// ── CONTRATS ──
-function addContrat(){
-  const emp=document.getElementById('c-emp').value.trim();
-  const debut=document.getElementById('c-debut').value;
-  if(!emp||!debut){toast('❌ Employeur et date début requis');return;}
-  const sheet=document.getElementById('sheet-add-contrat');
-  const editId=sheet.dataset.editId;
-  const data={employeur:emp,poste:document.getElementById('c-poste').value.trim(),dateDebut:debut,dateFin:document.getElementById('c-fin').value||debut,cachets:parseInt(document.getElementById('c-cachets').value)||0,heures:parseFloat(document.getElementById('c-heures').value)||0,brutV:parseFloat(document.getElementById('c-brut').value)||0,netImp:parseFloat(document.getElementById('c-net-imp').value)||0,netV:parseFloat(document.getElementById('c-net').value)||0,pasV:parseFloat(document.getElementById('c-pas').value)||0,ref:document.getElementById('c-ref').value.trim(),comment:document.getElementById('c-comment').value.trim(),docs:[]};
-  if(editId){const idx=state.contrats.findIndex(x=>x.id===editId);if(idx>=0)state.contrats[idx]={...state.contrats[idx],...data};delete sheet.dataset.editId;document.getElementById('sheet-contrat-title').textContent='Nouveau contrat';document.getElementById('btn-save-contrat').textContent='✓ Enregistrer';toast('✅ Contrat mis à jour');}
-  else{data.id=Date.now().toString();data.paye=null;state.contrats.push(data);toast('✅ Contrat enregistré');}
-  saveState();closeSheet();renderContrats();renderBilan();
-  ['c-emp','c-poste','c-debut','c-fin','c-cachets','c-heures','c-brut','c-net-imp','c-net','c-pas','c-ref','c-comment'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
-}
-
-function renderContrats(){
-  const el=document.getElementById('contrats-list');
-  if(!state.contrats.length){el.innerHTML='<div class="empty" style="padding:48px 20px;"><div class="empty-icon">📁</div><div class="empty-text">Aucun contrat enregistré<br>Scanne ou ajoute manuellement</div></div>';return;}
-  const grouped={};
-  state.contrats.forEach(c=>{const d=new Date(c.dateDebut);const y=d.getFullYear();const m=d.getMonth();if(!grouped[y])grouped[y]={};if(!grouped[y][m])grouped[y][m]=[];grouped[y][m].push(c);});
-  let html='';
-  Object.keys(grouped).sort((a,b)=>b-a).forEach(y=>{
-    html+=`<div class="year-group"><div class="year-header">${y}</div>`;
-    Object.keys(grouped[y]).sort((a,b)=>b-a).forEach(m=>{
-      const contrats=grouped[y][m].sort((a,b)=>b.dateDebut.localeCompare(a.dateDebut));
-      const totalBrut=contrats.reduce((s,c)=>s+c.brutV,0);
-      const totalH=contrats.reduce((s,c)=>s+c.heures,0);
-      html+=`<div class="month-group"><div class="month-header"><div class="month-header-name">${MONTHS[m]}</div><div class="month-header-total">${totalH}h · ${fmt(totalBrut)}</div></div><div class="month-contracts">`;
-      contrats.forEach(c=>{
-        const sc=c.paye===true?'paye':c.paye===false?'en-attente':'inconnu';
-        const st=c.paye===true?'<span class="tag tag-green">✓ Payé</span>':c.paye===false?'<span class="tag tag-red">⏳ En attente</span>':'<span class="tag tag-gray">— Paiement ?</span>';
-        html+=`<div class="contrat-card ${sc}" onclick="openDetail('${c.id}')"><div class="contrat-header"><div><div class="contrat-employeur">${c.employeur||'Employeur inconnu'}</div>${c.poste?`<div class="contrat-poste">${c.poste}</div>`:''}</div>${st}</div><div class="contrat-dates">${fmtDate(c.dateDebut)}${c.dateFin&&c.dateFin!==c.dateDebut?' → '+fmtDate(c.dateFin):''}</div><div class="contrat-stats"><div class="contrat-stat"><strong>${c.cachets||0}</strong> cachet${(c.cachets||0)>1?'s':''}</div><div class="contrat-stat"><strong>${c.heures||0}h</strong></div><div class="contrat-stat"><strong style="color:var(--gold)">${fmt(c.brutV)}</strong> brut</div></div></div>`;
-      });
-      html+=`</div></div>`;
-    });
-    html+=`</div>`;
-  });
-  el.innerHTML=html;
-}
-
-// ── FRANCE TRAVAIL ──
-function renderFTPage(){
-  const sel=document.getElementById('ft-mois-select');
-  const now=new Date();
-  const opts=[];
-  for(let i=0;i<13;i++){const d=new Date(now.getFullYear(),now.getMonth()-i,1);const val=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;opts.push(`<option value="${val}">${MONTHS[d.getMonth()]} ${d.getFullYear()}</option>`);}
-  sel.innerHTML=opts.join('');
-  renderFT();
-}
-
-function renderFT(){
-  const val=document.getElementById('ft-mois-select').value;if(!val)return;
-  const[y,m]=val.split('-').map(Number);
-  const contrats=state.contrats.filter(c=>{const d=new Date(c.dateDebut);return d.getFullYear()===y&&d.getMonth()===m-1;});
-  const totalH=contrats.reduce((s,c)=>s+c.heures,0);
-  const totalBrut=contrats.reduce((s,c)=>s+c.brutV,0);
-  const totalCachets=contrats.reduce((s,c)=>s+c.cachets,0);
-  const totalJours=contrats.reduce((s,c)=>{if(!c.dateDebut||!c.dateFin)return s;return s+Math.ceil((new Date(c.dateFin)-new Date(c.dateDebut))/(86400000))+1;},0);
-  const moisDecl=new Date(y,m,1);
-  const el=document.getElementById('ft-content');
-  if(!contrats.length){el.innerHTML=`<div class="card"><div class="empty" style="padding:24px;"><div class="empty-icon">📋</div><div class="empty-text">Aucun contrat en ${MONTHS[m-1]} ${y}</div></div></div>`;return;}
-  el.innerHTML=`
-    <div class="card" style="background:var(--blue-light);border-color:rgba(26,74,122,.2);">
-      <div class="card-head"><div class="card-head-title" style="color:var(--blue);">À déclarer en ${MONTHS[moisDecl.getMonth()]} ${moisDecl.getFullYear()}</div></div>
-      <div class="ft-row"><span class="ft-label">Heures travaillées</span><span class="ft-value">${totalH} h</span></div>
-      <div class="ft-row"><span class="ft-label">Salaire brut total</span><span class="ft-value" style="color:var(--gold);">${fmt(totalBrut)}</span></div>
-      <div class="ft-row"><span class="ft-label">Nombre de cachets</span><span class="ft-value">${totalCachets}</span></div>
-      <div class="ft-row"><span class="ft-label">Jours travaillés</span><span class="ft-value">${totalJours}</span></div>
-      <div class="ft-row"><span class="ft-label">Employeurs</span><span class="ft-value">${[...new Set(contrats.map(c=>c.employeur))].length}</span></div>
-    </div>
-    <div class="card">
-      <div class="card-head"><div class="card-head-title">Détail par contrat</div></div>
-      ${contrats.map(c=>{const nj=c.dateDebut&&c.dateFin?Math.ceil((new Date(c.dateFin)-new Date(c.dateDebut))/(86400000))+1:0;return`<div style="padding:12px 0;border-bottom:1px solid var(--border2);"><div style="font-size:14px;font-weight:700;margin-bottom:6px;">${c.employeur}</div><div style="display:flex;gap:16px;flex-wrap:wrap;"><div class="contrat-stat"><strong>${c.heures||0}h</strong></div><div class="contrat-stat"><strong>${fmt(c.brutV)}</strong> brut</div><div class="contrat-stat"><strong>${c.cachets||0}</strong> cachet${(c.cachets||0)>1?'s':''}</div><div class="contrat-stat"><strong>${nj}j</strong></div></div><div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);margin-top:4px;">${fmtDate(c.dateDebut)}${c.dateFin&&c.dateFin!==c.dateDebut?' → '+fmtDate(c.dateFin):''}</div></div>`;}).join('')}
-    </div>
-    <button class="btn btn-ghost" style="width:100%;margin-bottom:10px;" onclick="copyFTRecap(${y},${m})">📋 Copier le récapitulatif</button>`;
-}
-
-function copyFTRecap(y,m){
-  const contrats=state.contrats.filter(c=>{const d=new Date(c.dateDebut);return d.getFullYear()===y&&d.getMonth()===m-1;});
-  let text=`DÉCLARATION FRANCE TRAVAIL — ${MONTHS[m-1]} ${y}\n${'─'.repeat(40)}\nHeures : ${contrats.reduce((s,c)=>s+c.heures,0)} h\nBrut : ${fmt(contrats.reduce((s,c)=>s+c.brutV,0))}\nCachets : ${contrats.reduce((s,c)=>s+c.cachets,0)}\n\nDÉTAIL :\n`;
-  contrats.forEach(c=>{text+=`\n• ${c.employeur}\n  ${c.heures||0}h — ${fmt(c.brutV)} brut — ${c.cachets||0} cachet(s)\n`;});
-  navigator.clipboard.writeText(text).then(()=>toast('📋 Copié !')).catch(()=>toast('❌ Impossible de copier'));
-}
-
-// ── SCAN ──
-function setDocType(el,type){document.querySelectorAll('.pill').forEach(p=>p.classList.remove('active'));el.classList.add('active');currentDocType=type;document.getElementById('scan-contrat-link-card').style.display=(type==='bulletin'||type==='aem')?'block':'none';}
-function handleDrop(e){e.preventDefault();document.getElementById('dropzone').classList.remove('active');if(e.dataTransfer.files[0])processFile(e.dataTransfer.files[0]);}
-function handleFile(e){if(e.target.files[0])processFile(e.target.files[0]);}
-function fileToBase64(f){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result.split(',')[1]);r.onerror=rej;r.readAsDataURL(f);});}
-
-async function processFile(file){
-  if(!getAppsScriptUrl()){showPage('settings');toast('⚙️ Configure Apps Script d\'abord');return;}
-  document.getElementById('scan-loading').style.display='block';
-  document.getElementById('scan-result-card').style.display='none';
-  const base64=await fileToBase64(file);
-  try{
-    const res=await appsScriptPost({action:'scanDoc',docType:currentDocType,base64Data:base64,mediaType:file.type});
-    document.getElementById('scan-loading').style.display='none';
-    if(res.ok){pendingScanData=res.data;showScanResult(res.data);}
-    else{document.getElementById('scan-result-card').style.display='block';document.getElementById('scan-result-card').innerHTML=`<div class="alert alert-err">❌ ${res.error||'Erreur scan'}</div>`;}
-  }catch(e){document.getElementById('scan-loading').style.display='none';document.getElementById('scan-result-card').style.display='block';document.getElementById('scan-result-card').innerHTML=`<div class="alert alert-err">❌ ${e.message}</div>`;}
-  document.getElementById('file-input').value='';
-}
-
-function showScanResult(d){
-  const card=document.getElementById('scan-result-card');card.style.display='block';
-  const numF=['salaire_brut','net_imposable','net_percu','pas_preleve','montant_ttc','montant_ht','cachet_brut'];
-  const rows=Object.entries(d).filter(([k,v])=>k!=='type'&&v!==null&&v!==''&&v!==0).map(([k,v])=>`<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border2);"><span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);text-transform:uppercase;">${k.replace(/_/g,' ')}</span><span style="font-size:13px;font-weight:600;">${numF.some(n=>k.includes(n.split('_')[0]))||k.includes('brut')||k.includes('net')||k.includes('montant')?fmt(v):v}</span></div>`).join('');
-  card.innerHTML=`<div class="card"><div class="card-head"><div class="card-head-title">Extraction IA</div><span class="tag tag-green">✓ OK</span></div>${rows}<button class="btn btn-primary" onclick="confirmScanInline()" style="margin-top:16px;">✓ Enregistrer</button><button class="btn btn-ghost" style="margin-top:8px;width:100%;" onclick="document.getElementById('scan-result-card').style.display='none'">Annuler</button></div>`;
-}
-
-function confirmScanInline(){
-  if(!pendingScanData)return;
-  const d=pendingScanData;
-  const linkedId=document.getElementById('scan-contrat-select')?.value||'';
-  if(d.type==='contrat'||currentDocType==='contrat'){
-    state.contrats.push({id:Date.now().toString(),employeur:d.employeur||'',poste:d.poste||d.nature_contrat||'',dateDebut:d.date_debut||new Date().toISOString().slice(0,10),dateFin:d.date_fin||d.date_debut||new Date().toISOString().slice(0,10),cachets:d.cachets||0,heures:d.h_prevues||0,brutV:d.cachet_brut_total||0,netImp:0,netV:0,pasV:0,paye:null,ref:'',comment:'',docs:[]});toast('✅ Contrat enregistré');
-  } else if(d.type==='bulletin'||currentDocType==='bulletin'){
-    if(linkedId){const c=state.contrats.find(x=>x.id===linkedId);if(c){if(!c.brutV)c.brutV=d.salaire_brut||0;if(!c.netImp)c.netImp=d.net_imposable||0;if(!c.netV)c.netV=d.net_percu||0;if(!c.pasV)c.pasV=d.pas_preleve||0;if(!c.heures)c.heures=d.h_totales||0;if(!c.cachets)c.cachets=d.cachets||0;toast('✅ Bulletin rattaché');}}
-    else{const mi=MONTHS.indexOf(d.mois);const an=d.annee||new Date().getFullYear();const ds=mi>=0?`${an}-${String(mi+1).padStart(2,'0')}-01`:new Date().toISOString().slice(0,10);state.contrats.push({id:Date.now().toString(),employeur:d.employeur||'',poste:'',dateDebut:ds,dateFin:ds,cachets:d.cachets||0,heures:d.h_totales||0,brutV:d.salaire_brut||0,netImp:d.net_imposable||0,netV:d.net_percu||0,pasV:d.pas_preleve||0,paye:null,ref:'',comment:'',docs:[]});toast('✅ Bulletin → nouveau contrat');}
-  } else if(d.type==='aem'||currentDocType==='aem'){
-    if(linkedId){const c=state.contrats.find(x=>x.id===linkedId);if(c){if(!c.heures)c.heures=d.nb_heures||0;if(!c.cachets)c.cachets=d.nb_cachets||0;if(!c.brutV)c.brutV=d.salaire_brut||0;toast('✅ AEM rattachée');}}
-    else{const mi=MONTHS.indexOf(d.mois);const an=d.annee||new Date().getFullYear();const ds=mi>=0?`${an}-${String(mi+1).padStart(2,'0')}-01`:new Date().toISOString().slice(0,10);state.contrats.push({id:Date.now().toString(),employeur:d.employeur||'',poste:'AEM',dateDebut:ds,dateFin:ds,cachets:d.nb_cachets||0,heures:d.nb_heures||0,brutV:d.salaire_brut||0,netImp:0,netV:0,pasV:0,paye:null,ref:'AEM',comment:'',docs:[]});toast('✅ AEM enregistrée');}
-  } else if(d.type==='conges'||currentDocType==='conges'){
-    state.frais.push({id:Date.now().toString(),cat:'conges',desc:'Congés Spectacle '+(d.periode||d.organisme||''),date:d.date_versement||new Date().toISOString().slice(0,10),montant:d.montant_verse||0,km:0,repas:0,ref:'',contratId:''});toast('✅ Congés Spectacle enregistrés');
-  } else if(d.type==='frais'||currentDocType==='frais'){
-    state.frais.push({id:Date.now().toString(),cat:d.categorie||'autre',desc:d.description||d.nature||'',date:d.date||new Date().toISOString().slice(0,10),montant:d.montant_ttc||0,km:0,repas:0,ref:'',contratId:linkedId||''});toast('✅ Frais enregistré');
-  }
-  saveState();pendingScanData=null;document.getElementById('scan-result-card').style.display='none';renderBilan();
-}
-
-// ── FRAIS ──
-function addFrais(){
-  const date=document.getElementById('f-date').value;const montant=parseFloat(document.getElementById('f-montant').value)||0;
-  if(!date||!montant){toast('❌ Date et montant requis');return;}
-  state.frais.push({id:Date.now().toString(),cat:document.getElementById('f-cat').value,desc:document.getElementById('f-desc').value.trim(),date,montant,km:parseFloat(document.getElementById('f-km').value)||0,repas:parseFloat(document.getElementById('f-repas').value)||0,ref:document.getElementById('f-ref').value.trim(),contratId:document.getElementById('f-contrat-link').value||''});
-  saveState();closeSheet();toast('✅ Frais enregistré');renderFrais();renderBilan();
-  ['f-desc','f-montant','f-km','f-repas','f-ref'].forEach(id=>document.getElementById(id).value='');
-}
-function deleteFrais(id){if(!confirm('Supprimer ?'))return;state.frais=state.frais.filter(f=>f.id!==id);saveState();renderFrais();renderBilan();toast('🗑️ Supprimé');}
-
-// ── FORMAT ──
-function fmt(n){if(!n&&n!==0)return'—';if(n===0)return'0 €';return new Intl.NumberFormat('fr-FR',{style:'currency',currency:'EUR',minimumFractionDigits:2}).format(n);}
-function fmtDate(s){if(!s)return'—';return new Date(s).toLocaleDateString('fr-FR',{day:'2-digit',month:'short',year:'numeric'});}
-
-// ── RENDER BILAN ──
-function renderBilan(){
-  const cs=state.contrats;
-  const tBrut=cs.reduce((s,c)=>s+(c.brutV||0),0),tNet=cs.reduce((s,c)=>s+(c.netV||0),0),tNetImp=cs.reduce((s,c)=>s+(c.netImp||0),0),tPas=cs.reduce((s,c)=>s+(c.pasV||0),0),tH=cs.reduce((s,c)=>s+(c.heures||0),0),tCachets=cs.reduce((s,c)=>s+(c.cachets||0),0),tFrais=state.frais.reduce((s,f)=>s+(f.montant||0),0);
-  document.getElementById('b-brut').textContent=fmt(tBrut);document.getElementById('b-net').textContent=fmt(tNet);document.getElementById('b-cachets').textContent=tCachets+' cachets';document.getElementById('b-heures').textContent=tH+' h';document.getElementById('b-pas').textContent=fmt(tPas);document.getElementById('b-frais').textContent=fmt(tFrais);
-  const ie=calcImpots(tNetImp,tFrais,state.config.situation);
-  document.getElementById('b-taux-pas').textContent=state.config.tauxPas+'% PAS';document.getElementById('b-impots-estim').textContent=fmt(ie);document.getElementById('b-impots-payes').textContent=fmt(tPas);document.getElementById('b-impots-reste').textContent=fmt(Math.max(0,ie-tPas));
-  const sjr=state.config.sjr||0,areJ=sjr>0?Math.min(sjr*0.6+12.47,sjr*0.75):0;
-  document.getElementById('q-are-jour').textContent=sjr>0?fmt(areJ):'— €';document.getElementById('q-are-mois').textContent=sjr>0?fmt(areJ*30):'— €';
-  document.getElementById('q-heures-prog').textContent=tH+' / 507 h';const pct=Math.min(100,(tH/507)*100);document.getElementById('q-heures-fill').style.width=pct+'%';
-  document.getElementById('are-status-tag').textContent=tH>=507?'✓ 507h atteintes':Math.round(pct)+'%';document.getElementById('are-status-tag').className=tH>=507?'tag tag-green':'tag tag-gold';
-  document.getElementById('foyer-simon').textContent=fmt(tNet);document.getElementById('foyer-mathilde').textContent=state.config.mathilde?fmt(state.config.mathilde):'—';document.getElementById('foyer-reste').textContent=fmt(tNet+(state.config.mathilde||0)+(state.config.areReel||0)*12);
-}
-function calcImpots(n,f,p){if(!n)return 0;const a=Math.min(n*0.1,14171);const r=n-Math.max(a,f);const rp=r/p;let i=0;if(rp<=11294)i=0;else if(rp<=28797)i=(rp-11294)*0.11;else if(rp<=82341)i=17503*0.11+(rp-28797)*0.30;else if(rp<=177106)i=17503*0.11+53544*0.30+(rp-82341)*0.41;else i=17503*0.11+53544*0.30+94765*0.41+(rp-177106)*0.45;return i*p;}
-
-// ── RENDER FRAIS ──
-function renderFrais(){
-  const tF=state.frais.reduce((s,f)=>s+(f.montant||0),0),tNI=state.contrats.reduce((s,c)=>s+(c.netImp||0),0),forfait=Math.min(tNI*0.1,14171);
-  document.getElementById('f-total').textContent=fmt(tF);
-  if(tNI>0){const diff=tF-forfait;const el=document.getElementById('f-compare');el.textContent=diff>0?'+'+fmt(diff):fmt(diff);el.className=diff>0?'val green':'val red';document.getElementById('f-compare-sub').textContent=diff>0?`Frais réels avantageux (forfait=${fmt(forfait)})`:`Forfait 10% plus avantageux (${fmt(forfait)})`;}
-  const bycat={};state.frais.forEach(f=>{if(!bycat[f.cat])bycat[f.cat]=0;bycat[f.cat]+=f.montant||0;});
-  document.getElementById('frais-by-cat').innerHTML=!Object.keys(bycat).length?'<div class="empty"><div class="empty-icon">🧾</div><div class="empty-text">Aucun frais</div></div>':Object.entries(bycat).sort((a,b)=>b[1]-a[1]).map(([cat,total])=>`<div class="frais-cat-row"><div class="frais-cat-icon">${CAT_ICONS[cat]||'📦'}</div><div class="frais-cat-name">${CAT_LABELS[cat]||cat}</div><div class="frais-cat-amt">${fmt(total)}</div></div>`).join('');
-  const moisDispo=[...new Set(state.frais.map(f=>f.date?.slice(0,7)).filter(Boolean))].sort();
-  document.getElementById('frais-month-tabs').innerHTML=`<div class="month-tab ${selectedMonthFrais==='all'?'active':''}" onclick="filterFrais('all')">Tout</div>`+moisDispo.map(m=>{const[y,mo]=m.split('-');return`<div class="month-tab ${selectedMonthFrais===m?'active':''}" onclick="filterFrais('${m}')">${MONTHS[parseInt(mo)-1]?.slice(0,3)||''} ${y}</div>`;}).join('');
-  const ff=selectedMonthFrais==='all'?state.frais:state.frais.filter(f=>f.date?.startsWith(selectedMonthFrais));
-  document.getElementById('frais-list').innerHTML=!ff.length?'<div class="empty"><div class="empty-icon">📋</div><div class="empty-text">Aucun frais</div></div>':ff.sort((a,b)=>b.date.localeCompare(a.date)).map(f=>`<div class="list-item"><div class="list-icon" style="background:var(--blue-light);">${CAT_ICONS[f.cat]||'📦'}</div><div class="list-main"><div class="list-title">${f.desc||CAT_LABELS[f.cat]||f.cat}</div><div class="list-sub">${fmtDate(f.date)}${f.ref?' · '+f.ref:''}</div></div><div class="list-right"><div class="list-amount">${fmt(f.montant)}</div><button onclick="deleteFrais('${f.id}')" style="margin-top:6px;font-size:11px;color:var(--muted);background:none;border:none;cursor:pointer;">🗑️</button></div></div>`).join('');
-}
-function filterFrais(m){selectedMonthFrais=m;renderFrais();}
-
-// ── CONFIG ──
-function loadConfig(){
-  document.getElementById('cfg-taux-pas').value=state.config.tauxPas||'';document.getElementById('cfg-situation').value=state.config.situation||2;document.getElementById('cfg-mathilde').value=state.config.mathilde||'';document.getElementById('cfg-sjr').value=state.config.sjr||'';document.getElementById('cfg-are-reel').value=state.config.areReel||'';document.getElementById('cfg-fin-droits').value=state.config.finDroits||'';
-  const url=localStorage.getItem('apps-script-url');if(url)document.getElementById('apps-script-url').value=url;
-}
-function saveConfig(){state.config.tauxPas=parseFloat(document.getElementById('cfg-taux-pas').value)||14.6;state.config.situation=parseFloat(document.getElementById('cfg-situation').value)||2;state.config.mathilde=parseFloat(document.getElementById('cfg-mathilde').value)||0;state.config.sjr=parseFloat(document.getElementById('cfg-sjr').value)||0;state.config.areReel=parseFloat(document.getElementById('cfg-are-reel').value)||0;state.config.finDroits=document.getElementById('cfg-fin-droits').value||'';saveState();}
-
-// ── DONNÉES ──
-function exportData(){const json=JSON.stringify(state,null,2);const blob=new Blob([json],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='intermittent-'+new Date().toISOString().slice(0,10)+'.json';a.click();toast('📤 Export téléchargé');}
-function importData(e){const f=e.target.files[0];if(!f)return;const reader=new FileReader();reader.onload=ev=>{try{const d=JSON.parse(ev.target.result);state.contrats=d.contrats||[];state.frais=d.frais||[];if(d.config)state.config={...state.config,...d.config};saveState();renderBilan();renderContrats();renderFrais();loadConfig();toast('✅ Import réussi');}catch(err){toast('❌ Fichier invalide');}};reader.readAsText(f);}
-function clearAll(){if(!confirm('Effacer toutes les données ? Irréversible.'))return;state.contrats=[];state.frais=[];saveState();renderBilan();renderContrats();renderFrais();toast('🗑️ Données effacées');}
-
-// ── INIT ──
-function init(){
-  try{const d=localStorage.getItem('intermittent-v2');if(d){const p=JSON.parse(d);if(p.contrats)state.contrats=p.contrats;else if(p.bulletins)state.contrats=p.bulletins.map(b=>({id:b.id,employeur:b.employeur||'',poste:'',dateDebut:b.date,dateFin:b.date,cachets:b.cachets||0,heures:b.hTot||0,brutV:b.brutV||0,netImp:b.netImp||0,netV:b.netV||0,pasV:b.pasV||0,paye:b.nonPaye===0,ref:b.ref||'',comment:'',docs:[]}));state.frais=p.frais||[];if(p.config)state.config={...state.config,...p.config};}}catch(e){}
-  loadConfig();renderBilan();renderContrats();renderFrais();renderFTPage();
-  updateSyncUI();
-  if(getAppsScriptUrl()){document.getElementById('apps-script-status').textContent='Configuré ✓';loadFromServer();}
-  const today=new Date().toISOString().slice(0,10);
-  document.getElementById('c-debut').value=today;document.getElementById('c-fin').value=today;document.getElementById('f-date').value=today;
-  document.getElementById('header-year').textContent=new Date().getFullYear();
-  const vEl=document.getElementById('app-version-display');const dEl=document.getElementById('app-date-display');
-  if(vEl)vEl.textContent=APP_VERSION;if(dEl)dEl.textContent=APP_DATE;
-  if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
-  document.querySelectorAll('.bottom-sheet').forEach(sheet=>{
-    let sY=0;
-    sheet.addEventListener('touchstart',e=>{sY=e.touches[0].clientY},{passive:true});
-    sheet.addEventListener('touchmove',e=>{if(e.touches[0].clientY-sY>80)closeSheet()},{passive:true});
-  });
-}
-document.addEventListener('DOMContentLoaded',init);
-</script>
+<script src="app.js"></script>
 </body>
 </html>
