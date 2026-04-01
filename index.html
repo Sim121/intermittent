@@ -203,8 +203,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-
     <div class="type-pills">
       <div class="pill active" onclick="setDocType(this,'bulletin')">📄 Bulletin</div>
       <div class="pill" onclick="setDocType(this,'contrat')">📝 Contrat</div>
+      <div class="pill" onclick="setDocType(this,'aem')">📋 AEM</div>
+      <div class="pill" onclick="setDocType(this,'conges')">🌴 Congés Spectacle</div>
       <div class="pill" onclick="setDocType(this,'frais')">🧾 Frais</div>
-      <div class="pill" onclick="setDocType(this,'autre')">📁 Autre</div>
     </div>
   </div>
   <div class="upload-zone" id="dropzone" ondragover="event.preventDefault();this.classList.add('active')" ondragleave="this.classList.remove('active')" ondrop="handleDrop(event)">
@@ -418,8 +419,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-
 
 <script>
 const MONTHS=['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
-const CAT_ICONS={transport:'🚗',navigo:'🚇',km:'🛣️',logiciel:'💻',formation:'📚',materiel:'🎭',repas:'🍽️',agent:'🤝',autre:'📦'};
-const CAT_LABELS={transport:'Transport',navigo:'Navigo',km:'Kilométrique',logiciel:'Logiciels',formation:'Formation',materiel:'Matériel',repas:'Repas',agent:'Agent',autre:'Autre'};
+const CAT_ICONS={transport:'🚗',navigo:'🚇',km:'🛣️',logiciel:'💻',formation:'📚',materiel:'🎭',repas:'🍽️',agent:'🤝',conges:'🌴',autre:'📦'};
+const CAT_LABELS={transport:'Transport',navigo:'Navigo',km:'Kilométrique',logiciel:'Logiciels',formation:'Formation',materiel:'Matériel',repas:'Repas',agent:'Agent',conges:'Congés Spectacle',autre:'Autre'};
 const DRIVE_FILENAME='intermittent-backup.json';
 const DRIVE_FOLDER='Intermittent';
 
@@ -720,6 +721,14 @@ function confirmScanInline(){
     const moisIdx=MONTHS.indexOf(d.mois);const annee=d.annee||new Date().getFullYear();
     const dateStr=moisIdx>=0?`${annee}-${String(moisIdx+1).padStart(2,'0')}-01`:new Date().toISOString().slice(0,10);
     state.bulletins.push({id:Date.now().toString(),employeur:d.employeur||'',date:dateStr,cachets:d.cachets||0,brutV:d.salaire_brut||0,netImp:d.net_imposable||0,netV:d.net_percu||0,pasV:d.pas_preleve||0,tauxPas:d.taux_pas||0,hCachets:d.h_cachets||0,hTot:d.h_totales||0,nonPaye:0,ref:''});
+  }else if(d.type==='aem'||currentDocType==='aem'){
+    // AEM → on l'enregistre comme bulletin partiel (heures + salaire pour France Travail)
+    const moisIdx=MONTHS.indexOf(d.mois);const annee=d.annee||new Date().getFullYear();
+    const dateStr=moisIdx>=0?`${annee}-${String(moisIdx+1).padStart(2,'0')}-01`:new Date().toISOString().slice(0,10);
+    state.bulletins.push({id:Date.now().toString(),employeur:d.employeur||'',date:dateStr,cachets:d.nb_cachets||0,brutV:d.salaire_brut||0,netImp:0,netV:0,pasV:0,tauxPas:0,hCachets:d.nb_heures||0,hTot:d.nb_heures||0,nonPaye:0,ref:'AEM'});
+  }else if(d.type==='conges'||currentDocType==='conges'){
+    // Congés spectacle → on l'enregistre comme frais entrant (revenu exceptionnel)
+    state.frais.push({id:Date.now().toString(),cat:'conges',desc:'Congés Spectacle '+(d.periode||d.organisme||''),date:d.date_versement||new Date().toISOString().slice(0,10),montant:d.montant_verse||0,km:0,repas:0,ref:'Congés Spectacle'});
   }else if(d.type==='frais'||currentDocType==='frais'){
     state.frais.push({id:Date.now().toString(),cat:d.categorie||'autre',desc:d.description||d.nature||'',date:d.date||new Date().toISOString().slice(0,10),montant:d.montant_ttc||0,km:0,repas:0,ref:''});
   }
