@@ -642,7 +642,7 @@ function renderSyncLog(){const el=document.getElementById('sync-log');if(!el)ret
 
 // ── API CLAUDE ──
 function saveApiKey(){const k=document.getElementById('api-key-input').value.trim();if(!k.startsWith('sk-ant')){toast('❌ Clé invalide');return;}localStorage.setItem('claude-api-key',k);checkApiSetup();toast('✅ Clé API sauvegardée');if(driveToken){state._apiKey=k;saveState();}}
-async function testApiKey(){const k=localStorage.getItem('claude-api-key');if(!k){toast('❌ Aucune clé');return;}const btn=document.getElementById('test-btn');btn.innerHTML='<div class="loader" style="width:14px;height:14px;"></div>';try{const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':k,'anthropic-version':'2023-06-01'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:5,messages:[{role:'user',content:'OK'}]})});btn.textContent='Tester';document.getElementById('api-test-result').innerHTML=r.ok?'<div class="alert alert-ok">✅ Connexion OK !</div>':'<div class="alert alert-err">❌ Clé refusée</div>';}catch(e){btn.textContent='Tester';document.getElementById('api-test-result').innerHTML='<div class="alert alert-err">❌ Erreur réseau</div>';}}
+async function testApiKey(){const k=localStorage.getItem('claude-api-key');if(!k){toast('❌ Aucune clé');return;}const btn=document.getElementById('test-btn');btn.innerHTML='<div class="loader" style="width:14px;height:14px;"></div>';try{const r=await fetch('https://intermittent-proxy.simonherlin.workers.dev/',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':k,'anthropic-version':'2023-06-01'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:5,messages:[{role:'user',content:'OK'}]})});btn.textContent='Tester';document.getElementById('api-test-result').innerHTML=r.ok?'<div class="alert alert-ok">✅ Connexion OK !</div>':'<div class="alert alert-err">❌ Clé refusée</div>';}catch(e){btn.textContent='Tester';document.getElementById('api-test-result').innerHTML='<div class="alert alert-err">❌ Erreur réseau</div>';}}
 function checkApiSetup(){const k=localStorage.getItem('claude-api-key');document.getElementById('scan-setup-alert').style.display=k?'none':'block';}
 
 // ── CONFIG ──
@@ -689,7 +689,7 @@ async function processFile(file){
   else content.push({type:'image',source:{type:'base64',media_type:file.type,data:base64}});
   content.push({type:'text',text:prompts[currentDocType]});
   try{
-    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':k,'anthropic-version':'2023-06-01'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:800,messages:[{role:'user',content}]})});
+    const res=await fetch('https://intermittent-proxy.simonherlin.workers.dev/',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':k,'anthropic-version':'2023-06-01'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:800,messages:[{role:'user',content}]})});
     const data=await res.json();
     const text=data.content.map(i=>i.text||'').join('');
     pendingScanData=JSON.parse(text.replace(/```json|```/g,'').trim());
