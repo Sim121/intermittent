@@ -440,6 +440,9 @@ function loadState(){
 
 function saveState(){
   localStorage.setItem('intermittent-v2',JSON.stringify(state));
+  // Sync API key dans Drive (stockée séparément en local pour sécurité)
+  const apiKey=localStorage.getItem('claude-api-key');
+  if(apiKey)state._apiKey=apiKey; else delete state._apiKey;
   if(driveToken){clearTimeout(syncDebounce);syncDebounce=setTimeout(()=>syncToDrive(false),3000);}
 }
 
@@ -624,8 +627,9 @@ async function restoreFromDrive(){
     if(data.bulletins)state.bulletins=data.bulletins;
     if(data.frais)state.frais=data.frais;
     if(data.config)state.config={...state.config,...data.config};
+    if(data._apiKey){localStorage.setItem('claude-api-key',data._apiKey);}
     localStorage.setItem('intermittent-v2',JSON.stringify(state));
-    renderBilan();renderSalaires();renderFrais();loadConfig();
+    renderBilan();renderSalaires();renderFrais();loadConfig();checkApiSetup();
     setDriveStatus('connected','Drive ✓');
     addSyncLog('Restauration OK','ok');
     toast('✅ Données restaurées depuis Drive !');
@@ -637,7 +641,7 @@ function addSyncLog(msg,type){syncLog.unshift({msg,type});if(syncLog.length>20)s
 function renderSyncLog(){const el=document.getElementById('sync-log');if(!el)return;if(!syncLog.length){el.innerHTML='<div style="font-family:\'DM Mono\',monospace;font-size:10px;color:var(--muted);padding:4px 0;">Aucune synchro encore</div>';return;}el.innerHTML=syncLog.slice(0,8).map(s=>`<div class="sync-log-item ${s.type||''}">${s.msg}</div>`).join('');}
 
 // ── API CLAUDE ──
-function saveApiKey(){const k=document.getElementById('api-key-input').value.trim();if(!k.startsWith('sk-ant')){toast('❌ Clé invalide');return;}localStorage.setItem('claude-api-key',k);checkApiSetup();toast('✅ Clé API sauvegardée');}
+function saveApiKey(){const k=document.getElementById('api-key-input').value.trim();if(!k.startsWith('sk-ant')){toast('❌ Clé invalide');return;}localStorage.setItem('claude-api-key',k);checkApiSetup();toast('✅ Clé API sauvegardée');if(driveToken){state._apiKey=k;saveState();}}
 async function testApiKey(){const k=localStorage.getItem('claude-api-key');if(!k){toast('❌ Aucune clé');return;}const btn=document.getElementById('test-btn');btn.innerHTML='<div class="loader" style="width:14px;height:14px;"></div>';try{const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':k,'anthropic-version':'2023-06-01'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:5,messages:[{role:'user',content:'OK'}]})});btn.textContent='Tester';document.getElementById('api-test-result').innerHTML=r.ok?'<div class="alert alert-ok">✅ Connexion OK !</div>':'<div class="alert alert-err">❌ Clé refusée</div>';}catch(e){btn.textContent='Tester';document.getElementById('api-test-result').innerHTML='<div class="alert alert-err">❌ Erreur réseau</div>';}}
 function checkApiSetup(){const k=localStorage.getItem('claude-api-key');document.getElementById('scan-setup-alert').style.display=k?'none':'block';}
 
