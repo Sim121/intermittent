@@ -433,8 +433,19 @@ function loadState(){
   try{
     const d=localStorage.getItem('intermittent-v2');
     if(d){const p=JSON.parse(d);state.bulletins=p.bulletins||[];state.frais=p.frais||[];if(p.config)state.config={...state.config,...p.config};}
-    driveToken=localStorage.getItem('drive-token')||null;
-    driveFileId=localStorage.getItem('drive-file-id')||null;
+    // Token Drive : localStorage → sessionStorage → cookie
+    const cookieToken=document.cookie.split(';').find(c=>c.trim().startsWith('drive_token='));
+    const cookieClientId=document.cookie.split(';').find(c=>c.trim().startsWith('google_client_id='));
+    driveToken=localStorage.getItem('drive-token')||sessionStorage.getItem('drive-token')||(cookieToken?cookieToken.split('=')[1]:null)||null;
+    driveFileId=localStorage.getItem('drive-file-id')||sessionStorage.getItem('drive-file-id')||null;
+    // Restaure le client ID depuis le cookie si localStorage vidé
+    if(!localStorage.getItem('google-client-id')&&cookieClientId){
+      localStorage.setItem('google-client-id',cookieClientId.split('=').slice(1).join('='));
+    }
+    // Si token récupéré depuis cookie/session mais absent du localStorage → le réhydrater
+    if(driveToken&&!localStorage.getItem('drive-token')){
+      localStorage.setItem('drive-token',driveToken);
+    }
     const sl=localStorage.getItem('sync-log');if(sl)syncLog=JSON.parse(sl);
   }catch(e){}
 }
@@ -506,8 +517,15 @@ function handleOAuthRedirect(){
   const expiresIn=parseInt(params.get('expires_in')||3600);
   const expiresAt=Date.now()+(expiresIn*1000)-60000; // 1 min de marge
   driveToken=token;
+  // Stocke dans localStorage ET sessionStorage ET cookie pour survie au vidage de cache
   localStorage.setItem('drive-token',token);
   localStorage.setItem('drive-token-expires',expiresAt.toString());
+  sessionStorage.setItem('drive-token',token);
+  sessionStorage.setItem('drive-file-id',driveFileId||'');
+  // Cookie persistant 1h (survit au vidage localStorage dans certains cas)
+  const expires=new Date(expiresAt).toUTCString();
+  document.cookie=`drive_token=${token};expires=${expires};path=/;SameSite=Strict`;
+  document.cookie=`google_client_id=${localStorage.getItem('google-client-id')||''};expires=${new Date(Date.now()+365*24*3600*1000).toUTCString()};path=/;SameSite=Strict`;
   window.location.hash='';
   updateDriveUI();
   syncToDrive(true);
