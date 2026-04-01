@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Intermittent">
+<meta name="theme-color" content="#1a1a18">
+<title>Intermittent</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><rect width='180' height='180' rx='40' fill='%231a1a18'/><text x='90' y='125' font-size='90' text-anchor='middle'>🎭</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#F5F2EC;--bg2:#EDE9E0;--surface:#FFFFFF;--border:#D8D3C8;--border2:#E8E4DC;--ink:#1a1a18;--ink2:#3d3d38;--muted:#8a8578;--gold:#B8922A;--gold-light:#F0E4C0;--green:#2D6A4F;--green-light:#D8F0E4;--red:#C0392B;--red-light:#FAE0DC;--blue:#1a4a7a;--blue-light:#DCE8F5;--r:16px;--r-sm:10px;--safe-top:env(safe-area-inset-top,44px);--safe-bottom:env(safe-area-inset-bottom,20px)}
+html{height:100%}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-height:100dvh;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+.app-header{position:sticky;top:0;z-index:90;background:rgba(245,242,236,0.92);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);padding:calc(var(--safe-top) + 10px) 20px 14px;border-bottom:1px solid var(--border2)}
+.header-inner{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.app-logo{font-family:'Playfair Display',serif;font-size:22px;font-weight:900;letter-spacing:-.5px;white-space:nowrap}
+.app-logo span{color:var(--gold)}
+.header-right{display:flex;align-items:center;gap:8px}
+.drive-status{display:flex;align-items:center;gap:5px;font-family:'DM Mono',monospace;font-size:10px;padding:4px 10px;border-radius:20px;border:1px solid var(--border);background:var(--bg2);cursor:pointer;-webkit-tap-highlight-color:transparent;white-space:nowrap}
+.drive-dot{width:6px;height:6px;border-radius:50%;background:var(--border);transition:background .3s}
+.drive-dot.connected{background:var(--green)}
+.drive-dot.syncing{background:var(--gold);animation:pulse 1s infinite}
+.drive-dot.error{background:var(--red)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;z-index:100;background:rgba(255,255,255,0.95);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:1px solid var(--border2);padding:8px 0 calc(var(--safe-bottom) + 4px);display:flex}
+.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:none;cursor:pointer;padding:6px 4px;-webkit-tap-highlight-color:transparent;transition:transform .15s}
+.nav-btn:active{transform:scale(.92)}
+.nav-btn .nav-icon{font-size:22px;line-height:1;transition:transform .2s cubic-bezier(.34,1.56,.64,1)}
+.nav-btn.active .nav-icon{transform:scale(1.15)}
+.nav-btn .nav-label{font-size:9.5px;font-weight:600;color:var(--muted);letter-spacing:.2px;transition:color .15s}
+.nav-btn.active .nav-label{color:var(--gold)}
+.page{display:none}.page.active{display:block}
+.page-wrap{padding:0 0 calc(var(--safe-bottom) + 80px)}
+.section{padding:20px 16px 0}
+.section-title{font-family:'Playfair Display',serif;font-size:26px;font-weight:900;letter-spacing:-.5px;line-height:1.1;margin-bottom:4px}
+.section-title .accent{color:var(--gold)}
+.section-sub{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:20px}
+.card{background:var(--surface);border:1px solid var(--border2);border-radius:var(--r);padding:18px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.04)}
+.card-label{font-family:'DM Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:6px}
+.card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.card-head-title{font-family:'DM Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.card-head-title::before{content:'';display:block;width:6px;height:6px;border-radius:2px;background:var(--gold)}
+.stat-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.stat-row.three{grid-template-columns:1fr 1fr 1fr}
+.stat-card{background:var(--surface);border:1px solid var(--border2);border-radius:var(--r-sm);padding:14px;box-shadow:0 1px 3px rgba(0,0,0,.03)}
+.stat-card .lbl{font-family:'DM Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin-bottom:6px}
+.stat-card .val{font-family:'Playfair Display',serif;font-size:20px;font-weight:700;letter-spacing:-.5px}
+.stat-card .val.gold{color:var(--gold)}.stat-card .val.green{color:var(--green)}.stat-card .val.red{color:var(--red)}.stat-card .val.blue{color:var(--blue)}
+.stat-card .sub{font-size:10px;color:var(--muted);margin-top:2px}
+.field{margin-bottom:14px}
+.field label{display:block;font-family:'DM Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin-bottom:6px}
+.field input,.field select,.field textarea{width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--r-sm);padding:12px 14px;font-size:15px;color:var(--ink);font-family:'DM Sans',sans-serif;appearance:none;-webkit-appearance:none;transition:border-color .15s}
+.field input:focus,.field select:focus{outline:none;border-color:var(--gold);background:#fff}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:13px 20px;border-radius:var(--r-sm);font-size:14px;font-weight:600;cursor:pointer;border:none;font-family:'DM Sans',sans-serif;transition:all .15s;-webkit-tap-highlight-color:transparent;white-space:nowrap}
+.btn:active{transform:scale(.97)}
+.btn-primary{background:var(--ink);color:#fff;width:100%}
+.btn-google{background:#fff;color:#3c4043;border:1.5px solid #dadce0;width:100%;font-size:14px}
+.btn-ghost{background:var(--bg2);color:var(--ink2);border:1px solid var(--border)}
+.btn-sm{padding:8px 14px;font-size:12px;border-radius:8px}
+.btn-danger{background:var(--red-light);color:var(--red);border:1px solid rgba(192,57,43,.2)}
+.tag{display:inline-block;padding:3px 9px;border-radius:20px;font-size:10px;font-weight:600;font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:.3px}
+.tag-green{background:var(--green-light);color:var(--green)}.tag-gold{background:var(--gold-light);color:var(--gold)}.tag-red{background:var(--red-light);color:var(--red)}.tag-gray{background:var(--bg2);color:var(--muted);border:1px solid var(--border)}.tag-blue{background:var(--blue-light);color:var(--blue)}
+.list-item{display:flex;align-items:flex-start;gap:12px;padding:14px 0;border-bottom:1px solid var(--border2)}
+.list-item:last-child{border-bottom:none;padding-bottom:0}.list-item:first-child{padding-top:0}
+.list-icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;background:var(--bg2)}
+.list-main{flex:1;min-width:0}.list-title{font-size:14px;font-weight:600;margin-bottom:2px}.list-sub{font-size:11px;color:var(--muted);font-family:'DM Mono',monospace}
+.list-right{text-align:right;flex-shrink:0}.list-amount{font-family:'Playfair Display',serif;font-size:16px;font-weight:700}.list-amount.green{color:var(--green)}.list-amount.red{color:var(--red)}
+.list-meta{font-size:10px;color:var(--muted);margin-top:2px;font-family:'DM Mono',monospace}
+.progress-wrap{margin:12px 0}.progress-label{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:6px;font-family:'DM Mono',monospace}
+.progress-bar{height:8px;background:var(--bg2);border-radius:4px;overflow:hidden;border:1px solid var(--border)}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--gold),#D4A832);border-radius:4px;transition:width .6s cubic-bezier(.34,1.2,.64,1)}
+.progress-fill.green{background:linear-gradient(90deg,var(--green),#3d8b69)}
+.divider{border:none;border-top:1px solid var(--border2);margin:16px 0}
+.upload-zone{border:2px dashed var(--border);border-radius:var(--r);padding:36px 20px;text-align:center;cursor:pointer;position:relative;background:var(--bg2);transition:all .2s}
+.upload-zone.active,.upload-zone:hover{border-color:var(--gold);background:var(--gold-light)}
+.upload-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.upload-emoji{font-size:40px;margin-bottom:12px}.upload-title{font-size:15px;font-weight:600;color:var(--ink2);margin-bottom:4px}.upload-sub{font-size:12px;color:var(--muted)}
+.alert{padding:12px 14px;border-radius:var(--r-sm);font-size:13px;margin-bottom:12px;display:flex;gap:8px;line-height:1.5}
+.alert-warn{background:var(--gold-light);border:1px solid rgba(184,146,42,.3);color:#7a5c10}
+.alert-ok{background:var(--green-light);border:1px solid rgba(45,106,79,.3);color:var(--green)}
+.alert-err{background:var(--red-light);border:1px solid rgba(192,57,43,.3);color:var(--red)}
+.alert-info{background:var(--blue-light);border:1px solid rgba(26,74,122,.2);color:var(--blue)}
+.loader{display:inline-block;width:18px;height:18px;border:2px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-block{text-align:center;padding:32px;color:var(--muted)}
+.loading-block .loader{width:28px;height:28px;border-width:3px;margin-bottom:12px}
+.empty{text-align:center;padding:40px 20px;color:var(--muted)}.empty-icon{font-size:36px;margin-bottom:10px}.empty-text{font-size:13px;line-height:1.5}
+.month-scroll{display:flex;gap:8px;overflow-x:auto;padding:0 16px 12px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.month-scroll::-webkit-scrollbar{display:none}
+.month-tab{flex-shrink:0;padding:7px 14px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;border:1.5px solid var(--border);background:var(--surface);color:var(--muted);-webkit-tap-highlight-color:transparent;transition:all .15s;font-family:'DM Sans',sans-serif}
+.month-tab.active{background:var(--ink);color:#fff;border-color:var(--ink)}
+.type-pills{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.pill{padding:8px 14px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;border:1.5px solid var(--border);background:var(--surface);color:var(--muted);-webkit-tap-highlight-color:transparent;transition:all .15s;font-family:'DM Sans',sans-serif}
+.pill.active{background:var(--ink);color:#fff;border-color:var(--ink)}
+.sheet-overlay{position:fixed;inset:0;background:rgba(26,26,24,.4);z-index:200;display:none;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
+.sheet-overlay.show{display:block}
+.bottom-sheet{position:fixed;bottom:0;left:0;right:0;z-index:201;background:var(--surface);border-radius:20px 20px 0 0;padding:0 16px calc(var(--safe-bottom) + 20px);max-height:90dvh;overflow-y:auto;transform:translateY(100%);transition:transform .35s cubic-bezier(.32,.72,0,1)}
+.bottom-sheet.show{transform:translateY(0)}
+.sheet-handle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:12px auto 20px}
+.sheet-title{font-family:'Playfair Display',serif;font-size:20px;font-weight:700;margin-bottom:20px}
+.toast{position:fixed;top:calc(var(--safe-top) + 70px);left:50%;transform:translateX(-50%) translateY(-12px);z-index:999;background:var(--ink);color:#fff;padding:11px 18px;border-radius:24px;font-size:13px;font-weight:500;white-space:nowrap;opacity:0;transition:all .3s cubic-bezier(.34,1.4,.64,1);pointer-events:none;box-shadow:0 4px 20px rgba(0,0,0,.2)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.month-row{display:flex;align-items:center;padding:12px 0;border-bottom:1px solid var(--border2);gap:10px}
+.month-row:last-child{border-bottom:none}.month-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}.month-name{font-size:13px;font-weight:600;flex:1}.month-h{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);width:50px;text-align:right}.month-brut{font-family:'Playfair Display',serif;font-size:15px;font-weight:700;width:85px;text-align:right}
+.frais-cat-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border2)}
+.frais-cat-row:last-child{border-bottom:none}.frais-cat-icon{font-size:20px;width:28px;text-align:center}.frais-cat-name{flex:1;font-size:13px;font-weight:500}.frais-cat-amt{font-family:'Playfair Display',serif;font-size:15px;font-weight:700}
+.settings-row{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--border2)}
+.settings-row:last-child{border-bottom:none}.settings-label{font-size:14px;font-weight:500}.settings-sub{font-size:11px;color:var(--muted);margin-top:2px}
+.drive-card{background:linear-gradient(135deg,#e8f4fd,#d2e9f5);border:1px solid rgba(26,74,122,.15);border-radius:var(--r);padding:20px;margin-bottom:12px}
+.drive-card-connected{background:linear-gradient(135deg,var(--green-light),#c8eeda);border:1px solid rgba(45,106,79,.2)}
+.sync-log{background:var(--bg2);border-radius:var(--r-sm);padding:10px;margin-top:12px;max-height:110px;overflow-y:auto}
+.sync-log-item{font-family:'DM Mono',monospace;font-size:10px;padding:4px 0;border-bottom:1px solid var(--border2);display:flex;justify-content:space-between;color:var(--muted)}
+.sync-log-item:last-child{border-bottom:none}.sync-log-item.ok{color:var(--green)}.sync-log-item.err{color:var(--red)}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.page.active .section{animation:fadeUp .3s ease both}
+.page.active .stat-row{animation:fadeUp .3s .05s ease both}
+</style>
+</head>
+<body>
+<header class="app-header">
+  <div class="header-inner">
+    <div class="app-logo">🎭 Inter<span>mittent</span></div>
+    <div class="header-right">
+      <div class="drive-status" onclick="showPage('settings')" id="drive-status-btn">
+        <div class="drive-dot" id="drive-dot"></div>
+        <span id="drive-status-label">Drive</span>
+      </div>
+      <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);background:var(--bg2);padding:4px 10px;border-radius:20px;border:1px solid var(--border);" id="header-year">2026</div>
+    </div>
+  </div>
+</header>
+<div class="toast" id="toast"></div>
+
+<!-- PAGE BILAN -->
+<div class="page active" id="page-bilan"><div class="page-wrap"><div class="section">
+  <div class="section-title">Bilan <span class="accent">2026</span></div>
+  <div class="section-sub">Vue annuelle · Drive sync auto</div>
+  <div class="stat-row">
+    <div class="stat-card"><div class="lbl">Brut total</div><div class="val gold" id="b-brut">0 €</div><div class="sub" id="b-cachets">0 cachets</div></div>
+    <div class="stat-card"><div class="lbl">Net total</div><div class="val green" id="b-net">0 €</div><div class="sub">net perçu</div></div>
+  </div>
+  <div class="stat-row three">
+    <div class="stat-card"><div class="lbl">Heures</div><div class="val" id="b-heures">0 h</div><div class="sub">cumulées</div></div>
+    <div class="stat-card"><div class="lbl">PAS payé</div><div class="val red" id="b-pas">0 €</div><div class="sub">prélevé</div></div>
+    <div class="stat-card"><div class="lbl">Frais réels</div><div class="val blue" id="b-frais">0 €</div><div class="sub">déductibles</div></div>
+  </div>
+  <div class="card">
+    <div class="card-head"><div class="card-head-title">Par mois</div><div id="b-employeurs-count" style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted)"></div></div>
+    <div id="bilan-mois-list"><div class="empty"><div class="empty-icon">📄</div><div class="empty-text">Scanne tes premiers bulletins</div></div></div>
+  </div>
+  <div class="card">
+    <div class="card-head"><div class="card-head-title">ARE estimée</div><span class="tag tag-gray" id="are-status-tag">non calculé</span></div>
+    <div style="display:flex;gap:16px;align-items:flex-end;">
+      <div><div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);margin-bottom:4px;">JOURNALIÈRE</div><div style="font-family:'Playfair Display',serif;font-size:28px;font-weight:700;color:var(--gold);" id="q-are-jour">— €</div></div>
+      <div><div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);margin-bottom:4px;">MENSUELLE ≈</div><div style="font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:var(--ink2);" id="q-are-mois">— €</div></div>
+    </div>
+    <div class="progress-wrap">
+      <div class="progress-label"><span>Progression vers les 507h</span><span id="q-heures-prog">0 / 507 h</span></div>
+      <div class="progress-bar"><div class="progress-fill" id="q-heures-fill" style="width:0%"></div></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-head"><div class="card-head-title">Foyer</div></div>
+    <div class="field-row">
+      <div><div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);margin-bottom:4px;">SIMON (toi)</div><div style="font-family:'Playfair Display',serif;font-size:20px;font-weight:700;" id="foyer-simon">— €</div></div>
+      <div><div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);margin-bottom:4px;">MATHILDE</div><div style="font-family:'Playfair Display',serif;font-size:20px;font-weight:700;" id="foyer-mathilde">— €</div></div>
+    </div>
+    <div style="margin-top:12px;font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);margin-bottom:4px;">TOTAL FOYER + ARE ANNUELLE</div>
+    <div style="font-family:'Playfair Display',serif;font-size:22px;font-weight:700;" id="foyer-reste">— €</div>
+  </div>
+  <div class="card">
+    <div class="card-head"><div class="card-head-title">Impôts</div><div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--gold);" id="b-taux-pas">—%</div></div>
+    <div class="field-row">
+      <div><div class="card-label">ESTIMÉ</div><div style="font-family:'Playfair Display',serif;font-size:22px;font-weight:700;" id="b-impots-estim">— €</div></div>
+      <div><div class="card-label">DÉJÀ PAYÉ</div><div style="font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:var(--green);" id="b-impots-payes">0 €</div></div>
+    </div>
+    <div style="margin-top:10px;"><div class="card-label">RESTANT ESTIMÉ</div><div style="font-family:'Playfair Display',serif;font-size:26px;font-weight:700;color:var(--red);" id="b-impots-reste">— €</div></div>
+  </div>
+</div></div></div>
+
+<!-- PAGE SCAN -->
+<div class="page" id="page-scan"><div class="page-wrap"><div class="section">
+  <div class="section-title">Scanner un <span class="accent">doc</span></div>
+  <div class="section-sub">IA · Extraction automatique</div>
+  <div id="scan-setup-alert" class="alert alert-warn" style="display:none;">⚠️ Configure ta clé API Claude dans Réglages.</div>
+  <div class="card">
+    <div class="card-head"><div class="card-head-title">Type de document</div></div>
+    <div class="type-pills">
+      <div class="pill active" onclick="setDocType(this,'bulletin')">📄 Bulletin</div>
+      <div class="pill" onclick="setDocType(this,'contrat')">📝 Contrat</div>
+      <div class="pill" onclick="setDocType(this,'frais')">🧾 Frais</div>
+      <div class="pill" onclick="setDocType(this,'autre')">📁 Autre</div>
+    </div>
+  </div>
+  <div class="upload-zone" id="dropzone" ondragover="event.preventDefault();this.classList.add('active')" ondragleave="this.classList.remove('active')" ondrop="handleDrop(event)">
+    <input type="file" accept=".pdf,image/*" onchange="handleFile(event)" id="file-input">
+    <div class="upload-emoji">📂</div>
+    <div class="upload-title">Glisse ou touche pour parcourir</div>
+    <div class="upload-sub">PDF, JPG, PNG · Photo iPhone OK</div>
+  </div>
+  <div id="scan-loading" style="display:none;" class="card"><div class="loading-block"><div class="loader"></div><div style="font-size:13px;color:var(--muted);margin-top:12px;">Analyse IA en cours…</div></div></div>
+  <div id="scan-result-card" style="display:none;"></div>
+</div></div></div>
+
+<!-- PAGE SALAIRES -->
+<div class="page" id="page-salaires"><div class="page-wrap">
+  <div class="section"><div class="section-title">Mes <span class="accent">salaires</span></div><div class="section-sub">Bulletins · Employeurs · Cumuls</div></div>
+  <div class="month-scroll" id="salaires-month-tabs"></div>
+  <div class="section" style="padding-top:0;">
+    <div class="stat-row">
+      <div class="stat-card"><div class="lbl">Brut (filtre)</div><div class="val gold" id="s-brut-filtered">0 €</div></div>
+      <div class="stat-card"><div class="lbl">Heures (filtre)</div><div class="val" id="s-heures-filtered">0 h</div></div>
+    </div>
+    <div class="card">
+      <div class="card-head"><div class="card-head-title">Bulletins</div><button class="btn btn-ghost btn-sm" onclick="openSheet('sheet-add-bulletin')">＋ Ajouter</button></div>
+      <div id="bulletins-list"><div class="empty"><div class="empty-icon">💰</div><div class="empty-text">Aucun bulletin</div></div></div>
+    </div>
+    <div class="card">
+      <div class="card-head"><div class="card-head-title">Salaires non payés</div></div>
+      <div id="non-paye-list"><div class="empty"><div class="empty-icon">✅</div><div class="empty-text">Tout est à jour !</div></div></div>
+    </div>
+  </div>
+</div></div>
+
+<!-- PAGE FRAIS -->
+<div class="page" id="page-frais"><div class="page-wrap"><div class="section">
+  <div class="section-title">Frais <span class="accent">réels</span></div>
+  <div class="section-sub">Déductibles · Justificatifs · Comparaison</div>
+  <div class="stat-row">
+    <div class="stat-card"><div class="lbl">Total frais</div><div class="val gold" id="f-total">0 €</div><div class="sub">à déclarer</div></div>
+    <div class="stat-card"><div class="lbl">vs Forfait 10%</div><div class="val" id="f-compare">—</div><div class="sub" id="f-compare-sub">calcul en attente</div></div>
+  </div>
+  <div class="card">
+    <div class="card-head"><div class="card-head-title">Par catégorie</div><button class="btn btn-ghost btn-sm" onclick="openSheet('sheet-add-frais')">＋ Ajouter</button></div>
+    <div id="frais-by-cat"><div class="empty"><div class="empty-icon">🧾</div><div class="empty-text">Aucun frais</div></div></div>
+  </div>
+  <div class="month-scroll" id="frais-month-tabs"></div>
+  <div class="card" style="margin:0 16px 12px;">
+    <div class="card-head"><div class="card-head-title">Liste</div></div>
+    <div id="frais-list"><div class="empty"><div class="empty-icon">📋</div><div class="empty-text">Aucun frais</div></div></div>
+  </div>
+</div></div></div>
+
+<!-- PAGE RÉGLAGES -->
+<div class="page" id="page-settings"><div class="page-wrap"><div class="section">
+  <div class="section-title"><span class="accent">Réglages</span></div>
+  <div class="section-sub">Drive · API Claude · Fiscal</div>
+
+  <!-- DRIVE DÉCONNECTÉ -->
+  <div id="drive-disconnected-card" class="drive-card">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+      <div style="font-size:28px;">☁️</div>
+      <div><div style="font-size:15px;font-weight:700;margin-bottom:2px;">Google Drive</div><div style="font-size:12px;color:var(--blue);">Sauvegarde automatique</div></div>
+    </div>
+    <div class="alert alert-info" style="margin-bottom:14px;">Connecte ton Drive : tes données seront sauvegardées automatiquement à chaque modification.</div>
+    <div class="field"><label>Client ID Google OAuth 2.0</label><input type="text" id="google-client-id" placeholder="xxxxxxxx.apps.googleusercontent.com"></div>
+    <button class="btn btn-google" onclick="connectDrive()">
+      <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+      Se connecter avec Google
+    </button>
+    <div style="margin-top:12px;"><a href="#" onclick="openSheet('sheet-drive-setup');return false;" style="font-size:12px;color:var(--blue);text-decoration:underline;">Guide de configuration étape par étape →</a></div>
+  </div>
+
+  <!-- DRIVE CONNECTÉ -->
+  <div id="drive-connected-card" class="drive-card drive-card-connected" style="display:none;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div style="font-size:28px;">✅</div>
+        <div><div style="font-size:15px;font-weight:700;margin-bottom:2px;">Drive connecté</div><div style="font-size:12px;color:var(--green);" id="drive-email-display">—</div></div>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="disconnectDrive()">Déconnecter</button>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:12px;">
+      <button class="btn btn-primary" style="flex:1;" onclick="syncToDrive(true)">☁️ Sauvegarder</button>
+      <button class="btn btn-ghost" style="flex:1;" onclick="restoreFromDrive()">📥 Restaurer</button>
+    </div>
+    <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);margin-bottom:4px;">DERNIÈRE SYNCHRO</div>
+    <div style="font-size:13px;font-weight:500;" id="last-sync-label">Jamais</div>
+    <div class="sync-log" id="sync-log"></div>
+  </div>
+
+  <!-- API CLAUDE -->
+  <div class="card">
+    <div class="card-head"><div class="card-head-title">Clé API Claude</div></div>
+    <div class="alert alert-warn">🔒 Stockée uniquement sur cet appareil. Jamais transmise.</div>
+    <div class="field"><label>Clé Anthropic (sk-ant-…)</label><input type="password" id="api-key-input" placeholder="sk-ant-api03-…"></div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-primary" style="flex:1;" onclick="saveApiKey()">Sauvegarder</button>
+      <button class="btn btn-ghost" onclick="testApiKey()" id="test-btn">Tester</button>
+    </div>
+    <div id="api-test-result" style="margin-top:10px;"></div>
+  </div>
+
+  <!-- FISCAL -->
+  <div class="card">
+    <div class="card-head"><div class="card-head-title">Paramètres fiscaux</div></div>
+    <div class="field"><label>Taux PAS actuel (%)</label><input type="number" id="cfg-taux-pas" placeholder="Ex: 14.6" step="0.1" oninput="saveConfig()"></div>
+    <div class="field"><label>Situation familiale</label>
+      <select id="cfg-situation" onchange="saveConfig()">
+        <option value="1">Célibataire (1 part)</option>
+        <option value="2" selected>Couple sans enfant (2 parts)</option>
+        <option value="2.5">Couple + 1 enfant (2.5 parts)</option>
+        <option value="3">Couple + 2 enfants (3 parts)</option>
+      </select>
+    </div>
+    <div class="field"><label>Revenus Mathilde (annuels, €)</label><input type="number" id="cfg-mathilde" placeholder="Ex: 21600" oninput="saveConfig()"></div>
+    <div class="field"><label>SJR ARE actuel (€/jour)</label><input type="number" id="cfg-sjr" placeholder="Ex: 63" step="0.01" oninput="saveConfig()"></div>
+    <div class="field"><label>ARE réellement touchée (€/mois)</label><input type="number" id="cfg-are-reel" placeholder="Ex: 1614" oninput="saveConfig()"></div>
+    <div class="field"><label>Date fin de droits ARE</label><input type="date" id="cfg-fin-droits" oninput="saveConfig()"></div>
+  </div>
+
+  <!-- DONNÉES LOCALES -->
+  <div class="card">
+    <div class="card-head"><div class="card-head-title">Sauvegarde locale</div></div>
+    <div class="settings-row">
+      <div><div class="settings-label">Exporter JSON</div><div class="settings-sub">Télécharger sur l'appareil</div></div>
+      <button class="btn btn-ghost btn-sm" onclick="exportData()">📤 Export</button>
+    </div>
+    <div class="settings-row">
+      <div><div class="settings-label">Importer JSON</div><div class="settings-sub">Restaurer depuis fichier</div></div>
+      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('import-file').click()">📥 Import</button>
+    </div>
+    <input type="file" id="import-file" accept=".json" style="display:none;" onchange="importData(event)">
+    <div class="settings-row">
+      <div><div class="settings-label" style="color:var(--red);">Tout effacer</div><div class="settings-sub">Irréversible</div></div>
+      <button class="btn btn-danger btn-sm" onclick="clearAll()">🗑️ Effacer</button>
+    </div>
+  </div>
+
+  <!-- INSTALLER -->
+  <div class="card" style="background:var(--gold-light);border-color:rgba(184,146,42,.3);">
+    <div style="font-size:20px;margin-bottom:8px;">📱</div>
+    <div style="font-size:14px;font-weight:600;margin-bottom:6px;">Installer sur iPhone</div>
+    <div style="font-size:12px;color:var(--ink2);line-height:1.6;">Safari → bouton <strong>Partager</strong> → <strong>"Sur l'écran d'accueil"</strong></div>
+  </div>
+</div></div></div>
+
+<!-- BOTTOM NAV -->
+<nav class="bottom-nav">
+  <button class="nav-btn active" id="nav-bilan" onclick="showPage('bilan')"><span class="nav-icon">📊</span><span class="nav-label">Bilan</span></button>
+  <button class="nav-btn" id="nav-scan" onclick="showPage('scan')"><span class="nav-icon">📄</span><span class="nav-label">Scanner</span></button>
+  <button class="nav-btn" id="nav-salaires" onclick="showPage('salaires')"><span class="nav-icon">💰</span><span class="nav-label">Salaires</span></button>
+  <button class="nav-btn" id="nav-frais" onclick="showPage('frais')"><span class="nav-icon">🧾</span><span class="nav-label">Frais</span></button>
+  <button class="nav-btn" id="nav-settings" onclick="showPage('settings')"><span class="nav-icon">⚙️</span><span class="nav-label">Réglages</span></button>
+</nav>
+
+<!-- OVERLAY -->
+<div class="sheet-overlay" id="sheet-overlay" onclick="closeSheet()"></div>
+
+<!-- SHEET : Ajouter bulletin -->
+<div class="bottom-sheet" id="sheet-add-bulletin">
+  <div class="sheet-handle"></div>
+  <div class="sheet-title">Ajouter un bulletin</div>
+  <div class="field"><label>Employeur</label><input type="text" id="b-emp" placeholder="Nom de la compagnie"></div>
+  <div class="field-row"><div class="field"><label>Date</label><input type="date" id="b-date"></div><div class="field"><label>Cachets</label><input type="number" id="b-cachets-nb" placeholder="0"></div></div>
+  <div class="field-row"><div class="field"><label>Brut (€)</label><input type="number" id="b-brut-v" placeholder="0.00"></div><div class="field"><label>Net imposable (€)</label><input type="number" id="b-net-imp" placeholder="0.00"></div></div>
+  <div class="field-row"><div class="field"><label>Net perçu (€)</label><input type="number" id="b-net-v" placeholder="0.00"></div><div class="field"><label>PAS prélevé (€)</label><input type="number" id="b-pas-v" placeholder="0.00"></div></div>
+  <div class="field-row"><div class="field"><label>H cachets</label><input type="number" id="b-h-cachets" placeholder="0"></div><div class="field"><label>H totales</label><input type="number" id="b-h-tot" placeholder="0"></div></div>
+  <div class="field"><label>Non payé (€)</label><input type="number" id="b-non-paye" placeholder="0 si tout payé"></div>
+  <div class="field"><label>Référence fichier</label><input type="text" id="b-ref" placeholder="001 - Bulletin_Jan.pdf"></div>
+  <button class="btn btn-primary" onclick="addBulletin()" style="margin-top:8px;">✓ Enregistrer</button>
+</div>
+
+<!-- SHEET : Ajouter frais -->
+<div class="bottom-sheet" id="sheet-add-frais">
+  <div class="sheet-handle"></div>
+  <div class="sheet-title">Ajouter un frais</div>
+  <div class="field"><label>Catégorie</label>
+    <select id="f-cat">
+      <option value="transport">🚗 Transport (SNCF, parking…)</option>
+      <option value="navigo">🚇 Navigo / Abonnement</option>
+      <option value="km">🛣️ Kilométrique</option>
+      <option value="logiciel">💻 Logiciels (Voxing Pro…)</option>
+      <option value="formation">📚 Formation</option>
+      <option value="materiel">🎭 Matériel & costumes</option>
+      <option value="repas">🍽️ Repas professionnels</option>
+      <option value="agent">🤝 Commission agent</option>
+      <option value="autre">📦 Autre</option>
+    </select>
+  </div>
+  <div class="field"><label>Description</label><input type="text" id="f-desc" placeholder="A/R Paris, Voxing Pro…"></div>
+  <div class="field-row"><div class="field"><label>Date</label><input type="date" id="f-date"></div><div class="field"><label>Montant (€)</label><input type="number" id="f-montant" placeholder="0.00" step="0.01"></div></div>
+  <div class="field-row"><div class="field"><label>KM</label><input type="number" id="f-km" placeholder="0"></div><div class="field"><label>Repas (nb)</label><input type="number" id="f-repas" placeholder="0"></div></div>
+  <div class="field"><label>Référence fichier</label><input type="text" id="f-ref" placeholder="001 - SNCF_260105.pdf"></div>
+  <button class="btn btn-primary" onclick="addFrais()" style="margin-top:8px;">✓ Enregistrer</button>
+</div>
+
+<!-- SHEET : Guide Drive -->
+<div class="bottom-sheet" id="sheet-drive-setup">
+  <div class="sheet-handle"></div>
+  <div class="sheet-title">Configurer Google Drive</div>
+  <div style="font-size:13px;line-height:1.8;color:var(--ink2);">
+    <div style="font-weight:700;margin-bottom:12px;">5 étapes (~10 min) — une seule fois !</div>
+    <div style="display:flex;gap:10px;margin-bottom:14px;"><div style="width:24px;height:24px;min-width:24px;border-radius:50%;background:var(--ink);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;">1</div><div>Va sur <strong>console.cloud.google.com</strong> et connecte-toi.</div></div>
+    <div style="display:flex;gap:10px;margin-bottom:14px;"><div style="width:24px;height:24px;min-width:24px;border-radius:50%;background:var(--ink);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;">2</div><div>Crée un <strong>nouveau projet</strong> → nomme-le "Intermittent".</div></div>
+    <div style="display:flex;gap:10px;margin-bottom:14px;"><div style="width:24px;height:24px;min-width:24px;border-radius:50%;background:var(--ink);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;">3</div><div>Menu <strong>Bibliothèque</strong> → cherche <strong>"Google Drive API"</strong> → Activer.</div></div>
+    <div style="display:flex;gap:10px;margin-bottom:14px;"><div style="width:24px;height:24px;min-width:24px;border-radius:50%;background:var(--ink);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;">4</div><div><strong>APIs & Services → Identifiants</strong> → "Créer" → <strong>ID client OAuth 2.0</strong> → Type : <strong>Application Web</strong> → dans "Origines JavaScript autorisées" ajoute l'URL de ton app hébergée.</div></div>
+    <div style="display:flex;gap:10px;margin-bottom:16px;"><div style="width:24px;height:24px;min-width:24px;border-radius:50%;background:var(--ink);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;">5</div><div>Copie le <strong>Client ID</strong> (finit par .apps.googleusercontent.com) → colle-le dans Réglages.</div></div>
+    <div class="alert alert-ok">✅ Une fois connecté, toutes tes données se sauvegardent automatiquement dans un dossier <strong>Intermittent/</strong> sur ton Drive à chaque modification.</div>
+  </div>
+  <button class="btn btn-ghost" onclick="closeSheet()" style="margin-top:8px;width:100%;">Fermer</button>
+</div>
+
+<script>
+const MONTHS=['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+const CAT_ICONS={transport:'🚗',navigo:'🚇',km:'🛣️',logiciel:'💻',formation:'📚',materiel:'🎭',repas:'🍽️',agent:'🤝',autre:'📦'};
+const CAT_LABELS={transport:'Transport',navigo:'Navigo',km:'Kilométrique',logiciel:'Logiciels',formation:'Formation',materiel:'Matériel',repas:'Repas',agent:'Agent',autre:'Autre'};
+const DRIVE_FILENAME='intermittent-backup.json';
+const DRIVE_FOLDER='Intermittent';
+
+let state={bulletins:[],frais:[],config:{tauxPas:14.6,situation:2,mathilde:0,sjr:0,areReel:0,finDroits:''}};
+let currentDocType='bulletin',pendingScanData=null,activeSheet=null;
+let selectedMonthBulletin='all',selectedMonthFrais='all';
+let driveToken=null,driveFileId=null,syncLog=[],syncDebounce=null;
+
+function loadState(){
+  try{
+    const d=localStorage.getItem('intermittent-v2');
+    if(d){const p=JSON.parse(d);state.bulletins=p.bulletins||[];state.frais=p.frais||[];if(p.config)state.config={...state.config,...p.config};}
+    driveToken=localStorage.getItem('drive-token')||null;
+    driveFileId=localStorage.getItem('drive-file-id')||null;
+    const sl=localStorage.getItem('sync-log');if(sl)syncLog=JSON.parse(sl);
+  }catch(e){}
+}
+
+function saveState(){
+  localStorage.setItem('intermittent-v2',JSON.stringify(state));
+  if(driveToken){clearTimeout(syncDebounce);syncDebounce=setTimeout(()=>syncToDrive(false),3000);}
+}
+
+function showPage(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  document.getElementById('nav-'+id).classList.add('active');
+  if(id==='bilan')renderBilan();
+  if(id==='salaires')renderSalaires();
+  if(id==='frais')renderFrais();
+}
+
+function toast(msg){
+  const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'),2800);
+}
+
+function openSheet(id){closeSheet(true);activeSheet=id;document.getElementById('sheet-overlay').classList.add('show');document.getElementById(id).classList.add('show');document.body.style.overflow='hidden';}
+function closeSheet(s){if(activeSheet){document.getElementById(activeSheet).classList.remove('show');activeSheet=null;}document.getElementById('sheet-overlay').classList.remove('show');document.body.style.overflow='';}
+
+// ── GOOGLE DRIVE OAUTH ──
+function connectDrive(){
+  const clientId=document.getElementById('google-client-id').value.trim()||localStorage.getItem('google-client-id')||'';
+  if(!clientId){toast('❌ Entre ton Client ID Google');return;}
+  localStorage.setItem('google-client-id',clientId);
+  const params=new URLSearchParams({client_id:clientId,redirect_uri:window.location.href.split('?')[0].split('#')[0],response_type:'token',scope:'https://www.googleapis.com/auth/drive.file',prompt:'consent'});
+  window.location.href='https://accounts.google.com/o/oauth2/v2/auth?'+params.toString();
+}
+
+function handleOAuthRedirect(){
+  const hash=window.location.hash;
+  if(!hash.includes('access_token'))return;
+  const params=new URLSearchParams(hash.slice(1));
+  const token=params.get('access_token');
+  if(!token)return;
+  driveToken=token;localStorage.setItem('drive-token',token);
+  window.location.hash='';
+  toast('✅ Google Drive connecté !');
+  updateDriveUI();syncToDrive(true);
+}
+
+function disconnectDrive(){
+  if(!confirm('Déconnecter Google Drive ?'))return;
+  driveToken=null;driveFileId=null;
+  localStorage.removeItem('drive-token');localStorage.removeItem('drive-file-id');
+  updateDriveUI();toast('Drive déconnecté');
+}
+
+async function getDriveUserInfo(){
+  if(!driveToken)return null;
+  try{const r=await fetch('https://www.googleapis.com/oauth2/v3/userinfo',{headers:{Authorization:'Bearer '+driveToken}});if(r.ok)return await r.json();}catch(e){}
+  return null;
+}
+
+function updateDriveUI(){
+  const connected=!!driveToken;
+  document.getElementById('drive-disconnected-card').style.display=connected?'none':'block';
+  document.getElementById('drive-connected-card').style.display=connected?'block':'none';
+  const dot=document.getElementById('drive-dot');
+  const lbl=document.getElementById('drive-status-label');
+  if(connected){dot.className='drive-dot connected';lbl.textContent='Drive ✓';getDriveUserInfo().then(info=>{if(info)document.getElementById('drive-email-display').textContent=info.email||'Connecté';});}
+  else{dot.className='drive-dot';lbl.textContent='Drive';}
+  renderSyncLog();
+  const cid=localStorage.getItem('google-client-id');
+  if(cid)document.getElementById('google-client-id').value=cid;
+}
+
+// ── SYNC DRIVE ──
+async function findOrCreateFolder(){
+  const r=await fetch(`https://www.googleapis.com/drive/v3/files?q=name='${DRIVE_FOLDER}' and mimeType='application/vnd.google-apps.folder' and trashed=false&fields=files(id)`,{headers:{Authorization:'Bearer '+driveToken}});
+  const d=await r.json();
+  if(d.files&&d.files.length>0)return d.files[0].id;
+  const c=await fetch('https://www.googleapis.com/drive/v3/files',{method:'POST',headers:{Authorization:'Bearer '+driveToken,'Content-Type':'application/json'},body:JSON.stringify({name:DRIVE_FOLDER,mimeType:'application/vnd.google-apps.folder'})});
+  const f=await c.json();return f.id;
+}
+
+async function findBackupFile(folderId){
+  if(driveFileId)return driveFileId;
+  const r=await fetch(`https://www.googleapis.com/drive/v3/files?q=name='${DRIVE_FILENAME}' and '${folderId}' in parents and trashed=false&fields=files(id)`,{headers:{Authorization:'Bearer '+driveToken}});
+  const d=await r.json();
+  if(d.files&&d.files.length>0){driveFileId=d.files[0].id;localStorage.setItem('drive-file-id',driveFileId);return driveFileId;}
+  return null;
+}
+
+async function syncToDrive(showToast=false){
+  if(!driveToken)return;
+  setDriveStatus('syncing','Sync…');
+  try{
+    const folderId=await findOrCreateFolder();
+    const fileId=await findBackupFile(folderId);
+    const payload=JSON.stringify({...state,_meta:{lastSync:new Date().toISOString(),version:2}},null,2);
+    if(fileId){
+      await fetch(`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`,{method:'PATCH',headers:{Authorization:'Bearer '+driveToken,'Content-Type':'application/json'},body:payload});
+    }else{
+      const meta=JSON.stringify({name:DRIVE_FILENAME,parents:[folderId]});
+      const form=new FormData();
+      form.append('metadata',new Blob([meta],{type:'application/json'}));
+      form.append('file',new Blob([payload],{type:'application/json'}));
+      const r=await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',{method:'POST',headers:{Authorization:'Bearer '+driveToken},body:form});
+      const created=await r.json();driveFileId=created.id;localStorage.setItem('drive-file-id',driveFileId);
+    }
+    const now=new Date();
+    const ts=now.toLocaleString('fr-FR',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
+    addSyncLog(ts,'ok');
+    document.getElementById('last-sync-label').textContent=ts;
+    setDriveStatus('connected','Drive ✓');
+    if(showToast)toast('☁️ Sauvegardé sur Drive !');
+  }catch(e){
+    addSyncLog('Erreur: '+e.message.slice(0,40),'err');
+    setDriveStatus('error','Drive ⚠️');
+    if(showToast)toast('❌ Erreur Drive');
+    if(e.message&&(e.message.includes('401')||e.message.includes('403'))){driveToken=null;localStorage.removeItem('drive-token');updateDriveUI();toast('🔑 Session Drive expirée, reconnecte-toi');}
+  }
+}
+
+async function restoreFromDrive(){
+  if(!driveToken)return;
+  setDriveStatus('syncing','Restauration…');
+  try{
+    const folderId=await findOrCreateFolder();
+    const fileId=await findBackupFile(folderId);
+    if(!fileId){toast('❌ Aucune sauvegarde trouvée');setDriveStatus('connected','Drive ✓');return;}
+    const r=await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`,{headers:{Authorization:'Bearer '+driveToken}});
+    const data=await r.json();
+    if(data.bulletins)state.bulletins=data.bulletins;
+    if(data.frais)state.frais=data.frais;
+    if(data.config)state.config={...state.config,...data.config};
+    localStorage.setItem('intermittent-v2',JSON.stringify(state));
+    renderBilan();renderSalaires();renderFrais();loadConfig();
+    setDriveStatus('connected','Drive ✓');
+    addSyncLog('Restauration OK','ok');
+    toast('✅ Données restaurées depuis Drive !');
+  }catch(e){setDriveStatus('error','Drive ⚠️');toast('❌ Erreur restauration');}
+}
+
+function setDriveStatus(s,l){document.getElementById('drive-dot').className='drive-dot '+s;document.getElementById('drive-status-label').textContent=l;}
+function addSyncLog(msg,type){syncLog.unshift({msg,type});if(syncLog.length>20)syncLog=syncLog.slice(0,20);localStorage.setItem('sync-log',JSON.stringify(syncLog));renderSyncLog();}
+function renderSyncLog(){const el=document.getElementById('sync-log');if(!el)return;if(!syncLog.length){el.innerHTML='<div style="font-family:\'DM Mono\',monospace;font-size:10px;color:var(--muted);padding:4px 0;">Aucune synchro encore</div>';return;}el.innerHTML=syncLog.slice(0,8).map(s=>`<div class="sync-log-item ${s.type||''}">${s.msg}</div>`).join('');}
+
+// ── API CLAUDE ──
+function saveApiKey(){const k=document.getElementById('api-key-input').value.trim();if(!k.startsWith('sk-ant')){toast('❌ Clé invalide');return;}localStorage.setItem('claude-api-key',k);checkApiSetup();toast('✅ Clé API sauvegardée');}
+async function testApiKey(){const k=localStorage.getItem('claude-api-key');if(!k){toast('❌ Aucune clé');return;}const btn=document.getElementById('test-btn');btn.innerHTML='<div class="loader" style="width:14px;height:14px;"></div>';try{const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':k,'anthropic-version':'2023-06-01'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:5,messages:[{role:'user',content:'OK'}]})});btn.textContent='Tester';document.getElementById('api-test-result').innerHTML=r.ok?'<div class="alert alert-ok">✅ Connexion OK !</div>':'<div class="alert alert-err">❌ Clé refusée</div>';}catch(e){btn.textContent='Tester';document.getElementById('api-test-result').innerHTML='<div class="alert alert-err">❌ Erreur réseau</div>';}}
+function checkApiSetup(){const k=localStorage.getItem('claude-api-key');document.getElementById('scan-setup-alert').style.display=k?'none':'block';}
+
+// ── CONFIG ──
+function loadConfig(){
+  document.getElementById('cfg-taux-pas').value=state.config.tauxPas||'';
+  document.getElementById('cfg-situation').value=state.config.situation||2;
+  document.getElementById('cfg-mathilde').value=state.config.mathilde||'';
+  document.getElementById('cfg-sjr').value=state.config.sjr||'';
+  document.getElementById('cfg-are-reel').value=state.config.areReel||'';
+  document.getElementById('cfg-fin-droits').value=state.config.finDroits||'';
+  const k=localStorage.getItem('claude-api-key');if(k)document.getElementById('api-key-input').value=k;
+}
+function saveConfig(){
+  state.config.tauxPas=parseFloat(document.getElementById('cfg-taux-pas').value)||14.6;
+  state.config.situation=parseFloat(document.getElementById('cfg-situation').value)||2;
+  state.config.mathilde=parseFloat(document.getElementById('cfg-mathilde').value)||0;
+  state.config.sjr=parseFloat(document.getElementById('cfg-sjr').value)||0;
+  state.config.areReel=parseFloat(document.getElementById('cfg-are-reel').value)||0;
+  state.config.finDroits=document.getElementById('cfg-fin-droits').value||'';
+  saveState();
+}
+
+// ── SCAN ──
+function setDocType(el,type){document.querySelectorAll('.pill').forEach(p=>p.classList.remove('active'));el.classList.add('active');currentDocType=type;}
+function handleDrop(e){e.preventDefault();document.getElementById('dropzone').classList.remove('active');if(e.dataTransfer.files[0])processFile(e.dataTransfer.files[0]);}
+function handleFile(e){if(e.target.files[0])processFile(e.target.files[0]);}
+function fileToBase64(f){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result.split(',')[1]);r.onerror=rej;r.readAsDataURL(f);});}
+
+async function processFile(file){
+  const k=localStorage.getItem('claude-api-key');
+  if(!k){showPage('settings');toast('⚙️ Configure ta clé API');return;}
+  document.getElementById('scan-loading').style.display='block';
+  document.getElementById('scan-result-card').style.display='none';
+  const base64=await fileToBase64(file);
+  const isPdf=file.type==='application/pdf';
+  const prompts={
+    bulletin:'Analyse ce bulletin de salaire intermittent français. JSON pur uniquement:\n{"type":"bulletin","employeur":"","mois":"","annee":0,"cachets":0,"salaire_brut":0,"net_imposable":0,"net_percu":0,"pas_preleve":0,"taux_pas":0,"h_cachets":0,"h_totales":0}\nNull si absent.',
+    contrat:'Analyse ce contrat intermittent. JSON pur:\n{"type":"contrat","employeur":"","poste":"","date_debut":"","date_fin":"","cachets":0,"cachet_brut":0,"h_prevues":0,"lieu":""}',
+    frais:'Analyse ce justificatif de frais. JSON pur:\n{"type":"frais","date":"","nature":"","fournisseur":"","montant_ttc":0,"categorie":"transport","description":""}',
+    autre:'Analyse pour intermittent du spectacle. JSON pur avec toutes infos financières.'
+  };
+  const content=[];
+  if(isPdf)content.push({type:'document',source:{type:'base64',media_type:'application/pdf',data:base64}});
+  else content.push({type:'image',source:{type:'base64',media_type:file.type,data:base64}});
+  content.push({type:'text',text:prompts[currentDocType]});
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':k,'anthropic-version':'2023-06-01'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:800,messages:[{role:'user',content}]})});
+    const data=await res.json();
+    const text=data.content.map(i=>i.text||'').join('');
+    pendingScanData=JSON.parse(text.replace(/```json|```/g,'').trim());
+    document.getElementById('scan-loading').style.display='none';
+    showScanResult(pendingScanData);
+  }catch(e){
+    document.getElementById('scan-loading').style.display='none';
+    document.getElementById('scan-result-card').style.display='block';
+    document.getElementById('scan-result-card').innerHTML=`<div class="alert alert-err">❌ Erreur: ${e.message}</div>`;
+  }
+  document.getElementById('file-input').value='';
+}
+
+function showScanResult(d){
+  const card=document.getElementById('scan-result-card');card.style.display='block';
+  const numK=['salaire_brut','net_imposable','net_percu','pas_preleve','montant_ttc','cachet_brut'];
+  const rows=Object.entries(d).filter(([k,v])=>k!=='type'&&v!==null&&v!==''&&v!==0).map(([k,v])=>`
+    <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border2);">
+      <span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);text-transform:uppercase;">${k.replace(/_/g,' ')}</span>
+      <span style="font-size:13px;font-weight:600;">${numK.some(n=>k.includes(n.split('_')[0]))||k.includes('brut')||k.includes('net')||k.includes('montant')?fmt(v):v}</span>
+    </div>`).join('');
+  card.innerHTML=`<div class="card"><div class="card-head"><div class="card-head-title">Extraction IA</div><span class="tag tag-green">✓ OK</span></div>${rows}<button class="btn btn-primary" onclick="confirmScanInline()" style="margin-top:16px;">✓ Enregistrer</button><button class="btn btn-ghost" style="margin-top:8px;width:100%;" onclick="document.getElementById('scan-result-card').style.display='none'">Annuler</button></div>`;
+}
+
+function confirmScanInline(){
+  if(!pendingScanData)return;const d=pendingScanData;
+  if(d.type==='bulletin'||currentDocType==='bulletin'){
+    const moisIdx=MONTHS.indexOf(d.mois);const annee=d.annee||new Date().getFullYear();
+    const dateStr=moisIdx>=0?`${annee}-${String(moisIdx+1).padStart(2,'0')}-01`:new Date().toISOString().slice(0,10);
+    state.bulletins.push({id:Date.now().toString(),employeur:d.employeur||'',date:dateStr,cachets:d.cachets||0,brutV:d.salaire_brut||0,netImp:d.net_imposable||0,netV:d.net_percu||0,pasV:d.pas_preleve||0,tauxPas:d.taux_pas||0,hCachets:d.h_cachets||0,hTot:d.h_totales||0,nonPaye:0,ref:''});
+  }else if(d.type==='frais'||currentDocType==='frais'){
+    state.frais.push({id:Date.now().toString(),cat:d.categorie||'autre',desc:d.description||d.nature||'',date:d.date||new Date().toISOString().slice(0,10),montant:d.montant_ttc||0,km:0,repas:0,ref:''});
+  }
+  saveState();pendingScanData=null;document.getElementById('scan-result-card').style.display='none';toast('✅ Enregistré !');renderBilan();
+}
+
+// ── BULLETINS ──
+function addBulletin(){
+  const emp=document.getElementById('b-emp').value.trim();const date=document.getElementById('b-date').value;
+  if(!emp||!date){toast('❌ Employeur et date requis');return;}
+  state.bulletins.push({id:Date.now().toString(),employeur:emp,date,cachets:parseFloat(document.getElementById('b-cachets-nb').value)||0,brutV:parseFloat(document.getElementById('b-brut-v').value)||0,netImp:parseFloat(document.getElementById('b-net-imp').value)||0,netV:parseFloat(document.getElementById('b-net-v').value)||0,pasV:parseFloat(document.getElementById('b-pas-v').value)||0,hCachets:parseFloat(document.getElementById('b-h-cachets').value)||0,hTot:parseFloat(document.getElementById('b-h-tot').value)||0,nonPaye:parseFloat(document.getElementById('b-non-paye').value)||0,ref:document.getElementById('b-ref').value.trim()});
+  saveState();closeSheet();toast('✅ Bulletin enregistré');renderSalaires();renderBilan();
+  ['b-emp','b-brut-v','b-net-imp','b-net-v','b-pas-v','b-h-cachets','b-h-tot','b-non-paye','b-ref','b-cachets-nb'].forEach(id=>document.getElementById(id).value='');
+}
+function deleteBulletin(id){if(!confirm('Supprimer ?'))return;state.bulletins=state.bulletins.filter(b=>b.id!==id);saveState();renderSalaires();renderBilan();toast('🗑️ Supprimé');}
+
+// ── FRAIS ──
+function addFrais(){
+  const date=document.getElementById('f-date').value;const montant=parseFloat(document.getElementById('f-montant').value)||0;
+  if(!date||!montant){toast('❌ Date et montant requis');return;}
+  state.frais.push({id:Date.now().toString(),cat:document.getElementById('f-cat').value,desc:document.getElementById('f-desc').value.trim(),date,montant,km:parseFloat(document.getElementById('f-km').value)||0,repas:parseFloat(document.getElementById('f-repas').value)||0,ref:document.getElementById('f-ref').value.trim()});
+  saveState();closeSheet();toast('✅ Frais enregistré');renderFrais();renderBilan();
+  ['f-desc','f-montant','f-km','f-repas','f-ref'].forEach(id=>document.getElementById(id).value='');
+}
+function deleteFrais(id){if(!confirm('Supprimer ?'))return;state.frais=state.frais.filter(f=>f.id!==id);saveState();renderFrais();renderBilan();toast('🗑️ Supprimé');}
+
+// ── FORMAT ──
+function fmt(n){if(n===null||n===undefined||isNaN(n))return'—';return new Intl.NumberFormat('fr-FR',{style:'currency',currency:'EUR',maximumFractionDigits:0}).format(n);}
+function fmtDec(n){if(!n)return'— €';return new Intl.NumberFormat('fr-FR',{style:'currency',currency:'EUR',minimumFractionDigits:2}).format(n);}
+
+// ── RENDER BILAN ──
+function renderBilan(){
+  const bs=state.bulletins;
+  const tBrut=bs.reduce((s,b)=>s+b.brutV,0),tNet=bs.reduce((s,b)=>s+b.netV,0),tNetImp=bs.reduce((s,b)=>s+b.netImp,0),tPas=bs.reduce((s,b)=>s+b.pasV,0),tH=bs.reduce((s,b)=>s+b.hTot,0),tCachets=bs.reduce((s,b)=>s+b.cachets,0),tFrais=state.frais.reduce((s,f)=>s+f.montant,0);
+  document.getElementById('b-brut').textContent=fmt(tBrut);document.getElementById('b-net').textContent=fmt(tNet);document.getElementById('b-cachets').textContent=tCachets+' cachets';document.getElementById('b-heures').textContent=tH+' h';document.getElementById('b-pas').textContent=fmt(tPas);document.getElementById('b-frais').textContent=fmt(tFrais);
+  const impotsEstim=calcImpots(tNetImp,tFrais,state.config.situation);
+  document.getElementById('b-taux-pas').textContent=state.config.tauxPas+'% PAS';document.getElementById('b-impots-estim').textContent=fmt(impotsEstim);document.getElementById('b-impots-payes').textContent=fmt(tPas);document.getElementById('b-impots-reste').textContent=fmt(Math.max(0,impotsEstim-tPas));
+  const sjr=state.config.sjr||0,areJ=sjr>0?Math.min(sjr*0.6+12.47,sjr*0.75):0;
+  document.getElementById('q-are-jour').textContent=sjr>0?fmtDec(areJ):'— €';document.getElementById('q-are-mois').textContent=sjr>0?fmt(areJ*30):'— €';
+  document.getElementById('q-heures-prog').textContent=tH+' / 507 h';const pct=Math.min(100,(tH/507)*100);document.getElementById('q-heures-fill').style.width=pct+'%';
+  document.getElementById('are-status-tag').textContent=tH>=507?'✓ 507h atteintes':Math.round(pct)+'%';document.getElementById('are-status-tag').className=tH>=507?'tag tag-green':'tag tag-gold';
+  document.getElementById('foyer-simon').textContent=fmt(tNet);document.getElementById('foyer-mathilde').textContent=state.config.mathilde?fmt(state.config.mathilde):'—';document.getElementById('foyer-reste').textContent=fmt(tNet+(state.config.mathilde||0)+(state.config.areReel||0)*12);
+  const byM={};MONTHS.forEach((m,i)=>byM[i+1]={label:m,brut:0,h:0,cachets:0,has:false});
+  bs.forEach(b=>{const m=parseInt(b.date.split('-')[1]);if(byM[m]){byM[m].brut+=b.brutV;byM[m].h+=b.hTot;byM[m].cachets+=b.cachets;byM[m].has=true;}});
+  const active=Object.values(byM).filter(m=>m.has);
+  const el=document.getElementById('bilan-mois-list');
+  el.innerHTML=!active.length?'<div class="empty"><div class="empty-icon">📄</div><div class="empty-text">Scanne tes premiers bulletins</div></div>':active.map(m=>`<div class="month-row"><div class="month-dot" style="background:var(--gold)"></div><div class="month-name">${m.label}</div><div class="month-h">${m.h}h</div><div class="month-brut">${fmt(m.brut)}</div></div>`).join('');
+  const emps=[...new Set(bs.map(b=>b.employeur))].filter(Boolean);document.getElementById('b-employeurs-count').textContent=emps.length+' employeur'+(emps.length>1?'s':'');
+}
+
+function calcImpots(netImp,fraisReels,nbParts){
+  if(!netImp)return 0;const abatt=Math.min(netImp*0.1,14171);const revNet=netImp-Math.max(abatt,fraisReels);const rpp=revNet/nbParts;
+  let imp=0;if(rpp<=11294)imp=0;else if(rpp<=28797)imp=(rpp-11294)*0.11;else if(rpp<=82341)imp=17503*0.11+(rpp-28797)*0.30;else if(rpp<=177106)imp=17503*0.11+53544*0.30+(rpp-82341)*0.41;else imp=17503*0.11+53544*0.30+94765*0.41+(rpp-177106)*0.45;
+  return imp*nbParts;
+}
+
+// ── RENDER SALAIRES ──
+function renderSalaires(){
+  const moisDispo=[...new Set(state.bulletins.map(b=>b.date.slice(0,7)))].sort();
+  document.getElementById('salaires-month-tabs').innerHTML=`<div class="month-tab ${selectedMonthBulletin==='all'?'active':''}" onclick="filterBulletin('all')">Tout</div>`+moisDispo.map(m=>{const[y,mo]=m.split('-');return`<div class="month-tab ${selectedMonthBulletin===m?'active':''}" onclick="filterBulletin('${m}')">${MONTHS[parseInt(mo)-1].slice(0,3)} ${y}</div>`;}).join('');
+  const f=selectedMonthBulletin==='all'?state.bulletins:state.bulletins.filter(b=>b.date.startsWith(selectedMonthBulletin));
+  document.getElementById('s-brut-filtered').textContent=fmt(f.reduce((s,b)=>s+b.brutV,0));document.getElementById('s-heures-filtered').textContent=f.reduce((s,b)=>s+b.hTot,0)+' h';
+  const listEl=document.getElementById('bulletins-list');
+  listEl.innerHTML=!f.length?'<div class="empty"><div class="empty-icon">💰</div><div class="empty-text">Aucun bulletin</div></div>':f.sort((a,b)=>b.date.localeCompare(a.date)).map(b=>`<div class="list-item"><div class="list-icon" style="background:var(--gold-light);">📄</div><div class="list-main"><div class="list-title">${b.employeur||'Employeur inconnu'}</div><div class="list-sub">${MONTHS[parseInt(b.date.split('-')[1])-1]} ${b.date.split('-')[0]} · ${b.cachets} cachets · ${b.hTot}h</div>${b.nonPaye>0?`<span class="tag tag-red" style="margin-top:4px;">Non payé: ${fmt(b.nonPaye)}</span>`:''}${b.ref?`<div style="font-size:10px;color:var(--muted);margin-top:3px;font-family:'DM Mono',monospace;">${b.ref}</div>`:''}</div><div class="list-right"><div class="list-amount">${fmt(b.brutV)}</div><div class="list-meta">net ${fmt(b.netV)}</div><div class="list-meta" style="color:var(--red);">PAS ${fmt(b.pasV)}</div><button onclick="deleteBulletin('${b.id}')" style="margin-top:6px;font-size:11px;color:var(--muted);background:none;border:none;cursor:pointer;">🗑️</button></div></div>`).join('');
+  const np=state.bulletins.filter(b=>b.nonPaye>0);
+  document.getElementById('non-paye-list').innerHTML=!np.length?'<div class="empty"><div class="empty-icon">✅</div><div class="empty-text">Tout est à jour !</div></div>':np.map(b=>`<div class="list-item"><div class="list-icon" style="background:var(--red-light);">⚠️</div><div class="list-main"><div class="list-title">${b.employeur}</div><div class="list-sub">${new Date(b.date).toLocaleDateString('fr-FR',{month:'long',year:'numeric'})}</div></div><div class="list-right"><div class="list-amount red">${fmt(b.nonPaye)}</div><div class="list-meta">en attente</div></div></div>`).join('');
+}
+function filterBulletin(m){selectedMonthBulletin=m;renderSalaires();}
+
+// ── RENDER FRAIS ──
+function renderFrais(){
+  const tF=state.frais.reduce((s,f)=>s+f.montant,0),tNI=state.bulletins.reduce((s,b)=>s+b.netImp,0),forfait=Math.min(tNI*0.1,14171);
+  document.getElementById('f-total').textContent=fmt(tF);
+  if(tNI>0){const diff=tF-forfait;const el=document.getElementById('f-compare');el.textContent=diff>0?'+'+fmt(diff):fmt(diff);el.className=diff>0?'val green':'val red';document.getElementById('f-compare-sub').textContent=diff>0?`Frais réels avantageux (forfait=${fmt(forfait)})`:`Forfait 10% plus avantageux (${fmt(forfait)})`;}
+  const bycat={};state.frais.forEach(f=>{if(!bycat[f.cat])bycat[f.cat]=0;bycat[f.cat]+=f.montant;});
+  document.getElementById('frais-by-cat').innerHTML=!Object.keys(bycat).length?'<div class="empty"><div class="empty-icon">🧾</div><div class="empty-text">Aucun frais</div></div>':Object.entries(bycat).sort((a,b)=>b[1]-a[1]).map(([cat,total])=>`<div class="frais-cat-row"><div class="frais-cat-icon">${CAT_ICONS[cat]||'📦'}</div><div class="frais-cat-name">${CAT_LABELS[cat]||cat}</div><div class="frais-cat-amt">${fmt(total)}</div></div>`).join('');
+  const moisDispo=[...new Set(state.frais.map(f=>f.date.slice(0,7)))].sort();
+  document.getElementById('frais-month-tabs').innerHTML=`<div class="month-tab ${selectedMonthFrais==='all'?'active':''}" onclick="filterFrais('all')">Tout</div>`+moisDispo.map(m=>{const[y,mo]=m.split('-');return`<div class="month-tab ${selectedMonthFrais===m?'active':''}" onclick="filterFrais('${m}')">${MONTHS[parseInt(mo)-1].slice(0,3)} ${y}</div>`;}).join('');
+  const ff=selectedMonthFrais==='all'?state.frais:state.frais.filter(f=>f.date.startsWith(selectedMonthFrais));
+  document.getElementById('frais-list').innerHTML=!ff.length?'<div class="empty"><div class="empty-icon">📋</div><div class="empty-text">Aucun frais</div></div>':ff.sort((a,b)=>b.date.localeCompare(a.date)).map(f=>`<div class="list-item"><div class="list-icon" style="background:var(--blue-light);">${CAT_ICONS[f.cat]||'📦'}</div><div class="list-main"><div class="list-title">${f.desc||CAT_LABELS[f.cat]||f.cat}</div><div class="list-sub">${new Date(f.date).toLocaleDateString('fr-FR',{day:'2-digit',month:'short',year:'numeric'})}${f.ref?' · '+f.ref:''}</div>${f.km>0?`<span class="tag tag-gray" style="margin-top:4px;">${f.km} km</span>`:''}</div><div class="list-right"><div class="list-amount">${fmt(f.montant)}</div><button onclick="deleteFrais('${f.id}')" style="margin-top:6px;font-size:11px;color:var(--muted);background:none;border:none;cursor:pointer;">🗑️</button></div></div>`).join('');
+}
+function filterFrais(m){selectedMonthFrais=m;renderFrais();}
+
+// ── DONNÉES LOCALES ──
+function exportData(){const json=JSON.stringify(state,null,2);const blob=new Blob([json],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='intermittent-'+new Date().toISOString().slice(0,10)+'.json';a.click();toast('📤 Export téléchargé');}
+function importData(e){const f=e.target.files[0];if(!f)return;const reader=new FileReader();reader.onload=ev=>{try{const d=JSON.parse(ev.target.result);state.bulletins=d.bulletins||[];state.frais=d.frais||[];if(d.config)state.config={...state.config,...d.config};saveState();renderBilan();renderSalaires();renderFrais();loadConfig();toast('✅ Import réussi');}catch(err){toast('❌ Fichier invalide');}};reader.readAsText(f);}
+function clearAll(){if(!confirm('Effacer toutes les données ? Irréversible.'))return;state.bulletins=[];state.frais=[];saveState();renderBilan();renderSalaires();renderFrais();toast('🗑️ Données effacées');}
+
+// ── INIT ──
+function init(){
+  loadState();handleOAuthRedirect();loadConfig();updateDriveUI();checkApiSetup();
+  renderBilan();renderSalaires();renderFrais();
+  const today=new Date().toISOString().slice(0,10);
+  document.getElementById('b-date').value=today;document.getElementById('f-date').value=today;
+  document.getElementById('header-year').textContent=new Date().getFullYear();
+  if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+  document.querySelectorAll('.bottom-sheet').forEach(sheet=>{
+    let startY=0;
+    sheet.addEventListener('touchstart',e=>{startY=e.touches[0].clientY},{passive:true});
+    sheet.addEventListener('touchmove',e=>{if(e.touches[0].clientY-startY>80)closeSheet()},{passive:true});
+  });
+}
+document.addEventListener('DOMContentLoaded',init);
+</script>
+</body>
+</html>
