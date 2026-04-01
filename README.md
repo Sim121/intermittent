@@ -1,2 +1,2 @@
 # intermittent
-Répertorier salaires et comptes persos pour Simon
+Système de classification des fichiers propres à un intermittent
