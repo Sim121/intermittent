@@ -453,12 +453,65 @@ function openSheet(id){closeSheet(true);activeSheet=id;document.getElementById('
 function closeSheet(s){if(activeSheet){document.getElementById(activeSheet).classList.remove('show');activeSheet=null;}document.getElementById('sheet-overlay').classList.remove('show');document.body.style.overflow='';}
 
 // ── GOOGLE DRIVE OAUTH ──
-function connectDrive(){
+function getRedirectUri(){
+  return window.location.href.split('?')[0].split('#')[0];
+}
+
+function connectDrive(silent=false){
   const clientId=document.getElementById('google-client-id').value.trim()||localStorage.getItem('google-client-id')||'';
-  if(!clientId){toast('❌ Entre ton Client ID Google');return;}
+  if(!clientId){if(!silent)toast('❌ Entre ton Client ID Google');return;}
   localStorage.setItem('google-client-id',clientId);
-  const params=new URLSearchParams({client_id:clientId,redirect_uri:window.location.href.split('?')[0].split('#')[0],response_type:'token',scope:'https://www.googleapis.com/auth/drive.file',prompt:'consent'});
-  window.location.href='https://accounts.google.com/o/oauth2/v2/auth?'+params.toString();
+  const params=new URLSearchParams({
+    client_id:clientId,
+    redirect_uri:getRedirectUri(),
+    response_type:'token',
+    scope:'https://www.googleapis.com/auth/drive.file',
+    prompt: silent ? 'none' : 'consent'  // 'none' = silencieux si déjà autorisé
+  });
+  if(silent){
+    // Reconnexion silencieuse via iframe cachée
+    silentReconnect(clientId);
+  } else {
+    window.location.href='https://accounts.google.com/o/oauth2/v2/auth?'+params.toString();
+  }
+}
+
+function silentReconnect(clientId){
+  // Supprime l'iframe précédente si elle existe
+  const old=document.getElementById('oauth-iframe');
+  if(old)old.remove();
+
+  setDriveStatus('syncing','Connexion…');
+
+  const iframe=document.createElement('iframe');
+  iframe.id='oauth-iframe';
+  iframe.style.cssText='position:fixed;width:1px;height:1px;opacity:0;pointer-events:none;';
+
+  const params=new URLSearchParams({
+    client_id:clientId,
+    redirect_uri:getRedirectUri(),
+    response_type:'token',
+    scope:'https://www.googleapis.com/auth/drive.file',
+    prompt:'none'  // Ne montre aucune UI — échoue silencieusement si besoin de consentement
+  });
+
+  iframe.src='https://accounts.google.com/o/oauth2/v2/auth?'+params.toString();
+  document.body.appendChild(iframe);
+
+  // Écoute le retour de l'iframe
+  const handler=(e)=>{
+    if(!e.origin.includes('github.io')&&e.origin!==window.location.origin)return;
+    // L'iframe va déclencher un reload de la page parente avec le token dans le hash
+  };
+  window.addEventListener('message',handler);
+
+  // Timeout : si ça ne répond pas en 5s → token expiré, demander reconnexion manuelle
+  setTimeout(()=>{
+    iframe.remove();
+    if(!driveToken){
+      setDriveStatus('error','Drive ⚠️');
+    }
+  },5000);
 }
 
 function handleOAuthRedirect(){
@@ -467,10 +520,37 @@ function handleOAuthRedirect(){
   const params=new URLSearchParams(hash.slice(1));
   const token=params.get('access_token');
   if(!token)return;
-  driveToken=token;localStorage.setItem('drive-token',token);
+
+  // Stocke le token + l'heure d'expiration (1h par défaut Google)
+  const expiresIn=parseInt(params.get('expires_in')||3600);
+  const expiresAt=Date.now()+(expiresIn*1000)-60000; // 1 min de marge
+  driveToken=token;
+  localStorage.setItem('drive-token',token);
+  localStorage.setItem('drive-token-expires',expiresAt.toString());
   window.location.hash='';
+  updateDriveUI();
+  syncToDrive(true);
   toast('✅ Google Drive connecté !');
-  updateDriveUI();syncToDrive(true);
+}
+
+function isTokenExpired(){
+  const exp=localStorage.getItem('drive-token-expires');
+  if(!exp)return true;
+  return Date.now()>parseInt(exp);
+}
+
+// Vérifie et renouvelle le token toutes les 45 min
+function scheduleTokenRefresh(){
+  const exp=localStorage.getItem('drive-token-expires');
+  if(!exp)return;
+  const msUntilExpiry=parseInt(exp)-Date.now();
+  const refreshIn=Math.max(0,msUntilExpiry-120000); // 2 min avant expiration
+  setTimeout(()=>{
+    const clientId=localStorage.getItem('google-client-id');
+    if(clientId&&driveToken){
+      silentReconnect(clientId);
+    }
+  },refreshIn);
 }
 
 function disconnectDrive(){
@@ -741,7 +821,32 @@ function clearAll(){if(!confirm('Effacer toutes les données ? Irréversible.'))
 
 // ── INIT ──
 function init(){
-  loadState();handleOAuthRedirect();loadConfig();updateDriveUI();checkApiSetup();
+  loadState();
+  handleOAuthRedirect(); // Capture le token si on revient d'un redirect OAuth
+
+  loadConfig();checkApiSetup();
+
+  // Reconnexion automatique au lancement
+  const clientId=localStorage.getItem('google-client-id');
+  if(clientId){
+    if(driveToken && !isTokenExpired()){
+      // Token encore valide → connecté directement
+      updateDriveUI();
+      syncToDrive(false); // Sync silencieuse au lancement
+      scheduleTokenRefresh();
+    } else {
+      // Token expiré ou absent → reconnexion silencieuse
+      driveToken=null;
+      localStorage.removeItem('drive-token');
+      updateDriveUI();
+      silentReconnect(clientId);
+      // Si la reconnexion silencieuse échoue (rare), l'utilisateur verra Drive ⚠️
+      // et pourra se reconnecter manuellement depuis Réglages
+    }
+  } else {
+    updateDriveUI();
+  }
+
   renderBilan();renderSalaires();renderFrais();
   const today=new Date().toISOString().slice(0,10);
   document.getElementById('b-date').value=today;document.getElementById('f-date').value=today;
