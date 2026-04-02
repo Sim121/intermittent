@@ -764,6 +764,24 @@ async function processFile(file) {
 function showScanResult(d) {
   const card = document.getElementById('scan-result-card');
   card.style.display = 'block';
+
+  // Détecte une correspondance potentielle avant d'afficher
+  let matchInfo = '';
+  if (d.type === 'bulletin' || d.type === 'aem' || d.type === 'conges') {
+    const mi = MONTHS.indexOf(d.mois);
+    const an = d.annee || new Date().getFullYear();
+    const dateStr = d.date_travail || d.date_debut || (mi >= 0 ? `${an}-${String(mi+1).padStart(2,'0')}-01` : new Date().toISOString().slice(0,10));
+    const match = findMatchingContrat(d.employeur, dateStr);
+    if (match) {
+      matchInfo = `<div class="alert alert-ok" style="margin-bottom:12px;">
+        🔗 Correspondance trouvée : <strong>${match.employeur}</strong> (${fmtDate(match.dateDebut)})
+        <br><small>Ce document sera rattaché à ce contrat.</small>
+      </div>`;
+      // Pré-sélectionne dans le select
+      const sel = document.getElementById('scan-contrat-select');
+      if (sel) sel.value = match.id;
+    }
+  }
   const numF = ['salaire_brut','net_imposable','net_percu','pas_preleve','montant_ttc','montant_ht','cachet_brut'];
   const rows = Object.entries(d)
     .filter(([k,v]) => k!=='type' && v!==null && v!=='' && v!==0)
