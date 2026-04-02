@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Intermittent">
+<meta name="theme-color" content="#1a1a18">
+<title>Intermittent</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><rect width='180' height='180' rx='40' fill='%231a1a18'/><text x='90' y='125' font-size='90' text-anchor='middle'>🎭</text></svg>">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════
+     LOGIN SCREEN
+═══════════════════════════════════════ -->
+<div class="login-screen" id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">🎭</div>
+    <div class="login-title">Inter<span>mittent</span></div>
+    <div class="login-sub">Tableau de bord · Connexion</div>
+    <div class="login-error" id="login-error"></div>
+    <div class="field">
+      <label>Mot de passe</label>
+      <input type="password" id="login-password" placeholder="Ton mot de passe…" autocomplete="current-password">
+    </div>
+    <button class="btn btn-primary" id="login-btn" onclick="handleLogin()">Se connecter</button>
+    <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border2);">
+      <div style="font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;margin-bottom:10px;text-transform:uppercase;letter-spacing:1px;">Première configuration</div>
+      <div class="field">
+        <label>URL Apps Script</label>
+        <input type="text" id="login-apps-script-url" placeholder="https://script.google.com/macros/s/…/exec" style="font-size:13px;">
+      </div>
+      <button class="btn btn-ghost" style="width:100%;font-size:13px;" onclick="saveUrlFromLogin()">Enregistrer l'URL</button>
+      <div id="login-url-saved" style="display:none;margin-top:8px;" class="alert alert-ok">✅ URL enregistrée — entre ton mot de passe</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     APP SHELL
+═══════════════════════════════════════ -->
+<div id="app-shell" style="display:none;">
+
+  <!-- TOAST -->
+  <div class="toast" id="toast"></div>
+
+  <!-- ═══ SIDEBAR (desktop only) ═══ -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-icon">🎭</div>
+      <div class="sidebar-logo-title">Inter<span>mittent</span></div>
+      <div class="sidebar-logo-sub">Tableau de bord</div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="sidebar-section-label">Principal</div>
+      <div class="sidebar-item active" id="side-bilan" onclick="showPage('bilan')">
+        <span class="si-icon">📊</span> Bilan
+      </div>
+      <div class="sidebar-item" id="side-contrats" onclick="showPage('contrats')">
+        <span class="si-icon">📁</span> Contrats
+      </div>
+      <div class="sidebar-item" id="side-ft" onclick="showPage('ft')">
+        <span class="si-icon">🏛️</span> France Travail
+      </div>
+
+      <div class="sidebar-section-label" style="margin-top:8px;">Outils</div>
+      <div class="sidebar-item" id="side-scan" onclick="showPage('scan')">
+        <span class="si-icon">📄</span> Scanner un doc
+      </div>
+      <div class="sidebar-item" id="side-frais" onclick="showPage('frais')">
+        <span class="si-icon">🧾</span> Frais réels
+      </div>
+
+      <div class="sidebar-section-label" style="margin-top:8px;">Compte</div>
+      <div class="sidebar-item" id="side-settings" onclick="showPage('settings')">
+        <span class="si-icon">⚙️</span> Réglages
+      </div>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="sidebar-user">
+        <div class="sidebar-user-avatar">S</div>
+        <div style="font-size:13px;font-weight:500;">Simon</div>
+      </div>
+      <div class="sidebar-sync" onclick="syncToServer(true)">
+        <div class="sync-dot" id="desktop-sync-dot"></div>
+        <span id="desktop-sync-label">Sync</span>
+      </div>
+      <div class="sidebar-logout" onclick="handleLogout()">Se déconnecter</div>
+    </div>
+  </aside>
+
+  <!-- ═══ MAIN CONTENT ═══ -->
+  <div class="main-content">
+
+    <!-- MOBILE HEADER -->
+    <header class="app-header">
+      <div class="app-logo">🎭 Inter<span>mittent</span></div>
+      <div class="header-right">
+        <div class="sync-status" onclick="syncToServer(true)">
+          <div class="sync-dot" id="sync-dot"></div>
+          <span id="sync-label">Sync</span>
+        </div>
+        <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);background:var(--bg2);padding:4px 10px;border-radius:20px;border:1px solid var(--border);" id="header-year">2026</div>
+      </div>
+    </header>
+
+    <!-- ═══ PAGE BILAN ═══ -->
+    <div class="page active" id="page-bilan">
+      <div class="page-wrap">
+        <div class="section" style="padding-top:20px;">
+          <div class="section-title">Bilan <span class="accent">2026</span></div>
+          <div class="section-sub">Vue annuelle · Sauvegarde auto</div>
+        </div>
+        <div class="section">
+          <div class="stat-row">
+            <div class="stat-card"><div class="lbl">Brut total</div><div class="val gold" id="b-brut">0 €</div><div class="sub" id="b-cachets">0 cachets</div></div>
+            <div class="stat-card"><div class="lbl">Net total</div><div class="val green" id="b-net">0 €</div><div class="sub">net perçu</div></div>
+          </div>
+          <div class="stat-row three">
+            <div class="stat-card"><div class="lbl">Heures</div><div class="val" id="b-heures">0 h</div><div class="sub">cumulées</div></div>
+            <div class="stat-card"><div class="lbl">PAS payé</div><div class="val red" id="b-pas">0 €</div><div class="sub">prélevé</div></div>
+            <div class="stat-card"><div class="lbl">Frais réels</div><div class="val blue" id="b-frais">0 €</div><div class="sub">déductibles</div></div>
+          </div>
+          <div class="card">
+            <div class="card-head"><div class="card-head-title">ARE estimée</div><span class="tag tag-gray" id="are-status-tag">non calculé</span></div>
+            <div style="display:flex;gap:16px;align-items:flex-end;">
+              <div>
+                <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);margin-bottom:4px;">JOURNALIÈRE</div>
+                <div style="font-family:'Playfair Display',serif;font-size:28px;font-weight:700;color:var(--gold);" id="q-are-jour">— €</div>
+              </div>
+              <div>
+                <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);margin-bottom:4px;">MENSUELLE ≈</div>
+                <div style="font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:var(--ink2);" id="q-are-mois">— €</div>
+              </div>
+            </div>
+            <div class="progress-wrap">
+              <div class="progress-label"><span>Progression vers les 507h</span><span id="q-heures-prog">0 / 507 h</span></div>
+              <div class="progress-bar"><div class="progress-fill" id="q-heures-fill" style="width:0%"></div></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head"><div class="card-head-title">Foyer</div></div>
+            <div class="field-row">
+              <div>
+                <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);margin-bottom:4px;">SIMON (toi)</div>
+                <div style="font-family:'Playfair Display',serif;font-size:20px;font-weight:700;" id="foyer-simon">— €</div>
+              </div>
+              <div>
+                <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);margin-bottom:4px;">MATHILDE</div>
+                <div style="font-family:'Playfair Display',serif;font-size:20px;font-weight:700;" id="foyer-mathilde">— €</div>
+              </div>
+            </div>
+            <div style="margin-top:12px;font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);margin-bottom:4px;">TOTAL FOYER + ARE ANNUELLE</div>
+            <div style="font-family:'Playfair Display',serif;font-size:22px;font-weight:700;" id="foyer-reste">— €</div>
+          </div>
+          <div class="card">
+            <div class="card-head"><div class="card-head-title">Impôts</div><div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--gold);" id="b-taux-pas">—%</div></div>
+            <div class="field-row">
+              <div><div class="card-label">ESTIMÉ</div><div style="font-family:'Playfair Display',serif;font-size:22px;font-weight:700;" id="b-impots-estim">— €</div></div>
+              <div><div class="card-label">DÉJÀ PAYÉ</div><div style="font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:var(--green);" id="b-impots-payes">0 €</div></div>
+            </div>
+            <div style="margin-top:10px;"><div class="card-label">RESTANT ESTIMÉ</div><div style="font-family:'Playfair Display',serif;font-size:26px;font-weight:700;color:var(--red);" id="b-impots-reste">— €</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ PAGE CONTRATS ═══ -->
+    <div class="page" id="page-contrats">
+      <div style="padding:20px 16px 0;display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <div class="section-title">Mes <span class="accent">contrats</span></div>
+          <div class="section-sub">Par mois · Clic pour détail</div>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="openSheet('sheet-add-contrat')" style="flex-shrink:0;">＋ Ajouter</button>
+      </div>
+      <!-- Desktop : layout 2 colonnes -->
+      <div class="contracts-layout" id="contracts-layout" style="margin-top:16px;">
+        <div id="contrats-list"></div>
+        <!-- Panel détail desktop -->
+        <div class="contract-panel" id="desktop-detail-panel" style="display:none;">
+          <div class="card">
+            <div class="card-head">
+              <div class="card-head-title" id="detail-title-desktop">Sélectionne un contrat</div>
+              <div style="display:flex;gap:8px;">
+                <button class="btn btn-danger btn-sm" onclick="deleteCurrentContrat()">🗑️</button>
+                <button class="btn btn-ghost btn-sm" onclick="closeDetail()">✕</button>
+              </div>
+            </div>
+            <div id="desktop-detail-body">
+              <div class="empty" style="padding:32px;"><div class="empty-icon">👆</div><div class="empty-text">Clique sur un contrat<br>pour voir les détails</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ PAGE FRANCE TRAVAIL ═══ -->
+    <div class="page" id="page-ft">
+      <div class="page-wrap">
+        <div class="section" style="padding-top:20px;">
+          <div class="section-title">France <span class="accent">Travail</span></div>
+          <div class="section-sub">Déclaration mensuelle · Récap automatique</div>
+          <div class="alert alert-info">📅 Tu déclares le mois M en M+1, avant le 15.</div>
+          <div class="card">
+            <div class="card-head"><div class="card-head-title">Mois à déclarer</div></div>
+            <div class="field"><label>Mois de travail</label><select id="ft-mois-select" onchange="renderFT()"></select></div>
+          </div>
+          <div id="ft-content"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ PAGE SCAN ═══ -->
+    <div class="page" id="page-scan">
+      <div class="page-wrap">
+        <div class="section" style="padding-top:20px;">
+          <div class="section-title">Scanner un <span class="accent">doc</span></div>
+          <div class="section-sub">IA · Extraction automatique</div>
+        </div>
+        <div class="scan-layout">
+          <div class="section" style="padding-top:0;">
+            <div class="card">
+              <div class="card-head"><div class="card-head-title">Type de document</div></div>
+              <div class="type-pills">
+                <div class="pill active" onclick="setDocType(this,'bulletin')">📄 Bulletin</div>
+                <div class="pill" onclick="setDocType(this,'contrat')">📝 Contrat</div>
+                <div class="pill" onclick="setDocType(this,'aem')">📋 AEM</div>
+                <div class="pill" onclick="setDocType(this,'conges')">🌴 Congés</div>
+                <div class="pill" onclick="setDocType(this,'frais')">🧾 Frais</div>
+              </div>
+            </div>
+            <div class="card" id="scan-contrat-link-card" style="display:none;">
+              <div class="card-head"><div class="card-head-title">Rattacher à un contrat</div></div>
+              <div class="field"><label>Contrat associé (optionnel)</label>
+                <select id="scan-contrat-select"><option value="">— Aucun / nouveau contrat —</option></select>
+              </div>
+            </div>
+            <div class="upload-zone" id="dropzone"
+              ondragover="event.preventDefault();this.classList.add('active')"
+              ondragleave="this.classList.remove('active')"
+              ondrop="handleDrop(event)">
+              <input type="file" accept=".pdf,image/*" onchange="handleFile(event)" id="file-input">
+              <div class="upload-emoji">📂</div>
+              <div class="upload-title">Glisse ou touche pour parcourir</div>
+              <div class="upload-sub">PDF, JPG, PNG · Photo iPhone OK</div>
+            </div>
+          </div>
+          <div class="section" style="padding-top:0;">
+            <div id="scan-loading" style="display:none;" class="card">
+              <div class="loading-block"><div class="loader"></div><div style="font-size:13px;color:var(--muted);margin-top:12px;">Analyse IA en cours…</div></div>
+            </div>
+            <div id="scan-result-card" style="display:none;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ PAGE FRAIS ═══ -->
+    <div class="page" id="page-frais">
+      <div class="page-wrap">
+        <div class="section" style="padding-top:20px;">
+          <div class="section-title">Frais <span class="accent">réels</span></div>
+          <div class="section-sub">Déductibles · Comparaison forfait</div>
+          <div class="stat-row">
+            <div class="stat-card"><div class="lbl">Total frais</div><div class="val gold" id="f-total">0 €</div><div class="sub">à déclarer</div></div>
+            <div class="stat-card"><div class="lbl">vs Forfait 10%</div><div class="val" id="f-compare">—</div><div class="sub" id="f-compare-sub">calcul en attente</div></div>
+          </div>
+          <div class="card">
+            <div class="card-head"><div class="card-head-title">Par catégorie</div><button class="btn btn-ghost btn-sm" onclick="openSheet('sheet-add-frais')">＋ Ajouter</button></div>
+            <div id="frais-by-cat"><div class="empty"><div class="empty-icon">🧾</div><div class="empty-text">Aucun frais</div></div></div>
+          </div>
+          <div class="month-scroll" id="frais-month-tabs"></div>
+          <div class="card">
+            <div class="card-head"><div class="card-head-title">Liste</div></div>
+            <div id="frais-list"><div class="empty"><div class="empty-icon">📋</div><div class="empty-text">Aucun frais</div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ PAGE RÉGLAGES ═══ -->
+    <div class="page" id="page-settings">
+      <div class="page-wrap">
+        <div class="section" style="padding-top:20px;">
+          <div class="section-title"><span class="accent">Réglages</span></div>
+          <div class="section-sub">Apps Script · Fiscal · Données</div>
+
+          <!-- APPS SCRIPT -->
+          <div class="card" style="background:linear-gradient(135deg,#e8f4fd,#d2e9f5);border-color:rgba(26,74,122,.15);">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+              <div style="font-size:28px;">🔗</div>
+              <div><div style="font-size:15px;font-weight:700;">Google Apps Script</div><div style="font-size:12px;color:var(--blue);" id="apps-script-status">Non configuré</div></div>
+            </div>
+            <div class="field"><label>URL de déploiement</label><input type="text" id="apps-script-url" placeholder="https://script.google.com/macros/s/…/exec"></div>
+            <div style="display:flex;gap:8px;">
+              <button class="btn btn-primary" style="flex:1;" onclick="saveAppsScriptUrl()">Sauvegarder</button>
+              <button class="btn btn-ghost" onclick="testAppsScript()" id="test-as-btn">Tester</button>
+            </div>
+            <div id="as-test-result" style="margin-top:10px;"></div>
+          </div>
+
+          <!-- SAUVEGARDE -->
+          <div class="card">
+            <div class="card-head"><div class="card-head-title">Sauvegarde Drive</div><span class="tag tag-gray" id="last-sync-label">—</span></div>
+            <div style="display:flex;gap:8px;">
+              <button class="btn btn-primary" style="flex:1;" onclick="syncToServer(true)">☁️ Sauvegarder</button>
+              <button class="btn btn-ghost" style="flex:1;" onclick="loadFromServer()">📥 Restaurer</button>
+            </div>
+          </div>
+
+          <!-- FISCAL -->
+          <div class="card">
+            <div class="card-head"><div class="card-head-title">Paramètres fiscaux</div></div>
+            <div class="field"><label>Taux PAS actuel (%)</label><input type="number" id="cfg-taux-pas" placeholder="Ex: 14.6" step="0.1" oninput="saveConfig()"></div>
+            <div class="field"><label>Situation familiale</label>
+              <select id="cfg-situation" onchange="saveConfig()">
+                <option value="1">Célibataire (1 part)</option>
+                <option value="2" selected>Couple sans enfant (2 parts)</option>
+                <option value="2.5">Couple + 1 enfant</option>
+                <option value="3">Couple + 2 enfants</option>
+              </select>
+            </div>
+            <div class="field"><label>Revenus Mathilde (annuels, €)</label><input type="number" id="cfg-mathilde" placeholder="Ex: 21600" oninput="saveConfig()"></div>
+            <div class="field"><label>SJR ARE actuel (€/jour)</label><input type="number" id="cfg-sjr" placeholder="Ex: 63" step="0.01" oninput="saveConfig()"></div>
+            <div class="field"><label>ARE réellement touchée (€/mois)</label><input type="number" id="cfg-are-reel" placeholder="Ex: 1614" oninput="saveConfig()"></div>
+            <div class="field"><label>Date fin de droits ARE</label><input type="date" id="cfg-fin-droits" oninput="saveConfig()"></div>
+          </div>
+
+          <!-- DONNÉES -->
+          <div class="card">
+            <div class="card-head"><div class="card-head-title">Données locales</div></div>
+            <div class="settings-row"><div><div class="settings-label">Exporter JSON</div><div class="settings-sub">Sauvegarde locale</div></div><button class="btn btn-ghost btn-sm" onclick="exportData()">📤 Export</button></div>
+            <div class="settings-row"><div><div class="settings-label">Importer JSON</div><div class="settings-sub">Restaurer depuis fichier</div></div><button class="btn btn-ghost btn-sm" onclick="document.getElementById('import-file').click()">📥 Import</button></div>
+            <input type="file" id="import-file" accept=".json" style="display:none;" onchange="importData(event)">
+            <div class="settings-row"><div><div class="settings-label" style="color:var(--red);">Tout effacer</div><div class="settings-sub">Irréversible</div></div><button class="btn btn-danger btn-sm" onclick="clearAll()">🗑️ Effacer</button></div>
+          </div>
+
+          <div class="card" style="background:var(--gold-light);border-color:rgba(184,146,42,.3);">
+            <div style="font-size:20px;margin-bottom:8px;">📱</div>
+            <div style="font-size:14px;font-weight:600;margin-bottom:6px;">Installer sur iPhone</div>
+            <div style="font-size:12px;color:var(--ink2);line-height:1.6;">Safari → <strong>Partager</strong> → <strong>"Sur l'écran d'accueil"</strong></div>
+          </div>
+
+          <div style="text-align:center;padding:8px 0 16px;">
+            <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);">Version <span id="app-version-display"></span></div>
+            <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--border);margin-top:4px;" id="app-date-display"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /main-content -->
+
+  <!-- ═══ BOTTOM NAV (mobile) ═══ -->
+  <nav class="bottom-nav">
+    <button class="nav-btn active" id="nav-bilan" onclick="showPage('bilan')"><span class="nav-icon">📊</span><span class="nav-label">Bilan</span></button>
+    <button class="nav-btn" id="nav-contrats" onclick="showPage('contrats')"><span class="nav-icon">📁</span><span class="nav-label">Contrats</span></button>
+    <button class="nav-btn" id="nav-scan" onclick="showPage('scan')"><span class="nav-icon">📄</span><span class="nav-label">Scanner</span></button>
+    <button class="nav-btn" id="nav-ft" onclick="showPage('ft')"><span class="nav-icon">🏛️</span><span class="nav-label">Fr. Travail</span></button>
+    <button class="nav-btn" id="nav-frais" onclick="showPage('frais')"><span class="nav-icon">🧾</span><span class="nav-label">Frais</span></button>
+    <button class="nav-btn" id="nav-settings" onclick="showPage('settings')"><span class="nav-icon">⚙️</span><span class="nav-label">Réglages</span></button>
+  </nav>
+
+  <!-- ═══ SHEET OVERLAY ═══ -->
+  <div class="sheet-overlay" id="sheet-overlay" onclick="closeSheet()"></div>
+
+  <!-- SHEET : Ajouter contrat -->
+  <div class="bottom-sheet" id="sheet-add-contrat">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title" id="sheet-contrat-title">Nouveau contrat</div>
+    <div class="field"><label>Employeur</label><input type="text" id="c-emp" placeholder="Nom de la compagnie"></div>
+    <div class="field"><label>Poste / Nature</label><input type="text" id="c-poste" placeholder="Ex: Comédien, Metteur en scène…"></div>
+    <div class="field-row">
+      <div class="field"><label>Date début</label><input type="date" id="c-debut"></div>
+      <div class="field"><label>Date fin</label><input type="date" id="c-fin"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Nb cachets</label><input type="number" id="c-cachets" placeholder="0" min="0"></div>
+      <div class="field"><label>Heures totales</label><input type="number" id="c-heures" placeholder="0" step="0.5"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Salaire brut (€)</label><input type="number" id="c-brut" placeholder="0.00" step="0.01"></div>
+      <div class="field"><label>Net imposable (€)</label><input type="number" id="c-net-imp" placeholder="0.00" step="0.01"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Net perçu (€)</label><input type="number" id="c-net" placeholder="0.00" step="0.01"></div>
+      <div class="field"><label>PAS prélevé (€)</label><input type="number" id="c-pas" placeholder="0.00" step="0.01"></div>
+    </div>
+    <div class="field"><label>Référence fichier(s)</label><input type="text" id="c-ref" placeholder="Contrat.pdf, Bulletin.pdf…"></div>
+    <div class="field"><label>Commentaire</label><textarea id="c-comment" placeholder="Notes…"></textarea></div>
+    <button class="btn btn-primary" id="btn-save-contrat" onclick="addContrat()" style="margin-top:8px;">✓ Enregistrer</button>
+  </div>
+
+  <!-- SHEET : Ajouter frais -->
+  <div class="bottom-sheet" id="sheet-add-frais">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">Ajouter un frais</div>
+    <div class="field"><label>Catégorie</label>
+      <select id="f-cat">
+        <option value="transport">🚗 Transport (SNCF, parking…)</option>
+        <option value="navigo">🚇 Navigo / Abonnement</option>
+        <option value="km">🛣️ Kilométrique</option>
+        <option value="logiciel">💻 Logiciels (Voxing Pro…)</option>
+        <option value="formation">📚 Formation</option>
+        <option value="materiel">🎭 Matériel & costumes</option>
+        <option value="repas">🍽️ Repas professionnels</option>
+        <option value="agent">🤝 Commission agent</option>
+        <option value="conges">🌴 Congés Spectacle</option>
+        <option value="autre">📦 Autre</option>
+      </select>
+    </div>
+    <div class="field"><label>Description</label><input type="text" id="f-desc" placeholder="A/R Paris, Voxing Pro…"></div>
+    <div class="field-row">
+      <div class="field"><label>Date</label><input type="date" id="f-date"></div>
+      <div class="field"><label>Montant (€)</label><input type="number" id="f-montant" placeholder="0.00" step="0.01"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>KM</label><input type="number" id="f-km" placeholder="0"></div>
+      <div class="field"><label>Repas (nb)</label><input type="number" id="f-repas" placeholder="0"></div>
+    </div>
+    <div class="field"><label>Affilier à un contrat</label><select id="f-contrat-link"><option value="">— Aucun —</option></select></div>
+    <div class="field"><label>Référence fichier</label><input type="text" id="f-ref" placeholder="SNCF_260105.pdf"></div>
+    <button class="btn btn-primary" onclick="addFrais()" style="margin-top:8px;">✓ Enregistrer</button>
+  </div>
+
+  <!-- DETAIL VIEW (mobile slide-in) -->
+  <div class="detail-view" id="detail-view">
+    <div class="detail-header">
+      <button class="detail-back" onclick="closeDetail()">←</button>
+      <div class="detail-title" id="detail-title">Contrat</div>
+      <button class="btn btn-danger btn-sm" onclick="deleteCurrentContrat()">🗑️</button>
+    </div>
+    <div class="detail-body" id="detail-body"></div>
+  </div>
+
+</div><!-- /app-shell -->
+
+<script src="utils.js"></script>
+<script src="bilan.js"></script>
+<script src="contrats.js"></script>
+<script src="scan.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
