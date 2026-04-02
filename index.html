@@ -28,9 +28,14 @@
       <input type="password" id="login-password" placeholder="Ton mot de passe…" autocomplete="current-password">
     </div>
     <button class="btn btn-primary" id="login-btn" onclick="handleLogin()">Se connecter</button>
-    <div style="margin-top:16px;font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;">
-      Pas encore configuré ?<br>
-      <a href="#" onclick="document.getElementById('login-screen').style.display='none';document.getElementById('app-shell').style.display='block';showPage('settings');" style="color:var(--gold);">Accéder aux réglages →</a>
+    <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border2);">
+      <div style="font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;margin-bottom:10px;text-transform:uppercase;letter-spacing:1px;">Première configuration</div>
+      <div class="field">
+        <label>URL Apps Script</label>
+        <input type="text" id="login-apps-script-url" placeholder="https://script.google.com/macros/s/…/exec" style="font-size:13px;">
+      </div>
+      <button class="btn btn-ghost" style="width:100%;font-size:13px;" onclick="saveUrlFromLogin()">Enregistrer l'URL</button>
+      <div id="login-url-saved" style="display:none;margin-top:8px;" class="alert alert-ok">✅ URL enregistrée — entre ton mot de passe</div>
     </div>
   </div>
 </div>
