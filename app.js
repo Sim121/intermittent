@@ -2,7 +2,7 @@
    INTERMITTENT — app.js v3.0
    ============================================================ */
 
-const APP_VERSION = '3.1.4.1';
+const APP_VERSION = '3.1.5';
 const APP_DATE    = '2026-04-01';
 
 const MONTHS     = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
@@ -362,6 +362,14 @@ function renderDetailBody(c) {
       <div class="paiement-toggle">
         <div class="paiement-btn ${c.paye===true?'active-paye':''}" onclick="togglePaiement('${c.id}',true)">✅ Payé</div>
         <div class="paiement-btn ${c.paye===false?'active-attente':''}" onclick="togglePaiement('${c.id}',false)">⏳ En attente</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-head"><div class="card-head-title">Documents rattachés</div></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <span class="tag ${c.hasBulletin ? 'tag-green' : 'tag-gray'}">📄 Bulletin ${c.hasBulletin ? '✓' : 'manquant'}</span>
+        <span class="tag ${c.hasAEM ? 'tag-green' : 'tag-gray'}">📋 AEM ${c.hasAEM ? '✓' : 'manquante'}</span>
+        <span class="tag ${c.hasCS ? 'tag-green' : 'tag-gray'}">🌴 Congés Spectacle ${c.hasCS ? '✓' : 'manquants'}</span>
       </div>
     </div>
     <div class="card">
