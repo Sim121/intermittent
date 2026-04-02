@@ -190,7 +190,7 @@ function renderDetailBody(c) {
     <div class="card" style="background:var(--blue-light);border-color:rgba(26,74,122,.2);">
       <div class="card-head"><div class="card-head-title" style="color:var(--blue);">France Travail</div></div>
       <div class="ft-row"><span class="ft-label">Déclarer en</span><span class="ft-value" style="color:var(--blue);">${getMoisDeclaration(c.dateDebut)}</span></div>
-      <div class="ft-row"><span class="ft-label">Heures</span><span class="ft-value">${c.heures||0} h</span></div>
+      <div class="ft-row"><span class="ft-label">Heures</span><span class="ft-value">${heuresFT(c)} h</span></div>
       <div class="ft-row"><span class="ft-label">Brut à déclarer</span><span class="ft-value">${fmt(c.brutV)}</span></div>
       <div class="ft-row"><span class="ft-label">Jours travaillés</span><span class="ft-value">${nbJours}</span></div>
     </div>
@@ -361,7 +361,7 @@ function renderFT() {
     const d = new Date(c.dateDebut + 'T12:00:00');
     return d.getFullYear() === y && d.getMonth() === m - 1;
   });
-  const totalH    = contrats.reduce((s,c) => s+(c.heures||0), 0);
+  const totalH    = contrats.reduce((s,c) => s+heuresFT(c), 0);
   const totalBrut = contrats.reduce((s,c) => s+(c.brutV||0), 0);
   const totalC    = contrats.reduce((s,c) => s+(c.cachets||0), 0);
   const totalJ    = contrats.reduce((s,c) => {
