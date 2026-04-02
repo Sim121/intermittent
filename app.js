@@ -2,7 +2,7 @@
    INTERMITTENT — app.js v3.0
    ============================================================ */
 
-const APP_VERSION = '3.1.18';
+const APP_VERSION = '3.1.20';
 const APP_DATE    = '2026-04-01';
 
 const MONTHS     = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
@@ -878,8 +878,13 @@ function showScanResult(d) {
       if (sel) sel.value = match.id;
     }
   }
+  const typeLabelsDisplay = {contrat:'📝 Contrat', bulletin:'📄 Bulletin de salaire', aem:'📋 AEM', conges:'🌴 Congés Spectacle', frais:'🧾 Frais'};
   const numF = ['salaire_brut','net_imposable','net_percu','pas_preleve','montant_ttc','montant_ht','cachet_brut'];
-  const rows = Object.entries(d)
+  const rows = '<div style="padding:8px 0;border-bottom:1px solid var(--border2);display:flex;justify-content:space-between;">'
+    + '<span style="font-family:\'DM Mono\',monospace;font-size:10px;color:var(--muted);text-transform:uppercase;">Type détecté</span>'
+    + '<span style="font-size:13px;font-weight:700;">' + (typeLabelsDisplay[d.type] || d.type || '—') + '</span>'
+    + '</div>'
+    + Object.entries(d)
     .filter(([k,v]) => k!=='type' && v!==null && v!=='' && v!==0)
     .map(([k,v]) => `
       <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border2);">
