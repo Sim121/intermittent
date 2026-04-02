@@ -2,7 +2,7 @@
    INTERMITTENT — app.js v3.0
    ============================================================ */
 
-const APP_VERSION = '3.1.7';
+const APP_VERSION = '3.1.8';
 const APP_DATE    = '2026-04-01';
 
 const MONTHS     = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
@@ -793,9 +793,9 @@ function showScanResult(d) {
   card.innerHTML = `
     <div class="card">
       <div class="card-head"><div class="card-head-title">Extraction IA</div><span class="tag tag-green">✓ OK</span></div>
+      ${matchInfo}
       ${rows}
       <button class="btn btn-primary" onclick="confirmScanInline()" style="margin-top:16px;">✓ Enregistrer</button>
-      <button class="btn btn-ghost" style="margin-top:8px;width:100%;" onclick="document.getElementById('scan-result-card').style.display='none'">Annuler</button>
     </div>`;
 }
 
