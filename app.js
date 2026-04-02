@@ -42,6 +42,14 @@ async function appsScriptGet(params) {
   return await r.json();
 }
 
+async function appsScriptLogin(password) {
+  const url = getAppsScriptUrl();
+  if (!url) throw new Error('Apps Script non configuré');
+  const params = new URLSearchParams({ action: 'login', password });
+  const r = await fetch(`${url}?${params}`, { redirect: 'follow' });
+  return await r.json();
+}
+
 async function appsScriptPost(body) {
   const url = getAppsScriptUrl();
   if (!url) throw new Error('Apps Script non configuré');
@@ -117,7 +125,7 @@ async function handleLogin() {
   error.classList.remove('show');
 
   try {
-    const res = await appsScriptPost({ action: 'login', password });
+    const res = await appsScriptLogin(password);
     btn.textContent = 'Se connecter';
     if (res.ok) {
       saveSession(res.token, res.expiresAt);
