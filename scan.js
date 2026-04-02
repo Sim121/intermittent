@@ -123,7 +123,34 @@ function showScanResult(d) {
 
   // Correspondance contrat existant
   let matchInfo = '';
-  if (['bulletin','aem','conges','contrat'].includes(d.type)) {
+  // Vérifie d'abord si c'est un doublon
+  const docTypeForDup = d.type || currentDocType;
+  const duplicate = findDuplicateContrat(d, docTypeForDup);
+  if (duplicate) {
+    const typeLabelsShort = {contrat:'Contrat', bulletin:'Bulletin', aem:'AEM', conges:'Congés Spectacle'};
+    matchInfo = '<div class="alert alert-warn" style="margin-bottom:12px;">'
+      + '⚠️ <strong>Document possiblement déjà chargé</strong><br>'
+      + '<small>Un ' + (typeLabelsShort[docTypeForDup]||docTypeForDup) + ' existe déjà pour <strong>' + duplicate.employeur + '</strong> (' + fmtDate(duplicate.dateDebut) + ')</small>'
+      + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;">'
+      + '<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px;font-size:11px;">'
+      + '<div style="font-weight:700;margin-bottom:6px;color:var(--muted);">EXISTANT</div>'
+      + '<div>💰 ' + fmt(duplicate.brutV) + ' brut</div>'
+      + '<div>📅 ' + fmtDate(duplicate.dateDebut) + '</div>'
+      + '<div>🎭 ' + (duplicate.cachets||0) + ' cachet(s)</div>'
+      + '<button class="btn btn-ghost btn-sm" style="width:100%;margin-top:8px;" onclick="keepExisting(\'' + duplicate.id + '\')">✓ Garder existant</button>'
+      + '</div>'
+      + '<div style="background:var(--accent-light);border:1px solid var(--accent);border-radius:8px;padding:10px;font-size:11px;">'
+      + '<div style="font-weight:700;margin-bottom:6px;color:var(--accent);">NOUVEAU</div>'
+      + '<div>💰 ' + fmt(d.salaire_brut||d.cachet_brut_total||0) + ' brut</div>'
+      + '<div>📅 ' + fmtDate(parseDate(d.date_travail)||parseDate(d.date_debut)||'') + '</div>'
+      + '<div>🎭 ' + (d.cachets||d.nb_cachets||0) + ' cachet(s)</div>'
+      + '<button class="btn btn-primary btn-sm" style="width:100%;margin-top:8px;" onclick="keepNew()">↑ Remplacer</button>'
+      + '</div>'
+      + '</div>'
+      + '</div>';
+    // Cache le bouton Enregistrer jusqu'au choix
+    setTimeout(() => { const btn = document.getElementById('btn-confirm-scan'); if (btn) btn.style.display = 'none'; }, 50);
+  } else if (['bulletin','aem','conges','contrat'].includes(d.type)) {
     const dateStr = parseDate(d.date_travail) || parseDate(d.date_debut) || parseDate(d.date_fin) || (() => {
       const mi = MONTHS.indexOf(d.mois);
       const an = parseInt(d.annee);
@@ -295,6 +322,50 @@ function updateScanField(key, value) {
   }
   // Referme le champ
   toggleScanField(key);
+}
+
+function findDuplicateContrat(d, docType) {
+  // Cherche un contrat qui a déjà ce type de document avec le même employeur/période
+  const dateStr = parseDate(d.date_travail) || parseDate(d.date_debut) || parseDate(d.date_fin) || (() => {
+    const mi = MONTHS.indexOf(d.mois);
+    const an = parseInt(d.annee);
+    return (mi >= 0 && !isNaN(an)) ? `${an}-${String(mi+1).padStart(2,'0')}-01` : null;
+  })();
+  if (!dateStr) return null;
+
+  const empNorm = (d.employeur||'').toUpperCase().replace(/\s+/g,'');
+  const [y, m]  = dateStr.split('-').map(Number);
+
+  return state.contrats.find(c => {
+    if (!c.dateDebut) return false;
+    const cd = new Date(c.dateDebut + 'T12:00:00');
+    if (cd.getFullYear() !== y || cd.getMonth() !== m-1) return false;
+    const cNorm = c.employeur.toUpperCase().replace(/\s+/g,'');
+    const sameEmp = cNorm === empNorm || cNorm.includes(empNorm.slice(0,6)) || empNorm.includes(cNorm.slice(0,6));
+    if (!sameEmp) return false;
+    // Vérifie si ce type de document est déjà présent
+    if (docType === 'bulletin' && c.hasBulletin) return true;
+    if (docType === 'aem'      && c.hasAEM)      return true;
+    if (docType === 'conges'   && c.hasCS)        return true;
+    if (docType === 'contrat'  && c.hasContrat)   return true;
+    return false;
+  });
+}
+
+function keepExisting(contratId) {
+  // On garde l'existant, on annule le scan
+  pendingScanData = null;
+  document.getElementById('scan-result-card').style.display = 'none';
+  toast('✅ Document existant conservé');
+  if (fileQueue.length > 0) nextInQueue();
+}
+
+function keepNew() {
+  // On remplace — affiche le bouton Enregistrer
+  const banner = document.querySelector('.alert-warn');
+  if (banner) banner.remove();
+  const btn = document.getElementById('btn-confirm-scan');
+  if (btn) btn.style.display = 'block';
 }
 
 function confirmScanInline() {
