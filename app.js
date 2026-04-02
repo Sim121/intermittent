@@ -2,7 +2,7 @@
    INTERMITTENT — app.js v3.0
    ============================================================ */
 
-const APP_VERSION = '3.1.16';
+const APP_VERSION = '3.1.17';
 const APP_DATE    = '2026-04-01';
 
 const MONTHS     = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
@@ -759,15 +759,39 @@ function handleFile(e) {
   processFileQueue(files);
 }
 
+let fileQueue = [];
+let fileQueueIndex = 0;
+
 async function processFileQueue(files) {
-  for (const file of files) {
-    toast(`📄 Traitement : ${file.name}`);
-    await processFile(file);
-    // Petite pause entre chaque pour ne pas surcharger
-    await new Promise(r => setTimeout(r, 500));
-  }
-  toast(`✅ ${files.length} documents traités`);
+  fileQueue = Array.from(files);
+  fileQueueIndex = 0;
+  toast(`📂 ${fileQueue.length} documents à traiter — confirme chaque extraction`);
+  await processFile(fileQueue[fileQueueIndex]);
 }
+
+function nextInQueue() {
+  fileQueueIndex++;
+  if (fileQueueIndex < fileQueue.length) {
+    toast(`📄 Document ${fileQueueIndex+1}/${fileQueue.length} : ${fileQueue[fileQueueIndex].name}`);
+    setTimeout(() => processFile(fileQueue[fileQueueIndex]), 300);
+  } else {
+    fileQueue = [];
+    fileQueueIndex = 0;
+    toast(`✅ Tous les documents traités`);
+  }
+}
+
+async function processFile(file) {
+  if (!getAppsScriptUrl()) { showPage('settings'); toast('⚙️ Configure Apps Script'); return; }
+  if (!isSessionValid()) { showLogin(); return; }
+
+  // Grise les pills et le sélecteur pendant l'upload
+  document.querySelectorAll('.pill').forEach(p => { p.style.pointerEvents='none'; p.style.opacity='0.5'; });
+  const linkCard = document.getElementById('scan-contrat-link-card');
+  if (linkCard) linkCard.style.opacity = '0.5';
+
+  document.getElementById('scan-loading').style.display = 'block';
+  document.getElementById('scan-result-card').style.display = 'none';
 
 function fileToBase64(f) {
   return new Promise((res, rej) => {
@@ -799,26 +823,61 @@ async function processFile(file) {
     document.getElementById('scan-result-card').style.display = 'block';
     document.getElementById('scan-result-card').innerHTML = `<div class="alert alert-err">❌ ${e.message}</div>`;
   }
+  // Réactive les pills
+  document.querySelectorAll('.pill').forEach(p => { p.style.pointerEvents=''; p.style.opacity=''; });
+  const lc = document.getElementById('scan-contrat-link-card');
+  if (lc) lc.style.opacity = '';
   document.getElementById('file-input').value = '';
 }
+
+function cancelScan() {
+  pendingScanData = null;
+  document.getElementById('scan-result-card').style.display = 'none';
+  document.querySelectorAll('.pill').forEach(p => { p.style.pointerEvents=''; p.style.opacity=''; });
+  const lc = document.getElementById('scan-contrat-link-card');
+  if (lc) lc.style.opacity = '';
+}   
 
 function showScanResult(d) {
   const card = document.getElementById('scan-result-card');
   card.style.display = 'block';
 
+  // Détecte si le type reconnu diffère du type sélectionné
+  let typeWarning = '';
+  const typeLabels = {contrat:'Contrat', bulletin:'Bulletin', aem:'AEM', conges:'Congés Spectacle', frais:'Frais'};
+  if (d.type && d.type !== currentDocType) {
+    typeWarning = `<div class="alert alert-warn" style="margin-bottom:12px;">
+      ⚠️ L'IA a reconnu ce document comme <strong>${typeLabels[d.type]||d.type}</strong> 
+      alors que tu as sélectionné <strong>${typeLabels[currentDocType]}</strong>.<br>
+      <div style="display:flex;gap:8px;margin-top:8px;">
+        <button class="btn btn-ghost btn-sm" onclick="currentDocType='${d.type}';showScanResult(pendingScanData)">
+          Utiliser ${typeLabels[d.type]||d.type}
+        </button>
+        <button class="btn btn-ghost btn-sm" onclick="this.closest('.alert-warn').remove()">
+          Garder ${typeLabels[currentDocType]}
+        </button>
+      </div>
+    </div>`;
+  }
+
   // Détecte une correspondance potentielle avant d'afficher
   let matchInfo = '';
-  if (d.type === 'bulletin' || d.type === 'aem' || d.type === 'conges') {
+  if (d.type === 'bulletin' || d.type === 'aem' || d.type === 'conges' || d.type === 'contrat') {
     const mi = MONTHS.indexOf(d.mois);
     const an = d.annee || new Date().getFullYear();
     const dateStr = d.date_travail || d.date_debut || (mi >= 0 ? `${an}-${String(mi+1).padStart(2,'0')}-01` : new Date().toISOString().slice(0,10));
     const match = findMatchingContrat(d.employeur, dateStr);
     if (match) {
       matchInfo = `<div class="alert alert-ok" style="margin-bottom:12px;">
-        🔗 Correspondance trouvée : <strong>${match.employeur}</strong> (${fmtDate(match.dateDebut)})
-        <br><small>Ce document sera rattaché à ce contrat.</small>
+        🔗 Correspondance trouvée : <strong>${match.employeur}</strong> (${fmtDate(match.dateDebut)})<br>
+        <small>Confirmes-tu le rattachement à ce contrat ?</small>
+        <div style="display:flex;gap:8px;margin-top:8px;">
+          <button class="btn btn-primary btn-sm" onclick="confirmRattachement('${match.id}')">✓ Oui, rattacher</button>
+          <button class="btn btn-ghost btn-sm" onclick="refuserRattachement()">Non, créer nouveau</button>
+        </div>
       </div>`;
-      // Pré-sélectionne dans le select
+      // Masque le bouton Enregistrer jusqu'à confirmation
+      document.getElementById('btn-confirm-scan').style.display = 'none';
       const sel = document.getElementById('scan-contrat-select');
       if (sel) sel.value = match.id;
     }
@@ -836,7 +895,8 @@ function showScanResult(d) {
       <div class="card-head"><div class="card-head-title">Extraction IA</div><span class="tag tag-green">✓ OK</span></div>
       ${matchInfo}
       ${rows}
-      <button class="btn btn-primary" onclick="confirmScanInline()" style="margin-top:16px;">✓ Enregistrer</button>
+      <button class="btn btn-primary" id="btn-confirm-scan" onclick="confirmScanInline()" style="margin-top:16px;">✓ Enregistrer</button>
+      <button class="btn btn-ghost" style="margin-top:8px;width:100%;" onclick="cancelScan()">Annuler</button>
     </div>`;
 }
 
@@ -855,6 +915,21 @@ function findMatchingContrat(employeur, dateStr) {
                      empNorm.includes(cNorm.slice(0,6));
     return sameMonth && empMatch;
   });
+}
+
+function confirmRattachement(id) {
+  const sel = document.getElementById('scan-contrat-select');
+  if (sel) sel.value = id;
+  document.getElementById('btn-confirm-scan').style.display = 'block';
+  // Retire la bannière de confirmation
+  document.querySelector('.alert-ok')?.remove();
+}
+
+function refuserRattachement() {
+  const sel = document.getElementById('scan-contrat-select');
+  if (sel) sel.value = '';
+  document.getElementById('btn-confirm-scan').style.display = 'block';
+  document.querySelector('.alert-ok')?.remove();
 }
 
 function confirmScanInline() {
@@ -986,6 +1061,8 @@ function confirmScanInline() {
   pendingScanData = null;
   document.getElementById('scan-result-card').style.display = 'none';
   renderBilan();
+  // Passe au document suivant si queue active
+  if (fileQueue.length > 0) nextInQueue();
 }
 
 // ============================================================
