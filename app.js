@@ -169,6 +169,7 @@ function showLogin() {
 function showApp() {
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('app-shell').style.display = 'block';
+   showPage('bilan');
 }
 
 // ============================================================
