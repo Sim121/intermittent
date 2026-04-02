@@ -336,7 +336,22 @@ body {
     padding: 0 32px;
   }
 
-  .section { padding: 0 32px; }
+  .section { padding: 0 32px; max-width: 1200px; }
+
+  #page-bilan .page-wrap { padding: 24px 0 48px; }
+
+  #page-bilan .section {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    align-items: start;
+  }
+
+  #page-bilan .section .section-title,
+  #page-bilan .section .section-sub,
+  #page-bilan .section .stat-row {
+    grid-column: 1 / -1;
+  }
 
   /* Stats row desktop */
   .stat-row { margin-bottom: 20px; }
