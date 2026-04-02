@@ -399,8 +399,8 @@ function renderDetailBody(c) {
     </div>
     ${c.ref ? `<div class="card"><div class="card-head"><div class="card-head-title">Documents</div></div><div style="font-family:'DM Mono',monospace;font-size:12px;line-height:1.8;">${c.ref}</div></div>` : ''}
     ${c.comment ? `<div class="card"><div class="card-head"><div class="card-head-title">Commentaire</div></div><div style="font-size:13px;line-height:1.6;">${c.comment}</div></div>` : ''}
-    <button class="btn btn-ghost" onclick="editContrat('${c.id}')" style="width:100%;margin-bottom:10px;">✏️ Modifier</button>
-  `;
+    <button class="btn btn-ghost" onclick="editContrat('${c.id}')" style="width:100%;margin-bottom:8px;">✏️ Modifier</button>
+    <button class="btn btn-ghost" onclick="openMergeContrat('${c.id}')" style="width:100%;margin-bottom:10px;">🔀 Fusionner avec un autre contrat</button>  `;
 
   document.getElementById('detail-body').innerHTML = html;
   const dp = document.getElementById('desktop-detail-body');
