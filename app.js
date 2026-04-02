@@ -710,32 +710,108 @@ function showScanResult(d) {
     </div>`;
 }
 
+// Trouve un contrat existant correspondant (même employeur + même période)
+function findMatchingContrat(employeur, dateStr) {
+  if (!employeur || !dateStr) return null;
+  const empNorm = employeur.toLowerCase().trim();
+  const [y, m] = dateStr.split('-').map(Number);
+  return state.contrats.find(c => {
+    if (!c.dateDebut) return false;
+    const cd = new Date(c.dateDebut);
+    const sameMonth = cd.getFullYear() === y && cd.getMonth() === m - 1;
+    const empMatch = c.employeur.toLowerCase().trim().includes(empNorm.slice(0,6)) ||
+                     empNorm.includes(c.employeur.toLowerCase().trim().slice(0,6));
+    return sameMonth && empMatch;
+  });
+}
+
 function confirmScanInline() {
   if (!pendingScanData) return;
   const d = pendingScanData;
   const linkedId = document.getElementById('scan-contrat-select')?.value || '';
 
   if (d.type === 'contrat' || currentDocType === 'contrat') {
-    state.contrats.push({ id:Date.now().toString(), employeur:d.employeur||'', poste:d.poste||d.nature_contrat||'', dateDebut:d.date_debut||new Date().toISOString().slice(0,10), dateFin:d.date_fin||d.date_debut||new Date().toISOString().slice(0,10), cachets:d.cachets||0, heures:d.h_prevues||0, brutV:d.cachet_brut_total||0, netImp:0, netV:0, pasV:0, paye:null, ref:'', comment:'', docs:[] });
+    state.contrats.push({
+      id: Date.now().toString(),
+      employeur: d.employeur||'', poste: d.poste||d.nature_contrat||'',
+      dateDebut: d.date_debut||new Date().toISOString().slice(0,10),
+      dateFin: d.date_fin||d.date_debut||new Date().toISOString().slice(0,10),
+      cachets: d.cachets||0, heures: d.h_prevues||0,
+      brutV: d.cachet_brut_total||0, netImp:0, netV:0, pasV:0,
+      paye: null, ref:'', comment:'', docs:[],
+      hasBulletin: false, hasAEM: false, hasCS: false
+    });
     toast('✅ Contrat enregistré');
+
   } else if (d.type === 'bulletin' || currentDocType === 'bulletin') {
-    if (linkedId) {
-      const c = state.contrats.find(x => x.id === linkedId);
-      if (c) { if(!c.brutV)c.brutV=d.salaire_brut||0; if(!c.netImp)c.netImp=d.net_imposable||0; if(!c.netV)c.netV=d.net_percu||0; if(!c.pasV)c.pasV=d.pas_preleve||0; if(!c.heures)c.heures=d.h_totales||0; if(!c.cachets)c.cachets=d.cachets||0; toast('✅ Bulletin rattaché'); }
+    const mi = MONTHS.indexOf(d.mois);
+    const an = d.annee || new Date().getFullYear();
+    const dateStr = mi >= 0 ? `${an}-${String(mi+1).padStart(2,'0')}-01` : new Date().toISOString().slice(0,10);
+    const match = linkedId ? state.contrats.find(x => x.id === linkedId) : findMatchingContrat(d.employeur, dateStr);
+
+    if (match) {
+      if (!match.brutV) match.brutV = d.salaire_brut||0;
+      if (!match.netImp) match.netImp = d.net_imposable||0;
+      if (!match.netV) match.netV = d.net_percu||0;
+      if (!match.pasV) match.pasV = d.pas_preleve||0;
+      if (!match.heures) match.heures = d.h_totales||0;
+      if (!match.cachets) match.cachets = d.cachets||0;
+      match.hasBulletin = true;
+      toast('✅ Bulletin rattaché à : ' + match.employeur);
     } else {
-      const mi = MONTHS.indexOf(d.mois); const an = d.annee||new Date().getFullYear();
-      const ds = mi>=0 ? `${an}-${String(mi+1).padStart(2,'0')}-01` : new Date().toISOString().slice(0,10);
-      state.contrats.push({ id:Date.now().toString(), employeur:d.employeur||'', poste:'', dateDebut:ds, dateFin:ds, cachets:d.cachets||0, heures:d.h_totales||0, brutV:d.salaire_brut||0, netImp:d.net_imposable||0, netV:d.net_percu||0, pasV:d.pas_preleve||0, paye:null, ref:'', comment:'', docs:[] });
+      state.contrats.push({
+        id: Date.now().toString(), employeur: d.employeur||'', poste:'',
+        dateDebut: dateStr, dateFin: dateStr,
+        cachets: d.cachets||0, heures: d.h_totales||0,
+        brutV: d.salaire_brut||0, netImp: d.net_imposable||0,
+        netV: d.net_percu||0, pasV: d.pas_preleve||0,
+        paye: null, ref:'', comment:'', docs:[],
+        hasBulletin: true, hasAEM: false, hasCS: false
+      });
       toast('✅ Bulletin → nouveau contrat');
     }
+
   } else if (d.type === 'aem' || currentDocType === 'aem') {
-    if (linkedId) { const c=state.contrats.find(x=>x.id===linkedId); if(c){if(!c.heures)c.heures=d.nb_heures||0;if(!c.cachets)c.cachets=d.nb_cachets||0;if(!c.brutV)c.brutV=d.salaire_brut||0;toast('✅ AEM rattachée');} }
-    else { const mi=MONTHS.indexOf(d.mois);const an=d.annee||new Date().getFullYear();const ds=mi>=0?`${an}-${String(mi+1).padStart(2,'0')}-01`:new Date().toISOString().slice(0,10); state.contrats.push({id:Date.now().toString(),employeur:d.employeur||'',poste:'AEM',dateDebut:ds,dateFin:ds,cachets:d.nb_cachets||0,heures:d.nb_heures||0,brutV:d.salaire_brut||0,netImp:0,netV:0,pasV:0,paye:null,ref:'AEM',comment:'',docs:[]});toast('✅ AEM enregistrée'); }
+    // Date AEM : utiliser mois+annee, pas la date du jour de travail
+    const mi = MONTHS.indexOf(d.mois);
+    const an = d.annee || new Date().getFullYear();
+    const dateStr = mi >= 0 ? `${an}-${String(mi+1).padStart(2,'0')}-01` : new Date().toISOString().slice(0,10);
+    const match = linkedId ? state.contrats.find(x => x.id === linkedId) : findMatchingContrat(d.employeur, dateStr);
+
+    if (match) {
+      if (!match.heures) match.heures = d.nb_heures||0;
+      if (!match.cachets) match.cachets = d.nb_cachets||0;
+      if (!match.brutV) match.brutV = d.salaire_brut||0;
+      match.hasAEM = true;
+      toast('✅ AEM rattachée à : ' + match.employeur);
+    } else {
+      state.contrats.push({
+        id: Date.now().toString(), employeur: d.employeur||'', poste:'AEM',
+        dateDebut: dateStr, dateFin: dateStr,
+        cachets: d.nb_cachets||0, heures: d.nb_heures||0,
+        brutV: d.salaire_brut||0, netImp:0, netV:0, pasV:0,
+        paye: null, ref:'AEM', comment:'', docs:[],
+        hasBulletin: false, hasAEM: true, hasCS: false
+      });
+      toast('✅ AEM → nouveau contrat');
+    }
+
   } else if (d.type === 'conges' || currentDocType === 'conges') {
-    state.frais.push({ id:Date.now().toString(), cat:'conges', desc:'Congés Spectacle '+(d.periode||d.organisme||''), date:d.date_versement||new Date().toISOString().slice(0,10), montant:d.montant_verse||0, km:0, repas:0, ref:'', contratId:'' });
+    state.frais.push({
+      id: Date.now().toString(), cat:'conges',
+      desc: 'Congés Spectacle '+(d.periode||d.organisme||''),
+      date: d.date_versement||new Date().toISOString().slice(0,10),
+      montant: d.montant_verse||0, km:0, repas:0, ref:'', contratId:''
+    });
     toast('✅ Congés Spectacle enregistrés');
+
   } else if (d.type === 'frais' || currentDocType === 'frais') {
-    state.frais.push({ id:Date.now().toString(), cat:d.categorie||'autre', desc:d.description||d.nature||'', date:d.date||new Date().toISOString().slice(0,10), montant:d.montant_ttc||0, km:0, repas:0, ref:'', contratId:linkedId||'' });
+    state.frais.push({
+      id: Date.now().toString(), cat: d.categorie||'autre',
+      desc: d.description||d.nature||'',
+      date: d.date||new Date().toISOString().slice(0,10),
+      montant: d.montant_ttc||0, km:0, repas:0, ref:'', contratId: linkedId||''
+    });
     toast('✅ Frais enregistré');
   }
 
@@ -795,7 +871,8 @@ function fmtDate(s) {
 // RENDER BILAN
 // ============================================================
 function renderBilan() {
-  const cs = state.contrats;
+  const selectedYear = parseInt(document.getElementById('bilan-year-select')?.value) || new Date().getFullYear();
+  const cs = state.contrats.filter(c => c.dateDebut && new Date(c.dateDebut).getFullYear() === selectedYear);
   const tBrut   = cs.reduce((s,c) => s+(c.brutV||0), 0);
   const tNet    = cs.reduce((s,c) => s+(c.netV||0), 0);
   const tNetImp = cs.reduce((s,c) => s+(c.netImp||0), 0);
@@ -995,7 +1072,19 @@ function clearAll() {
 }
 
 function renderAll() {
+  populateYearSelect();
   renderBilan(); renderContrats(); renderFrais();
+}
+
+function populateYearSelect() {
+  const sel = document.getElementById('bilan-year-select');
+  if (!sel) return;
+  const years = [...new Set(state.contrats.map(c => c.dateDebut ? new Date(c.dateDebut).getFullYear() : null).filter(Boolean))];
+  const currentYear = new Date().getFullYear();
+  if (!years.includes(currentYear)) years.push(currentYear);
+  years.sort((a,b) => b - a);
+  const current = sel.value || currentYear;
+  sel.innerHTML = years.map(y => `<option value="${y}" ${y==current?'selected':''}>${y}</option>`).join('');
 }
 
 // ============================================================
