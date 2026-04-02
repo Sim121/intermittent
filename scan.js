@@ -1,1 +1,372 @@
+/* ============================================================
+   INTERMITTENT — scan.js
+   Scan de documents, reconnaissance IA, rattachement
+   ============================================================ */
 
+let fileQueue      = [];
+let fileQueueIndex = 0;
+
+// ── UPLOAD ──
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('dropzone').classList.remove('active');
+  const files = Array.from(e.dataTransfer.files);
+  if (files.length === 1) processFile(files[0]);
+  else if (files.length > 1) processFileQueue(files);
+}
+
+function handleFile(e) {
+  const files = Array.from(e.target.files);
+  if (!files.length) return;
+  if (files.length === 1) { processFile(files[0]); return; }
+  processFileQueue(files);
+}
+
+async function processFileQueue(files) {
+  fileQueue      = Array.from(files);
+  fileQueueIndex = 0;
+  toast(`📂 ${fileQueue.length} documents à traiter — confirme chaque extraction`);
+  await processFile(fileQueue[fileQueueIndex]);
+}
+
+function nextInQueue() {
+  fileQueueIndex++;
+  if (fileQueueIndex < fileQueue.length) {
+    toast(`📄 Document ${fileQueueIndex+1}/${fileQueue.length} : ${fileQueue[fileQueueIndex].name}`);
+    setTimeout(() => processFile(fileQueue[fileQueueIndex]), 300);
+  } else {
+    fileQueue      = [];
+    fileQueueIndex = 0;
+    toast('✅ Tous les documents traités');
+  }
+}
+
+function fileToBase64(f) {
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload  = () => res(r.result.split(',')[1]);
+    r.onerror = rej;
+    r.readAsDataURL(f);
+  });
+}
+
+async function processFile(file) {
+  if (!getAppsScriptUrl()) { showPage('settings'); toast('⚙️ Configure Apps Script'); return; }
+  if (!isSessionValid())   { showLogin(); return; }
+
+  // Grise l'interface pendant le traitement
+  document.querySelectorAll('.pill').forEach(p => { p.style.pointerEvents = 'none'; p.style.opacity = '0.5'; });
+  const linkCard = document.getElementById('scan-contrat-link-card');
+  if (linkCard) linkCard.style.opacity = '0.5';
+
+  document.getElementById('scan-loading').style.display    = 'block';
+  document.getElementById('scan-result-card').style.display = 'none';
+
+  try {
+    const base64 = await fileToBase64(file);
+    const res    = await appsScriptPost({ action: 'scanDoc', docType: currentDocType, base64Data: base64, mediaType: file.type });
+    document.getElementById('scan-loading').style.display = 'none';
+    if (res.ok) {
+      pendingScanData = res.data;
+      showScanResult(res.data);
+    } else {
+      document.getElementById('scan-result-card').style.display  = 'block';
+      document.getElementById('scan-result-card').innerHTML = '<div class="alert alert-err">❌ ' + (res.error||'Erreur scan') + '</div>';
+    }
+  } catch(e) {
+    document.getElementById('scan-loading').style.display    = 'none';
+    document.getElementById('scan-result-card').style.display = 'block';
+    document.getElementById('scan-result-card').innerHTML = '<div class="alert alert-err">❌ ' + e.message + '</div>';
+  }
+
+  // Réactive l'interface
+  document.querySelectorAll('.pill').forEach(p => { p.style.pointerEvents = ''; p.style.opacity = ''; });
+  const lc = document.getElementById('scan-contrat-link-card');
+  if (lc) lc.style.opacity = '';
+  document.getElementById('file-input').value = '';
+}
+
+// ── AFFICHAGE RÉSULTAT ──
+function showScanResult(d) {
+  const card = document.getElementById('scan-result-card');
+  card.style.display = 'block';
+
+  const typeLabels = {contrat:'📝 Contrat', bulletin:'📄 Bulletin', aem:'📋 AEM', conges:'🌴 Congés Spectacle', frais:'🧾 Frais'};
+
+  // Sélecteur de type
+  const typeSelector = '<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;padding:10px 14px;background:var(--bg2);border-radius:var(--r-sm);">'
+    + '<span style="font-family:\'DM Mono\',monospace;font-size:10px;color:var(--muted);text-transform:uppercase;">Type détecté</span>'
+    + '<select onchange="overrideDocType(this.value)" style="flex:1;padding:6px 10px;border-radius:8px;border:1.5px solid var(--border);background:var(--surface);font-size:13px;font-weight:600;">'
+    + Object.entries(typeLabels).map(([v,l]) => '<option value="' + v + '"' + (v === d.type ? ' selected' : '') + '>' + l + '</option>').join('')
+    + '</select>'
+    + '</div>';
+
+  // Correspondance contrat existant
+  let matchInfo = '';
+  if (['bulletin','aem','conges','contrat'].includes(d.type)) {
+    const dateStr = parseDate(d.date_travail) || parseDate(d.date_debut) || parseDate(d.date_fin) || (() => {
+      const mi = MONTHS.indexOf(d.mois);
+      const an = parseInt(d.annee);
+      return (mi >= 0 && !isNaN(an)) ? `${an}-${String(mi+1).padStart(2,'0')}-01` : new Date().toISOString().slice(0,10);
+    })();
+    const match = findMatchingContrat(d.employeur, dateStr);
+    if (match) {
+      matchInfo = '<div class="alert alert-ok" style="margin-bottom:12px;">'
+        + '🔗 Correspondance trouvée : <strong>' + match.employeur + '</strong> (' + fmtDate(match.dateDebut) + ')<br>'
+        + '<small>Confirmes-tu le rattachement à ce contrat ?</small>'
+        + '<div style="display:flex;gap:8px;margin-top:8px;">'
+        + '<button class="btn btn-primary btn-sm" onclick="confirmRattachement(\'' + match.id + '\')">✓ Oui, rattacher</button>'
+        + '<button class="btn btn-ghost btn-sm" onclick="refuserRattachement()">Non, créer nouveau</button>'
+        + '</div></div>';
+      const btn = document.getElementById('btn-confirm-scan');
+      if (btn) btn.style.display = 'none';
+      const sel = document.getElementById('scan-contrat-select');
+      if (sel) sel.value = match.id;
+    }
+  }
+
+  // Tableau des données extraites
+  const numF = ['salaire_brut','net_imposable','net_percu','pas_preleve','montant_ttc','montant_ht','cachet_brut'];
+  const intF = ['cachets','nb_cachets','nb_jours_cachets','nb_heures','h_totales','h_cachets','annee'];
+  const rows = '<div style="padding:8px 0;border-bottom:1px solid var(--border2);display:flex;justify-content:space-between;">'
+    + '<span style="font-family:\'DM Mono\',monospace;font-size:10px;color:var(--muted);text-transform:uppercase;">Type initialement détecté</span>'
+    + '<span style="font-size:13px;font-weight:700;">' + (typeLabels[d.type] || d.type || '—') + '</span>'
+    + '</div>'
+    + Object.entries(d)
+      .filter(([k,v]) => k !== 'type' && v !== null && v !== '' && v !== 0)
+      .map(([k,v]) =>
+        '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border2);">'
+        + '<span style="font-family:\'DM Mono\',monospace;font-size:10px;color:var(--muted);text-transform:uppercase;">' + k.replace(/_/g,' ') + '</span>'
+        + '<span style="font-size:13px;font-weight:600;">'
+        + (intF.includes(k) ? v : (numF.some(n => k.includes(n.split('_')[0])) || k.includes('brut') || k.includes('net') || k.includes('montant') ? fmt(v) : v))
+        + '</span></div>'
+      ).join('');
+
+  card.innerHTML = '<div class="card">'
+    + '<div class="card-head"><div class="card-head-title">Extraction IA</div><span class="tag tag-green">✓ OK</span></div>'
+    + typeSelector
+    + matchInfo
+    + rows
+    + '<button class="btn btn-primary" id="btn-confirm-scan" onclick="confirmScanInline()" style="margin-top:16px;">✓ Enregistrer comme ' + (typeLabels[d.type]||d.type) + '</button>'
+    + '<button class="btn btn-ghost" style="margin-top:8px;width:100%;" onclick="cancelScan()">Annuler</button>'
+    + '</div>';
+}
+
+// ── ACTIONS ──
+function overrideDocType(type) {
+  if (pendingScanData) {
+    pendingScanData.type = type;
+    const typeLabels = {contrat:'📝 Contrat', bulletin:'📄 Bulletin', aem:'📋 AEM', conges:'🌴 Congés Spectacle', frais:'🧾 Frais'};
+    const btn = document.getElementById('btn-confirm-scan');
+    if (btn) btn.textContent = '✓ Enregistrer comme ' + (typeLabels[type]||type);
+  }
+}
+
+function cancelScan() {
+  pendingScanData = null;
+  document.getElementById('scan-result-card').style.display = 'none';
+  document.querySelectorAll('.pill').forEach(p => { p.style.pointerEvents = ''; p.style.opacity = ''; });
+  const lc = document.getElementById('scan-contrat-link-card');
+  if (lc) lc.style.opacity = '';
+  if (fileQueue.length > 0) {
+    fileQueue      = [];
+    fileQueueIndex = 0;
+    toast('❌ File d\'attente annulée');
+  }
+}
+
+function confirmRattachement(id) {
+  const sel = document.getElementById('scan-contrat-select');
+  if (sel) sel.value = id;
+  const btn = document.getElementById('btn-confirm-scan');
+  if (btn) btn.style.display = 'block';
+  document.querySelector('.alert-ok')?.remove();
+}
+
+function refuserRattachement() {
+  const sel = document.getElementById('scan-contrat-select');
+  if (sel) sel.value = '';
+  const btn = document.getElementById('btn-confirm-scan');
+  if (btn) btn.style.display = 'block';
+  const banner = document.querySelector('.alert-ok');
+  if (banner) {
+    banner.className = 'alert alert-warn';
+    banner.innerHTML = '📄 Ce document créera un <strong>nouveau contrat</strong>.'
+      + '<div style="display:flex;gap:8px;margin-top:8px;">'
+      + '<button class="btn btn-ghost btn-sm" onclick="revenirRattachement()">↩ Finalement, rattacher</button>'
+      + '</div>';
+  }
+}
+
+function revenirRattachement() {
+  if (pendingScanData) showScanResult(pendingScanData);
+}
+
+// ── CORRESPONDANCE ──
+function findMatchingContrat(employeur, dateStr) {
+  if (!employeur) return null;
+  const empNorm = employeur.toUpperCase().replace(/\s+/g, '').trim();
+  if (!empNorm || empNorm.length < 3) return null;
+
+  const parsedDate = parseDate(dateStr);
+  if (!parsedDate) return null;
+  const [y, m] = parsedDate.split('-').map(Number);
+  if (!y || !m || isNaN(y) || isNaN(m)) return null;
+
+  const candidates = state.contrats.filter(c => {
+    if (!c.dateDebut) return false;
+    const cd = new Date(c.dateDebut + 'T12:00:00');
+    return cd.getFullYear() === y && cd.getMonth() === m - 1;
+  });
+
+  if (!candidates.length) return null;
+
+  return candidates.map(c => {
+    const cNorm = c.employeur.toUpperCase().replace(/\s+/g, '').trim();
+    let score = 0;
+    if (cNorm === empNorm) score += 10;
+    else if (cNorm.includes(empNorm.slice(0,6)) || empNorm.includes(cNorm.slice(0,6))) score += 5;
+    return { c, score };
+  })
+  .filter(x => x.score > 0)
+  .sort((a,b) => b.score - a.score)[0]?.c || null;
+}
+
+// ── ENREGISTREMENT ──
+function confirmScanInline() {
+  if (!pendingScanData) return;
+  const d       = pendingScanData;
+  const docType = d.type || currentDocType;
+  const linkedId = document.getElementById('scan-contrat-select')?.value || '';
+
+  if (docType === 'contrat') {
+    const dateDebut = parseDate(d.date_debut) || parseDate(d.date_travail) || new Date().toISOString().slice(0,10);
+    const dateFin   = parseDate(d.date_fin) || dateDebut;
+    const match     = linkedId ? state.contrats.find(x => x.id === linkedId) : findMatchingContrat(d.employeur, dateDebut);
+    if (match) {
+      if (!match.poste   && (d.poste||d.nature_contrat)) match.poste   = d.poste||d.nature_contrat;
+      if (!match.heures  && d.h_prevues)                 match.heures  = d.h_prevues;
+      if (!match.brutV   && d.cachet_brut_total)         match.brutV   = d.cachet_brut_total;
+      if (!match.cachets && d.cachets)                   match.cachets = d.cachets;
+      match.hasContrat = true;
+      toast('✅ Contrat rattaché à : ' + match.employeur);
+    } else {
+      state.contrats.push({
+        id: Date.now().toString(),
+        employeur: (d.employeur||'').toUpperCase().trim(),
+        poste: d.poste||d.nature_contrat||'',
+        dateDebut, dateFin,
+        cachets: d.cachets||0, heures: d.h_prevues||0,
+        brutV: d.cachet_brut_total||0, netImp:0, netV:0, pasV:0,
+        paye: false, ref:'', comment:'', docs:[],
+        hasContrat:true, hasBulletin:false, hasAEM:false, hasCS:false
+      });
+      toast('✅ Contrat enregistré');
+    }
+
+  } else if (docType === 'bulletin') {
+    const mi       = MONTHS.indexOf(d.mois);
+    const an       = parseInt(d.annee) || new Date().getFullYear();
+    const fallback = (mi >= 0 && !isNaN(an)) ? `${an}-${String(mi+1).padStart(2,'0')}-01` : new Date().toISOString().slice(0,10);
+    const dateStr  = parseDate(d.date_travail) || parseDate(d.date_debut) || fallback;
+    const match    = linkedId ? state.contrats.find(x => x.id === linkedId) : findMatchingContrat(d.employeur, dateStr);
+    if (match) {
+      if (!match.brutV)   match.brutV   = d.salaire_brut||0;
+      if (!match.netImp)  match.netImp  = d.net_imposable||0;
+      if (!match.netV)    match.netV    = d.net_percu||0;
+      if (!match.pasV)    match.pasV    = d.pas_preleve||0;
+      if (!match.heures)  match.heures  = d.h_totales||0;
+      if (!match.cachets) match.cachets = d.cachets||0;
+      match.hasBulletin = true;
+      toast('✅ Bulletin rattaché à : ' + match.employeur);
+    } else {
+      state.contrats.push({
+        id: Date.now().toString(),
+        employeur: (d.employeur||'').toUpperCase().trim(), poste:'',
+        dateDebut: dateStr, dateFin: dateStr,
+        cachets: d.cachets||0, heures: d.h_totales||0,
+        brutV: d.salaire_brut||0, netImp: d.net_imposable||0,
+        netV: d.net_percu||0, pasV: d.pas_preleve||0,
+        paye: false, ref:'', comment:'', docs:[],
+        hasContrat:false, hasBulletin:true, hasAEM:false, hasCS:false
+      });
+      toast('✅ Bulletin → nouveau contrat');
+    }
+
+  } else if (docType === 'aem') {
+    const mi       = MONTHS.indexOf(d.mois);
+    const an       = parseInt(d.annee) || new Date().getFullYear();
+    const fallback = (mi >= 0 && !isNaN(an)) ? `${an}-${String(mi+1).padStart(2,'0')}-01` : new Date().toISOString().slice(0,10);
+    const dateStr  = parseDate(d.date_debut) || parseDate(d.date_travail) || fallback;
+    const match    = linkedId ? state.contrats.find(x => x.id === linkedId) : findMatchingContrat(d.employeur, dateStr);
+    if (match) {
+      if (!match.heures)  match.heures  = d.nb_heures||0;
+      if (!match.cachets) match.cachets = d.nb_cachets||0;
+      if (!match.brutV)   match.brutV   = d.salaire_brut||0;
+      match.hasAEM = true;
+      toast('✅ AEM rattachée à : ' + match.employeur);
+    } else {
+      state.contrats.push({
+        id: Date.now().toString(),
+        employeur: (d.employeur||'').toUpperCase().trim(), poste:'AEM',
+        dateDebut: dateStr, dateFin: dateStr,
+        cachets: d.nb_cachets||0, heures: d.nb_heures||0,
+        brutV: d.salaire_brut||0, netImp:0, netV:0, pasV:0,
+        paye: false, ref:'AEM', comment:'', docs:[],
+        hasContrat:false, hasBulletin:false, hasAEM:true, hasCS:false
+      });
+      toast('✅ AEM → nouveau contrat');
+    }
+
+  } else if (docType === 'conges') {
+    const dateStr = parseDate(d.date_debut) || parseDate(d.date_fin) || new Date().toISOString().slice(0,10);
+    const match   = linkedId ? state.contrats.find(x => x.id === linkedId) : findMatchingContrat(d.employeur, dateStr);
+    if (match) {
+      match.hasCS = true;
+      if (!match.brutV && d.salaire_brut) match.brutV = d.salaire_brut;
+      toast('✅ Congés Spectacle rattachés à : ' + match.employeur);
+    } else {
+      state.contrats.push({
+        id: Date.now().toString(),
+        employeur: (d.employeur||'').toUpperCase().trim(),
+        poste: d.emploi||'',
+        dateDebut: parseDate(d.date_debut)||dateStr,
+        dateFin:   parseDate(d.date_fin)||dateStr,
+        cachets: d.nb_jours_cachets||0, heures:0,
+        brutV: d.salaire_brut||0, netImp:0, netV:0, pasV:0,
+        paye: false, ref:'', comment:'', docs:[],
+        hasContrat:false, hasBulletin:false, hasAEM:false, hasCS:true
+      });
+      toast('✅ Congés Spectacle → nouveau contrat');
+    }
+
+  } else if (docType === 'frais') {
+    state.frais.push({
+      id: Date.now().toString(),
+      cat: d.categorie||'autre',
+      desc: d.description||d.nature||'',
+      date: parseDate(d.date)||new Date().toISOString().slice(0,10),
+      montant: d.montant_ttc||0, km:0, repas:0, ref:'',
+      contratId: linkedId||''
+    });
+    toast('✅ Frais enregistré');
+  }
+
+  saveState();
+  pendingScanData = null;
+  document.getElementById('scan-result-card').style.display = 'none';
+  renderBilan();
+  if (fileQueue.length > 0) nextInQueue();
+}
+
+// ── NAVIGATION VERS SCANNER ──
+function goScanFor(contratId, docType) {
+  closeDetail();
+  showPage('scan');
+  currentDocType = docType;
+  document.getElementById('scan-contrat-link-card').style.display = 'block';
+  populateContratSelects();
+  const sel = document.getElementById('scan-contrat-select');
+  if (sel) sel.value = contratId;
+  toast('📄 Scanne le document manquant — ' + docType);
+}
