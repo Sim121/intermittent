@@ -11,7 +11,7 @@ function renderBilan() {
   const tNet    = cs.reduce((s,c) => s+(c.netV||0), 0);
   const tNetImp = cs.reduce((s,c) => s+(c.netImp||0), 0);
   const tPas    = cs.reduce((s,c) => s+(c.pasV||0), 0);
-  const tH      = cs.reduce((s,c) => s+(c.heures||0), 0);
+  const tH      = cs.reduce((s,c) => s+heuresFT(c), 0);
   const tC      = cs.reduce((s,c) => s+(c.cachets||0), 0);
   const tF      = state.frais.filter(f => f.date && new Date(f.date + 'T12:00:00').getFullYear() === selectedYear)
                              .reduce((s,f) => s+(f.montant||0), 0);
