@@ -281,7 +281,20 @@ function toast(msg) {
 function openSheet(id) {
   closeSheet(true);
   populateContratSelects();
+  // Reset du formulaire contrat : remet le choix scan/manuel
+  if (id === 'sheet-add-contrat') {
+    const form = document.getElementById('contrat-form');
+    const btns = form?.previousElementSibling;
+    if (form) form.style.display = 'none';
+    if (btns) btns.style.display = 'flex';
+  }
   activeSheet = id;
+  if (isDesktop && id === 'sheet-add-contrat') {
+    // Sur desktop : affiche dans le panneau latéral droit
+    document.getElementById('desktop-detail-panel').classList.add('show');
+    document.getElementById('desktop-detail-body').innerHTML = document.getElementById('sheet-add-contrat').innerHTML;
+    return;
+  }
   document.getElementById('sheet-overlay').classList.add('show');
   document.getElementById(id).classList.add('show');
   document.body.style.overflow = 'hidden';
