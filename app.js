@@ -3,7 +3,7 @@
    Core : state, auth, sync, navigation, settings, init
    ============================================================ */
 
-const APP_VERSION = '3.2.3';
+const APP_VERSION = '3.2.4';
 const APP_DATE    = '2026-04-02';
 
 // ── STATE GLOBAL ──
@@ -248,12 +248,15 @@ function openSheet(id) {
     if (btns) btns.style.display = 'flex';
   }
   activeSheet = id;
+   
   if (isDesktop && id === 'sheet-add-contrat') {
     document.getElementById('desktop-detail-panel').classList.add('show');
     const sheet = document.getElementById('sheet-add-contrat');
     const tmp = document.createElement('div');
     tmp.innerHTML = sheet.innerHTML;
+    // Retire poignée et le header titre+✕ qui font doublon
     tmp.querySelector('.sheet-handle')?.remove();
+    tmp.querySelector('div[style*="justify-content:space-between"]')?.remove();
     document.getElementById('desktop-detail-body').innerHTML = tmp.innerHTML;
     return;
   }
