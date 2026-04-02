@@ -781,18 +781,6 @@ function nextInQueue() {
   }
 }
 
-async function processFile(file) {
-  if (!getAppsScriptUrl()) { showPage('settings'); toast('⚙️ Configure Apps Script'); return; }
-  if (!isSessionValid()) { showLogin(); return; }
-
-  // Grise les pills et le sélecteur pendant l'upload
-  document.querySelectorAll('.pill').forEach(p => { p.style.pointerEvents='none'; p.style.opacity='0.5'; });
-  const linkCard = document.getElementById('scan-contrat-link-card');
-  if (linkCard) linkCard.style.opacity = '0.5';
-
-  document.getElementById('scan-loading').style.display = 'block';
-  document.getElementById('scan-result-card').style.display = 'none';
-
 function fileToBase64(f) {
   return new Promise((res, rej) => {
     const r = new FileReader();
@@ -806,6 +794,10 @@ async function processFile(file) {
   if (!getAppsScriptUrl()) { showPage('settings'); toast('⚙️ Configure Apps Script'); return; }
   if (!isSessionValid()) { showLogin(); return; }
 
+  document.querySelectorAll('.pill').forEach(p => { p.style.pointerEvents='none'; p.style.opacity='0.5'; });
+  const linkCard = document.getElementById('scan-contrat-link-card');
+  if (linkCard) linkCard.style.opacity = '0.5';
+
   document.getElementById('scan-loading').style.display = 'block';
   document.getElementById('scan-result-card').style.display = 'none';
 
@@ -816,14 +808,13 @@ async function processFile(file) {
     if (res.ok) { pendingScanData = res.data; showScanResult(res.data); }
     else {
       document.getElementById('scan-result-card').style.display = 'block';
-      document.getElementById('scan-result-card').innerHTML = `<div class="alert alert-err">❌ ${res.error||'Erreur scan'}</div>`;
+      document.getElementById('scan-result-card').innerHTML = '<div class="alert alert-err">❌ ' + (res.error||'Erreur scan') + '</div>';
     }
   } catch(e) {
     document.getElementById('scan-loading').style.display = 'none';
     document.getElementById('scan-result-card').style.display = 'block';
-    document.getElementById('scan-result-card').innerHTML = `<div class="alert alert-err">❌ ${e.message}</div>`;
+    document.getElementById('scan-result-card').innerHTML = '<div class="alert alert-err">❌ ' + e.message + '</div>';
   }
-  // Réactive les pills
   document.querySelectorAll('.pill').forEach(p => { p.style.pointerEvents=''; p.style.opacity=''; });
   const lc = document.getElementById('scan-contrat-link-card');
   if (lc) lc.style.opacity = '';
