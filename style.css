@@ -332,7 +332,7 @@ body {
   }
 
   .contracts-layout .contract-panel.show {
-    display: block;
+    display: block !important;
   }
 
   /* Scan : upload gauche, résultat droite */
