@@ -292,7 +292,8 @@ body {
     margin-bottom: 24px;
   }
 
-  .page-wrap { padding: 0 0 48px; }
+.page-wrap { padding: 32px 32px 48px; }
+  .section { padding: 0; }
 
   /* Pages visibles en desktop */
   .page.active { display: block; }
@@ -335,8 +336,6 @@ body {
     gap: 20px;
     padding: 0 32px;
   }
-
-  .section { padding: 0 32px; max-width: 1200px; }
 
   #page-bilan .page-wrap { padding: 24px 0 48px; }
 
