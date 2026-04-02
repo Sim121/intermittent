@@ -134,13 +134,19 @@ function showScanResult(d) {
     + '</div>'
     + Object.entries(d)
       .filter(([k,v]) => k !== 'type' && v !== null && v !== '' && v !== 0)
-      .map(([k,v]) =>
-        '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border2);">'
-        + '<span style="font-family:\'DM Mono\',monospace;font-size:10px;color:var(--muted);text-transform:uppercase;">' + k.replace(/_/g,' ') + '</span>'
-        + '<span style="font-size:13px;font-weight:600;">'
-        + (intF.includes(k) ? v : (numF.some(n => k.includes(n.split('_')[0])) || k.includes('brut') || k.includes('net') || k.includes('montant') ? fmt(v) : v))
-        + '</span></div>'
-      ).join('');
+      .map(([k,v]) => {
+        const isNum = intF.includes(k) || numF.some(n => k.includes(n.split('_')[0])) || k.includes('brut') || k.includes('net') || k.includes('montant');
+        const inputType = intF.includes(k) ? 'number' : isNum ? 'number' : 'text';
+        const displayVal = intF.includes(k) ? v : (isNum ? v : v);
+        return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border2);">'
+          + '<span style="font-family:\'JetBrains Mono\',monospace;font-size:10px;color:var(--muted);text-transform:uppercase;flex:1;">' + k.replace(/_/g,' ') + '</span>'
+          + '<div style="display:flex;align-items:center;gap:6px;">'
+          + '<span id="scan-val-' + k + '" style="font-size:13px;font-weight:600;">' + (isNum && !intF.includes(k) ? fmt(v) : v) + '</span>'
+          + '<input id="scan-input-' + k + '" type="' + inputType + '" value="' + v + '" step="0.01" style="display:none;padding:4px 8px;border:1.5px solid var(--accent);border-radius:6px;font-size:13px;font-weight:600;width:120px;background:var(--surface);" onchange="updateScanField(\'' + k + '\',this.value)">'
+          + '<button onclick="toggleScanField(\'' + k + '\')" style="background:none;border:none;cursor:pointer;padding:2px;color:var(--muted);font-size:12px;flex-shrink:0;" title="Modifier">✏️</button>'
+          + '</div>'
+          + '</div>';
+      }).join('');
 
   card.innerHTML = '<div class="card">'
     + '<div class="card-head"><div class="card-head-title">Extraction IA</div><span class="tag tag-green">✓ OK</span></div>'
@@ -233,6 +239,38 @@ function findMatchingContrat(employeur, dateStr) {
 }
 
 // ── ENREGISTREMENT ──
+function toggleScanField(key) {
+  const span  = document.getElementById('scan-val-' + key);
+  const input = document.getElementById('scan-input-' + key);
+  if (!span || !input) return;
+  const editing = input.style.display !== 'none';
+  if (editing) {
+    span.style.display  = '';
+    input.style.display = 'none';
+  } else {
+    span.style.display  = 'none';
+    input.style.display = '';
+    input.focus();
+    input.select();
+  }
+}
+
+function updateScanField(key, value) {
+  if (!pendingScanData) return;
+  const parsed = isNaN(value) ? value : (value.includes('.') ? parseFloat(value) : parseInt(value));
+  pendingScanData[key] = parsed;
+  // Met à jour l'affichage
+  const span = document.getElementById('scan-val-' + key);
+  const numF = ['salaire_brut','net_imposable','net_percu','pas_preleve','montant_ttc','montant_ht','cachet_brut'];
+  const intF = ['cachets','nb_cachets','nb_jours_cachets','nb_heures','h_totales','h_cachets','annee'];
+  if (span) {
+    const isNum = numF.some(n => key.includes(n.split('_')[0])) || key.includes('brut') || key.includes('net') || key.includes('montant');
+    span.textContent = (isNum && !intF.includes(key)) ? fmt(parsed) : parsed;
+  }
+  // Referme le champ
+  toggleScanField(key);
+}
+
 function confirmScanInline() {
   if (!pendingScanData) return;
   const d       = pendingScanData;
