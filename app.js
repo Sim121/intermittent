@@ -851,22 +851,15 @@ function showScanResult(d) {
   const card = document.getElementById('scan-result-card');
   card.style.display = 'block';
 
-  // Détecte si le type reconnu diffère du type sélectionné
-  let typeWarning = '';
-  const typeLabels = {contrat:'Contrat', bulletin:'Bulletin', aem:'AEM', conges:'Congés Spectacle', frais:'Frais'};
-  if (d.type && d.type !== currentDocType) {
-    const detectedType = typeLabels[d.type] || d.type;
-    const selectedType = typeLabels[currentDocType];
-    const typeLabels = {contrat:'📝 Contrat', bulletin:'📄 Bulletin', aem:'📋 AEM', conges:'🌴 Congés Spectacle', frais:'🧾 Frais'};
+  const typeLabels = {contrat:'📝 Contrat', bulletin:'📄 Bulletin', aem:'📋 AEM', conges:'🌴 Congés Spectacle', frais:'🧾 Frais'};
+
   const typeSelector = '<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;padding:10px 14px;background:var(--bg2);border-radius:var(--r-sm);">'
     + '<span style="font-family:\'DM Mono\',monospace;font-size:10px;color:var(--muted);text-transform:uppercase;">Type détecté</span>'
     + '<select onchange="overrideDocType(this.value)" style="flex:1;padding:6px 10px;border-radius:8px;border:1.5px solid var(--border);background:var(--surface);font-size:13px;font-weight:600;">'
     + Object.entries(typeLabels).map(([v,l]) => '<option value="' + v + '"' + (v === d.type ? ' selected' : '') + '>' + l + '</option>').join('')
     + '</select>'
     + '</div>';
-  }
 
-  // Détecte une correspondance potentielle avant d'afficher
   let matchInfo = '';
   if (d.type === 'bulletin' || d.type === 'aem' || d.type === 'conges' || d.type === 'contrat') {
     const mi = MONTHS.indexOf(d.mois);
@@ -881,35 +874,33 @@ function showScanResult(d) {
         + '<button class="btn btn-primary btn-sm" onclick="confirmRattachement(\'' + match.id + '\')">✓ Oui, rattacher</button>'
         + '<button class="btn btn-ghost btn-sm" onclick="refuserRattachement()">Non, créer nouveau</button>'
         + '</div></div>';
-      // Masque le bouton Enregistrer jusqu'à confirmation
-      document.getElementById('btn-confirm-scan').style.display = 'none';
+      document.getElementById('btn-confirm-scan') && (document.getElementById('btn-confirm-scan').style.display = 'none');
       const sel = document.getElementById('scan-contrat-select');
       if (sel) sel.value = match.id;
     }
   }
-  const typeLabelsDisplay = {contrat:'📝 Contrat', bulletin:'📄 Bulletin de salaire', aem:'📋 AEM', conges:'🌴 Congés Spectacle', frais:'🧾 Frais'};
+
   const numF = ['salaire_brut','net_imposable','net_percu','pas_preleve','montant_ttc','montant_ht','cachet_brut'];
   const intF = ['cachets','nb_cachets','nb_jours_cachets','nb_heures','h_totales','h_cachets','annee'];
   const rows = '<div style="padding:8px 0;border-bottom:1px solid var(--border2);display:flex;justify-content:space-between;">'
     + '<span style="font-family:\'DM Mono\',monospace;font-size:10px;color:var(--muted);text-transform:uppercase;">Type détecté</span>'
-    + '<span style="font-size:13px;font-weight:700;">' + (typeLabelsDisplay[d.type] || d.type || '—') + '</span>'
+    + '<span style="font-size:13px;font-weight:700;">' + (typeLabels[d.type] || d.type || '—') + '</span>'
     + '</div>'
     + Object.entries(d)
-    .filter(([k,v]) => k!=='type' && v!==null && v!=='' && v!==0)
-    .map(([k,v]) => `
-      <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border2);">
-        <span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);text-transform:uppercase;">${k.replace(/_/g,' ')}</span>
-        <span style="font-size:13px;font-weight:600;">${intF.some(n=>k===n)?v:(numF.some(n=>k.includes(n.split('_')[0]))||k.includes('brut')||k.includes('net')||k.includes('montant')?fmt(v):v)}</span>
-      </div>`).join('');
-  card.innerHTML = `
-    <div class="card">
-      <div class="card-head"><div class="card-head-title">Extraction IA</div><span class="tag tag-green">✓ OK</span></div>
-      ${typeSelector}
-      ${matchInfo}
-      ${rows}
-      <button class="btn btn-primary" id="btn-confirm-scan" onclick="confirmScanInline()" style="margin-top:16px;">✓ Enregistrer comme ${typeLabels[d.type]||d.type}</button>
-      <button class="btn btn-ghost" style="margin-top:8px;width:100%;" onclick="cancelScan()">Annuler</button>
-    </div>`;
+      .filter(([k,v]) => k!=='type' && v!==null && v!=='' && v!==0)
+      .map(([k,v]) => '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border2);">'
+        + '<span style="font-family:\'DM Mono\',monospace;font-size:10px;color:var(--muted);text-transform:uppercase;">' + k.replace(/_/g,' ') + '</span>'
+        + '<span style="font-size:13px;font-weight:600;">' + (intF.some(n=>k===n) ? v : (numF.some(n=>k.includes(n.split('_')[0]))||k.includes('brut')||k.includes('net')||k.includes('montant') ? fmt(v) : v)) + '</span>'
+        + '</div>').join('');
+
+  card.innerHTML = '<div class="card">'
+    + '<div class="card-head"><div class="card-head-title">Extraction IA</div><span class="tag tag-green">✓ OK</span></div>'
+    + typeSelector
+    + matchInfo
+    + rows
+    + '<button class="btn btn-primary" id="btn-confirm-scan" onclick="confirmScanInline()" style="margin-top:16px;">✓ Enregistrer comme ' + (typeLabels[d.type]||d.type) + '</button>'
+    + '<button class="btn btn-ghost" style="margin-top:8px;width:100%;" onclick="cancelScan()">Annuler</button>'
+    + '</div>';
 }
 
 // Trouve un contrat existant correspondant (même employeur + même période)
