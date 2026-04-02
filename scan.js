@@ -54,6 +54,20 @@ function fileToBase64(f) {
   });
 }
 
+function cancelAnalysis() {
+  if (currentAbortController) {
+    currentAbortController.abort();
+    currentAbortController = null;
+  }
+  document.getElementById('scan-loading').style.display = 'none';
+  document.querySelectorAll('.pill').forEach(p => { p.style.pointerEvents = ''; p.style.opacity = ''; });
+  const lc = document.getElementById('scan-contrat-link-card');
+  if (lc) lc.style.opacity = '';
+  document.getElementById('file-input').value = '';
+  if (fileQueue.length > 0) { fileQueue = []; fileQueueIndex = 0; toast('❌ Analyse annulée'); }
+  else toast('❌ Analyse annulée');
+}
+
 async function processFile(file) {
   if (!getAppsScriptUrl()) { showPage('settings'); toast('⚙️ Configure Apps Script'); return; }
   if (!isSessionValid())   { showLogin(); return; }
@@ -79,7 +93,8 @@ async function processFile(file) {
       document.getElementById('scan-result-card').innerHTML = '<div class="alert alert-err">❌ ' + (res.error||'Erreur scan') + '</div>';
     }
   } catch(e) {
-    document.getElementById('scan-loading').style.display    = 'none';
+    document.getElementById('scan-loading').style.display = 'none';
+    if (e.name === 'AbortError') return; // Annulation volontaire, pas d'erreur
     document.getElementById('scan-result-card').style.display = 'block';
     document.getElementById('scan-result-card').innerHTML = '<div class="alert alert-err">❌ ' + e.message + '</div>';
   }
