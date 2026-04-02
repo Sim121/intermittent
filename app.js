@@ -2,7 +2,7 @@
    INTERMITTENT — app.js v3.0
    ============================================================ */
 
-const APP_VERSION = '3.1.12';
+const APP_VERSION = '3.1.13';
 const APP_DATE    = '2026-04-01';
 
 const MONTHS     = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
@@ -1223,6 +1223,24 @@ function clearAll() {
   toast('🗑️ Données effacées');
 }
 
+function migrateData() {
+  let changed = false;
+  state.contrats.forEach(c => {
+    // Normalise l'employeur en majuscules
+    if (c.employeur && c.employeur !== c.employeur.toUpperCase()) {
+      c.employeur = c.employeur.toUpperCase().trim();
+      changed = true;
+    }
+    // Ajoute les champs manquants pour les anciens contrats
+    if (c.hasContrat === undefined) { c.hasContrat = false; changed = true; }
+    if (c.hasBulletin === undefined) { c.hasBulletin = false; changed = true; }
+    if (c.hasAEM === undefined) { c.hasAEM = false; changed = true; }
+    if (c.hasCS === undefined) { c.hasCS = false; changed = true; }
+    if (c.paye === undefined) { c.paye = false; changed = true; }
+  });
+  if (changed) saveState();
+}
+
 function renderAll() {
   populateYearSelect();
   renderBilan(); renderContrats(); renderFrais();
@@ -1268,6 +1286,7 @@ function init() {
 
   loadSession();
   loadConfig();
+  migrateData();
 
   // Login si pas de session valide
   if (!getAppsScriptUrl() || !isSessionValid()) {
