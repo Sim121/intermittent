@@ -526,9 +526,9 @@ body {
   font-family: 'JetBrains Mono', monospace;
   text-transform: uppercase; letter-spacing: .3px;
 }
-.tag-green { background: var(--green-light); color: var(--green); }
+.tag-green { background: #2D6A4F; color: #fff; }
 .tag-gold { background: var(--gold-light); color: var(--gold); }
-.tag-red { background: var(--red-light); color: var(--red); }
+.tag-red { background: #C0392B; color: #fff; }
 .tag-gray { background: var(--bg2); color: var(--muted); border: 1px solid var(--border); }
 .tag-blue { background: var(--blue-light); color: var(--blue); }
 
