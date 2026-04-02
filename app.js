@@ -2,7 +2,7 @@
    INTERMITTENT — app.js v3.0
    ============================================================ */
 
-const APP_VERSION = '3.1.15';
+const APP_VERSION = '3.1.16';
 const APP_DATE    = '2026-04-01';
 
 const MONTHS     = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
@@ -752,7 +752,22 @@ function handleDrop(e) {
   if (e.dataTransfer.files[0]) processFile(e.dataTransfer.files[0]);
 }
 
-function handleFile(e) { if (e.target.files[0]) processFile(e.target.files[0]); }
+function handleFile(e) {
+  const files = Array.from(e.target.files);
+  if (!files.length) return;
+  if (files.length === 1) { processFile(files[0]); return; }
+  processFileQueue(files);
+}
+
+async function processFileQueue(files) {
+  for (const file of files) {
+    toast(`📄 Traitement : ${file.name}`);
+    await processFile(file);
+    // Petite pause entre chaque pour ne pas surcharger
+    await new Promise(r => setTimeout(r, 500));
+  }
+  toast(`✅ ${files.length} documents traités`);
+}
 
 function fileToBase64(f) {
   return new Promise((res, rej) => {
