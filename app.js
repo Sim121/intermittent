@@ -863,7 +863,7 @@ function confirmScanInline() {
     } else {
       state.contrats.push({
         id: Date.now().toString(),
-        (d.employeur||'').toUpperCase().trim(), poste: d.poste||d.nature_contrat||'',
+        employeur: (d.employeur||'').toUpperCase().trim(), poste: d.poste||d.nature_contrat||'',
         dateDebut: d.date_debut||new Date().toISOString().slice(0,10),
         dateFin: d.date_fin||d.date_debut||new Date().toISOString().slice(0,10),
         cachets: d.cachets||0, heures: d.h_prevues||0,
