@@ -2,7 +2,7 @@
    INTERMITTENT — app.js v3.0
    ============================================================ */
 
-const APP_VERSION = '3.1.26';
+const APP_VERSION = '3.1.27';
 const APP_DATE    = '2026-04-01';
 
 const MONTHS     = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
@@ -865,7 +865,7 @@ function showScanResult(d) {
     const mi = MONTHS.indexOf(d.mois);
     const an = d.annee || new Date().getFullYear();
     const fallback = (mi >= 0 && !isNaN(an)) ? `${an}-${String(mi+1).padStart(2,'0')}-01` : new Date().toISOString().slice(0,10);
-    const dateStr = d.date_travail || d.date_debut || d.date_fin || fallback;
+    const dateStr = parseDate(d.date_travail) || parseDate(d.date_debut) || parseDate(d.date_fin) || fallback;
     const match = findMatchingContrat(d.employeur, dateStr);
     if (match) {
       matchInfo = '<div class="alert alert-ok" style="margin-bottom:12px;">'
@@ -902,6 +902,23 @@ function showScanResult(d) {
     + '<button class="btn btn-primary" id="btn-confirm-scan" onclick="confirmScanInline()" style="margin-top:16px;">✓ Enregistrer comme ' + (typeLabels[d.type]||d.type) + '</button>'
     + '<button class="btn btn-ghost" style="margin-top:8px;width:100%;" onclick="cancelScan()">Annuler</button>'
     + '</div>';
+}
+
+function parseDate(dateStr) {
+  if (!dateStr) return null;
+  // Déjà au bon format YYYY-MM-DD
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr;
+  // Format DD/MM/YYYY
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(dateStr)) {
+    const [d, m, y] = dateStr.split('/');
+    return `${y}-${m}-${d}`;
+  }
+  // Format DD-MM-YYYY
+  if (/^\d{2}-\d{2}-\d{4}$/.test(dateStr)) {
+    const [d, m, y] = dateStr.split('-');
+    return `${y}-${m}-${d}`;
+  }
+  return dateStr;
 }
 
 // Trouve un contrat existant correspondant (même employeur + même période)
@@ -1028,7 +1045,7 @@ function confirmScanInline() {
 
 } else if (d.type === 'conges' || docType === 'conges') {
     // Cherche un contrat correspondant (même employeur + mêmes dates)
-    const csDate = d.date_debut || new Date().toISOString().slice(0,10);
+    const csDate = parseDate(d.date_debut) || parseDate(d.date_fin) || new Date().toISOString().slice(0,10);
     const match = linkedId
       ? state.contrats.find(x => x.id === linkedId)
       : findMatchingContrat(d.employeur, csDate);
@@ -1117,7 +1134,11 @@ function fmt(n) {
 
 function fmtDate(s) {
   if (!s) return '—';
-  return new Date(s).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
+  const parsed = parseDate(s);
+  if (!parsed) return '—';
+  const d = new Date(parsed + 'T12:00:00');
+  if (isNaN(d.getTime())) return '—';
+  return d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
 // ============================================================
