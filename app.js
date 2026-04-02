@@ -892,7 +892,7 @@ function confirmScanInline() {
       toast('✅ Bulletin rattaché à : ' + match.employeur);
     } else {
       state.contrats.push({
-        id: Date.now().toString(), (d.employeur||'').toUpperCase().trim(), poste:'',
+        id: Date.now().toString(), employeur: (d.employeur||'').toUpperCase().trim(), poste:'',
         dateDebut: dateStr, dateFin: dateStr,
         cachets: d.cachets||0, heures: d.h_totales||0,
         brutV: d.salaire_brut||0, netImp: d.net_imposable||0,
@@ -917,7 +917,7 @@ function confirmScanInline() {
       toast('✅ AEM rattachée à : ' + match.employeur);
     } else {
       state.contrats.push({
-        id: Date.now().toString(), (d.employeur||'').toUpperCase().trim(), poste:'AEM',
+        id: Date.now().toString(), employeur: (d.employeur||'').toUpperCase().trim(), poste:'AEM',
         dateDebut: dateStr, dateFin: dateStr,
         cachets: d.nb_cachets||0, heures: d.nb_heures||0,
         brutV: d.salaire_brut||0, netImp:0, netV:0, pasV:0,
@@ -942,7 +942,7 @@ function confirmScanInline() {
       // Crée un nouveau contrat
       state.contrats.push({
         id: Date.now().toString(),
-        (d.employeur||'').toUpperCase().trim(),
+        employeur: (d.employeur||'').toUpperCase().trim(),
         poste: d.emploi||'',
         dateDebut: d.date_debut||csDate,
         dateFin: d.date_fin||csDate,
