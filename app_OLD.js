@@ -15,7 +15,6 @@ let state = {
   frais: [],
   config: { tauxPas:14.6, situation:2, mathilde:0, sjr:0, areReel:0, finDroits:'' }
 };
-
 let session = {
   token: null,
   expiresAt: null
