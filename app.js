@@ -2,7 +2,7 @@
    INTERMITTENT — app.js v3.0
    ============================================================ */
 
-const APP_VERSION = '3.1.13';
+const APP_VERSION = '3.1.14';
 const APP_DATE    = '2026-04-01';
 
 const MONTHS     = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
@@ -1293,6 +1293,7 @@ function init() {
     renderAll();
   } else {
     showApp();
+    migrateData();
     renderAll();
     renderFTPage();
     loadFromServer();
