@@ -342,10 +342,7 @@ body {
 
   /* Slide-in detail → panel fixe sur desktop */
   .detail-view {
-    position: static;
-    transform: none !important;
-    background: transparent;
-    overflow-y: visible;
+    display: none;
   }
 
   .detail-view .detail-header {
