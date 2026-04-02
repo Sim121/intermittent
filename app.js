@@ -2,7 +2,7 @@
    INTERMITTENT — app.js v3.0
    ============================================================ */
 
-const APP_VERSION = '3.1.11';
+const APP_VERSION = '3.1.12';
 const APP_DATE    = '2026-04-01';
 
 const MONTHS     = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
@@ -323,6 +323,24 @@ function populateContratSelects() {
 // ============================================================
 // DETAIL VIEW
 // ============================================================
+function goScanFor(contratId, docType) {
+  // Ferme le détail, va sur Scanner, pré-sélectionne le type et le contrat
+  closeDetail();
+  showPage('scan');
+  // Active le bon pill
+  document.querySelectorAll('.pill').forEach(p => {
+    const t = p.getAttribute('onclick')?.match(/'([^']+)'/)?.[1];
+    if (t === docType) { p.classList.add('active'); currentDocType = docType; }
+    else p.classList.remove('active');
+  });
+  // Affiche le sélecteur de contrat et pré-sélectionne
+  document.getElementById('scan-contrat-link-card').style.display = 'block';
+  populateContratSelects();
+  const sel = document.getElementById('scan-contrat-select');
+  if (sel) sel.value = contratId;
+  toast('📄 Scanne le document manquant');
+}
+
 function openDetail(id) {
   currentContratId = id;
   const c = state.contrats.find(x => x.id === id);
@@ -367,10 +385,10 @@ function renderDetailBody(c) {
     <div class="card">
       <div class="card-head"><div class="card-head-title">Documents rattachés</div></div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
-        <span class="tag ${c.hasContrat ? 'tag-green' : 'tag-gray'}">📝 Contrat ${c.hasContrat ? '✓' : 'manquant'}</span>
-        <span class="tag ${c.hasBulletin ? 'tag-green' : 'tag-gray'}">📄 Bulletin ${c.hasBulletin ? '✓' : 'manquant'}</span>
-        <span class="tag ${c.hasAEM ? 'tag-green' : 'tag-gray'}">📋 AEM ${c.hasAEM ? '✓' : 'manquante'}</span>
-        <span class="tag ${c.hasCS ? 'tag-green' : 'tag-gray'}">🌴 Congés Spectacle ${c.hasCS ? '✓' : 'manquants'}</span>
+         <span class="tag ${c.hasContrat?'tag-green':'tag-gray'}" style="${!c.hasContrat?'cursor:pointer':''}" onclick="${!c.hasContrat?`goScanFor('${c.id}','contrat')`:''}">📝 Contrat ${c.hasContrat?'✓':'+ Scanner'}</span>
+         <span class="tag ${c.hasBulletin?'tag-green':'tag-gray'}" style="${!c.hasBulletin?'cursor:pointer':''}" onclick="${!c.hasBulletin?`goScanFor('${c.id}','bulletin')`:''}">📄 Bulletin ${c.hasBulletin?'✓':'+ Scanner'}</span>
+         <span class="tag ${c.hasAEM?'tag-green':'tag-gray'}" style="${!c.hasAEM?'cursor:pointer':''}" onclick="${!c.hasAEM?`goScanFor('${c.id}','aem')`:''}">📋 AEM ${c.hasAEM?'✓':'+ Scanner'}</span>
+         <span class="tag ${c.hasCS?'tag-green':'tag-gray'}" style="${!c.hasCS?'cursor:pointer':''}" onclick="${!c.hasCS?`goScanFor('${c.id}','conges')`:''}">🌴 CS ${c.hasCS?'✓':'+ Scanner'}</span>
       </div>
     </div>
     <div class="card">
@@ -810,13 +828,13 @@ function showScanResult(d) {
 // Trouve un contrat existant correspondant (même employeur + même période)
 function findMatchingContrat(employeur, dateStr) {
   if (!employeur || !dateStr) return null;
-  const empNorm = employeur.toLowerCase().replace(/\s+/g, '').trim();
+  const empNorm = employeur.toUpperCase().replace(/\s+/g, '').trim();
   const [y, m] = dateStr.split('-').map(Number);
   return state.contrats.find(c => {
     if (!c.dateDebut) return false;
     const cd = new Date(c.dateDebut);
     const sameMonth = cd.getFullYear() === y && cd.getMonth() === m - 1;
-    const cNorm = c.employeur.toLowerCase().replace(/\s+/g, '').trim();
+    const cNorm = c.employeur.toUpperCase().replace(/\s+/g, '').trim();
     // Comparaison insensible à la casse et aux espaces, sur 6 caractères minimum
     const empMatch = cNorm.includes(empNorm.slice(0,6)) ||
                      empNorm.includes(cNorm.slice(0,6));
@@ -845,7 +863,7 @@ function confirmScanInline() {
     } else {
       state.contrats.push({
         id: Date.now().toString(),
-        employeur: d.employeur||'', poste: d.poste||d.nature_contrat||'',
+        (d.employeur||'').toUpperCase().trim(), poste: d.poste||d.nature_contrat||'',
         dateDebut: d.date_debut||new Date().toISOString().slice(0,10),
         dateFin: d.date_fin||d.date_debut||new Date().toISOString().slice(0,10),
         cachets: d.cachets||0, heures: d.h_prevues||0,
@@ -874,7 +892,7 @@ function confirmScanInline() {
       toast('✅ Bulletin rattaché à : ' + match.employeur);
     } else {
       state.contrats.push({
-        id: Date.now().toString(), employeur: d.employeur||'', poste:'',
+        id: Date.now().toString(), (d.employeur||'').toUpperCase().trim(), poste:'',
         dateDebut: dateStr, dateFin: dateStr,
         cachets: d.cachets||0, heures: d.h_totales||0,
         brutV: d.salaire_brut||0, netImp: d.net_imposable||0,
@@ -899,7 +917,7 @@ function confirmScanInline() {
       toast('✅ AEM rattachée à : ' + match.employeur);
     } else {
       state.contrats.push({
-        id: Date.now().toString(), employeur: d.employeur||'', poste:'AEM',
+        id: Date.now().toString(), (d.employeur||'').toUpperCase().trim(), poste:'AEM',
         dateDebut: dateStr, dateFin: dateStr,
         cachets: d.nb_cachets||0, heures: d.nb_heures||0,
         brutV: d.salaire_brut||0, netImp:0, netV:0, pasV:0,
@@ -924,7 +942,7 @@ function confirmScanInline() {
       // Crée un nouveau contrat
       state.contrats.push({
         id: Date.now().toString(),
-        employeur: d.employeur||'',
+        (d.employeur||'').toUpperCase().trim(),
         poste: d.emploi||'',
         dateDebut: d.date_debut||csDate,
         dateFin: d.date_fin||csDate,
