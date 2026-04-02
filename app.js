@@ -2,7 +2,7 @@
    INTERMITTENT — app.js v3.0
    ============================================================ */
 
-const APP_VERSION = '3.1.5';
+const APP_VERSION = '3.1.6';
 const APP_DATE    = '2026-04-01';
 
 const MONTHS     = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
@@ -867,14 +867,35 @@ function confirmScanInline() {
       toast('✅ AEM → nouveau contrat');
     }
 
-  } else if (d.type === 'conges' || currentDocType === 'conges') {
-    state.frais.push({
-      id: Date.now().toString(), cat:'conges',
-      desc: 'Congés Spectacle '+(d.periode||d.organisme||''),
-      date: d.date_versement||new Date().toISOString().slice(0,10),
-      montant: d.montant_verse||0, km:0, repas:0, ref:'', contratId:''
-    });
-    toast('✅ Congés Spectacle enregistrés');
+} else if (d.type === 'conges' || currentDocType === 'conges') {
+    // Cherche un contrat correspondant (même employeur + mêmes dates)
+    const csDate = d.date_debut || new Date().toISOString().slice(0,10);
+    const match = linkedId
+      ? state.contrats.find(x => x.id === linkedId)
+      : findMatchingContrat(d.employeur, csDate);
+
+    if (match) {
+      match.hasCS = true;
+      if (!match.brutV && d.salaire_brut) match.brutV = d.salaire_brut;
+      toast('✅ Congés Spectacle rattachés à : ' + match.employeur);
+    } else {
+      // Crée un nouveau contrat
+      state.contrats.push({
+        id: Date.now().toString(),
+        employeur: d.employeur||'',
+        poste: d.emploi||'',
+        dateDebut: d.date_debut||csDate,
+        dateFin: d.date_fin||csDate,
+        cachets: d.nb_jours_cachets||0,
+        heures: 0,
+        brutV: d.salaire_brut||0,
+        netImp: 0, netV: 0, pasV: 0,
+        paye: null, ref:'', comment:'',
+        docs: [],
+        hasBulletin: false, hasAEM: false, hasCS: true
+      });
+      toast('✅ Congés Spectacle → nouveau contrat');
+    }
 
   } else if (d.type === 'frais' || currentDocType === 'frais') {
     state.frais.push({
