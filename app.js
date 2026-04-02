@@ -1286,7 +1286,6 @@ function init() {
 
   loadSession();
   loadConfig();
-  migrateData();
 
   // Login si pas de session valide
   if (!getAppsScriptUrl() || !isSessionValid()) {
