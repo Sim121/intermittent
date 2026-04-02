@@ -2,7 +2,7 @@
    INTERMITTENT — app.js v3.0
    ============================================================ */
 
-const APP_VERSION = '3.1.23';
+const APP_VERSION = '3.1.24';
 const APP_DATE    = '2026-04-01';
 
 const MONTHS     = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
@@ -831,7 +831,12 @@ function switchDocType(type) {
 }
 
 function overrideDocType(type) {
-  if (pendingScanData) pendingScanData.type = type;
+  if (pendingScanData) {
+    pendingScanData.type = type;
+    const typeLabels = {contrat:'📝 Contrat', bulletin:'📄 Bulletin', aem:'📋 AEM', conges:'🌴 Congés Spectacle', frais:'🧾 Frais'};
+    const btn = document.getElementById('btn-confirm-scan');
+    if (btn) btn.textContent = '✓ Enregistrer comme ' + (typeLabels[type]||type);
+  }
 }
 
 function cancelScan() {
@@ -884,6 +889,7 @@ function showScanResult(d) {
   }
   const typeLabelsDisplay = {contrat:'📝 Contrat', bulletin:'📄 Bulletin de salaire', aem:'📋 AEM', conges:'🌴 Congés Spectacle', frais:'🧾 Frais'};
   const numF = ['salaire_brut','net_imposable','net_percu','pas_preleve','montant_ttc','montant_ht','cachet_brut'];
+  const intF = ['cachets','nb_cachets','nb_jours_cachets','nb_heures','h_totales','h_cachets','annee'];
   const rows = '<div style="padding:8px 0;border-bottom:1px solid var(--border2);display:flex;justify-content:space-between;">'
     + '<span style="font-family:\'DM Mono\',monospace;font-size:10px;color:var(--muted);text-transform:uppercase;">Type détecté</span>'
     + '<span style="font-size:13px;font-weight:700;">' + (typeLabelsDisplay[d.type] || d.type || '—') + '</span>'
@@ -893,7 +899,7 @@ function showScanResult(d) {
     .map(([k,v]) => `
       <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border2);">
         <span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);text-transform:uppercase;">${k.replace(/_/g,' ')}</span>
-        <span style="font-size:13px;font-weight:600;">${numF.some(n=>k.includes(n.split('_')[0]))||k.includes('brut')||k.includes('net')||k.includes('montant')?fmt(v):v}</span>
+        <span style="font-size:13px;font-weight:600;">${intF.some(n=>k===n)?v:(numF.some(n=>k.includes(n.split('_')[0]))||k.includes('brut')||k.includes('net')||k.includes('montant')?fmt(v):v)}</span>
       </div>`).join('');
   card.innerHTML = `
     <div class="card">
@@ -901,7 +907,7 @@ function showScanResult(d) {
       ${typeSelector}
       ${matchInfo}
       ${rows}
-      <button class="btn btn-primary" id="btn-confirm-scan" onclick="confirmScanInline()" style="margin-top:16px;">✓ Enregistrer</button>
+      <button class="btn btn-primary" id="btn-confirm-scan" onclick="confirmScanInline()" style="margin-top:16px;">✓ Enregistrer comme ${typeLabels[d.type]||d.type}</button>
       <button class="btn btn-ghost" style="margin-top:8px;width:100%;" onclick="cancelScan()">Annuler</button>
     </div>`;
 }
