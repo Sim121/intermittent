@@ -1198,7 +1198,12 @@ function init() {
   const vEl = document.getElementById('app-version-display');
   const dEl = document.getElementById('app-date-display');
   if (vEl) vEl.textContent = APP_VERSION;
-  if (dEl) dEl.textContent = APP_DATE;
+  if (dEl) dEl.textContent = APP_DATE
+
+   setTimeout(() => {
+    const sVel = document.getElementById('sidebar-version');
+    if (sVel) sVel.textContent = 'v' + APP_VERSION;
+  }, 500);
 
   // Pré-remplit l'URL Apps Script dans le login si déjà configurée
   const savedUrl = localStorage.getItem('apps-script-url');
