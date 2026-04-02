@@ -10,14 +10,17 @@ let fileQueueIndex = 0;
 function handleDrop(e) {
   e.preventDefault();
   document.getElementById('dropzone').classList.remove('active');
-  const files = Array.from(e.dataTransfer.files);
+  const files = Array.from(e.dataTransfer.files).slice(0, 4);
+  if (!files.length) return;
+  if (e.dataTransfer.files.length > 4) toast('⚠️ Maximum 4 fichiers — seuls les 4 premiers sont traités');
   if (files.length === 1) processFile(files[0]);
-  else if (files.length > 1) processFileQueue(files);
+  else processFileQueue(files);
 }
 
 function handleFile(e) {
-  const files = Array.from(e.target.files);
+  const files = Array.from(e.target.files).slice(0, 4);
   if (!files.length) return;
+  if (e.target.files.length > 4) toast('⚠️ Maximum 4 fichiers — seuls les 4 premiers sont traités');
   if (files.length === 1) { processFile(files[0]); return; }
   processFileQueue(files);
 }
@@ -136,13 +139,19 @@ function showScanResult(d) {
       .filter(([k,v]) => k !== 'type' && v !== null && v !== '' && v !== 0)
       .map(([k,v]) => {
         const isNum = intF.includes(k) || numF.some(n => k.includes(n.split('_')[0])) || k.includes('brut') || k.includes('net') || k.includes('montant');
-        const inputType = intF.includes(k) ? 'number' : isNum ? 'number' : 'text';
+        const isMois = k === 'mois';
+        const isDate = k.includes('date') || k === 'annee';
+        const inputType = isMois ? 'select' : (k.includes('date') ? 'date' : (intF.includes(k) || isNum ? 'number' : 'text'));
         const displayVal = intF.includes(k) ? v : (isNum ? v : v);
         return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border2);">'
           + '<span style="font-family:\'JetBrains Mono\',monospace;font-size:10px;color:var(--muted);text-transform:uppercase;flex:1;">' + k.replace(/_/g,' ') + '</span>'
           + '<div style="display:flex;align-items:center;gap:6px;">'
           + '<span id="scan-val-' + k + '" style="font-size:13px;font-weight:600;">' + (isNum && !intF.includes(k) ? fmt(v) : v) + '</span>'
-          + '<input id="scan-input-' + k + '" type="' + inputType + '" value="' + v + '" step="0.01" style="display:none;padding:4px 8px;border:1.5px solid var(--accent);border-radius:6px;font-size:13px;font-weight:600;width:120px;background:var(--surface);" onchange="updateScanField(\'' + k + '\',this.value)">'
+          + (k === 'mois'
+            ? '<select id="scan-input-' + k + '" style="display:none;padding:4px 8px;border:1.5px solid var(--accent);border-radius:6px;font-size:13px;font-weight:600;background:var(--surface);" onchange="updateScanField(\'' + k + '\',this.value)">'
+              + MONTHS.map(m => '<option value="' + m + '"' + (m === v ? ' selected' : '') + '>' + m + '</option>').join('')
+              + '</select>'
+            : '<input id="scan-input-' + k + '" type="' + inputType + '" value="' + (k.includes('date') ? parseDate(v)||v : v) + '" step="0.01" style="display:none;padding:4px 8px;border:1.5px solid var(--accent);border-radius:6px;font-size:13px;font-weight:600;width:120px;background:var(--surface);" onchange="updateScanField(\'' + k + '\',this.value)">')
           + '<button onclick="toggleScanField(\'' + k + '\')" style="background:none;border:none;cursor:pointer;padding:2px;color:var(--muted);font-size:12px;flex-shrink:0;" title="Modifier">✏️</button>'
           + '</div>'
           + '</div>';
