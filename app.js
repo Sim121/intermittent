@@ -2,7 +2,7 @@
    INTERMITTENT — app.js v3.0
    ============================================================ */
 
-const APP_VERSION = '3.1.28';
+const APP_VERSION = '3.1.29';
 const APP_DATE    = '2026-04-01';
 
 const MONTHS     = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
@@ -994,8 +994,8 @@ function confirmScanInline() {
       state.contrats.push({
         id: Date.now().toString(),
         employeur: (d.employeur||'').toUpperCase().trim(), poste: d.poste||d.nature_contrat||'',
-        dateDebut: d.date_debut||new Date().toISOString().slice(0,10),
-        dateFin: d.date_fin||d.date_debut||new Date().toISOString().slice(0,10),
+        dateDebut: parseDate(d.date_debut)||new Date().toISOString().slice(0,10),
+        dateFin: parseDate(d.date_fin)||parseDate(d.date_debut)||new Date().toISOString().slice(0,10),
         cachets: d.cachets||0, heures: d.h_prevues||0,
         brutV: d.cachet_brut_total||0, netImp:0, netV:0, pasV:0,
         paye: null, ref:'', comment:'', docs:[],
@@ -1374,6 +1374,15 @@ function migrateData() {
     if (c.hasAEM === undefined) { c.hasAEM = false; changed = true; }
     if (c.hasCS === undefined) { c.hasCS = false; changed = true; }
     if (c.paye === undefined) { c.paye = false; changed = true; }
+     // Normalise les dates au format YYYY-MM-DD
+    if (c.dateDebut && !/^\d{4}-\d{2}-\d{2}$/.test(c.dateDebut)) {
+      c.dateDebut = parseDate(c.dateDebut) || c.dateDebut;
+      changed = true;
+    }
+    if (c.dateFin && !/^\d{4}-\d{2}-\d{2}$/.test(c.dateFin)) {
+      c.dateFin = parseDate(c.dateFin) || c.dateFin;
+      changed = true;
+    }
   });
   if (changed) saveState();
 }
