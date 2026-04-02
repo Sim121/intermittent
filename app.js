@@ -48,7 +48,7 @@ async function appsScriptPost(body) {
   if (session.token && !body.token) body.token = session.token;
   const r = await fetch(url, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'text/plain' },
     body: JSON.stringify(body),
     redirect: 'follow'
   });
