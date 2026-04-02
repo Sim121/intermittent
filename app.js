@@ -3,7 +3,7 @@
    Core : state, auth, sync, navigation, settings, init
    ============================================================ */
 
-const APP_VERSION = '3.2.6';
+const APP_VERSION = '3.2.7';
 const APP_DATE    = '2026-04-02';
 
 // ── STATE GLOBAL ──
@@ -44,7 +44,7 @@ async function appsScriptLogin(password) {
   return await r.json();
 }
 
-async function appsScriptPost(body) {
+async function appsScriptPost(body, signal) {
   const url = getAppsScriptUrl();
   if (!url) throw new Error('Apps Script non configuré');
   if (session.token && !body.token) body.token = session.token;
@@ -52,8 +52,10 @@ async function appsScriptPost(body) {
     method: 'POST',
     headers: { 'Content-Type': 'text/plain' },
     body: JSON.stringify(body),
-    redirect: 'follow'
+    redirect: 'follow',
+    signal: signal
   });
+   
   const data = await r.json();
   if (!data.ok && data.code === 401) { handleSessionExpired(); return data; }
   return data;
