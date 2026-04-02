@@ -1,6 +1,6 @@
 // Version incrémentée à chaque déploiement — le navigateur détecte le changement automatiquement
-const CACHE_VERSION = 'intermittent-v3';
-const ASSETS = ['./', './index.html', './manifest.json'];
+const CACHE_VERSION = 'intermittent-v4';
+const ASSETS = ['./', './index.html', './manifest.json', './utils.js', './bilan.js', './contrats.js', './scan.js', './app.js', './style.css'];
 
 self.addEventListener('install', e => {
   e.waitUntil(
