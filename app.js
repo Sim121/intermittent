@@ -2,7 +2,7 @@
    INTERMITTENT — app.js v3.0
    ============================================================ */
 
-const APP_VERSION = '3.1.27';
+const APP_VERSION = '3.1.28';
 const APP_DATE    = '2026-04-01';
 
 const MONTHS     = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
@@ -862,10 +862,11 @@ function showScanResult(d) {
 
   let matchInfo = '';
   if (d.type === 'bulletin' || d.type === 'aem' || d.type === 'conges' || d.type === 'contrat') {
-    const mi = MONTHS.indexOf(d.mois);
-    const an = d.annee || new Date().getFullYear();
-    const fallback = (mi >= 0 && !isNaN(an)) ? `${an}-${String(mi+1).padStart(2,'0')}-01` : new Date().toISOString().slice(0,10);
-    const dateStr = parseDate(d.date_travail) || parseDate(d.date_debut) || parseDate(d.date_fin) || fallback;
+      const dateStr = parseDate(d.date_travail) || parseDate(d.date_debut) || parseDate(d.date_fin) || (() => {
+      const mi = MONTHS.indexOf(d.mois);
+      const an = parseInt(d.annee);
+      return (mi >= 0 && !isNaN(an)) ? `${an}-${String(mi+1).padStart(2,'0')}-01` : new Date().toISOString().slice(0,10);
+    })();
     const match = findMatchingContrat(d.employeur, dateStr);
     if (match) {
       matchInfo = '<div class="alert alert-ok" style="margin-bottom:12px;">'
@@ -923,21 +924,35 @@ function parseDate(dateStr) {
 
 // Trouve un contrat existant correspondant (même employeur + même période)
 function findMatchingContrat(employeur, dateStr) {
-  if (!employeur || !dateStr) return null;
+  if (!employeur) return null;
   const empNorm = employeur.toUpperCase().replace(/\s+/g, '').trim();
-  const parts = dateStr.split('-').map(Number);
+  if (!empNorm || empNorm.length < 3) return null;
+
+  const parsedDate = parseDate(dateStr);
+  if (!parsedDate) return null;
+  const parts = parsedDate.split('-').map(Number);
   const y = parts[0], m = parts[1];
   if (!y || !m || isNaN(y) || isNaN(m)) return null;
 
-  return state.contrats.find(c => {
+  const candidates = state.contrats.filter(c => {
     if (!c.dateDebut) return false;
-    const cd = new Date(c.dateDebut);
-    const sameMonth = cd.getFullYear() === y && cd.getMonth() === m - 1;
-    if (!sameMonth) return false;
-    const cNorm = c.employeur.toUpperCase().replace(/\s+/g, '').trim();
-    // Comparaison sur 6 caractères minimum
-    return cNorm.includes(empNorm.slice(0,6)) || empNorm.includes(cNorm.slice(0,6));
+    const cd = new Date(c.dateDebut + 'T12:00:00');
+    return cd.getFullYear() === y && cd.getMonth() === m - 1;
   });
+
+  if (!candidates.length) return null;
+
+  // Score de correspondance
+  return candidates.map(c => {
+    const cNorm = c.employeur.toUpperCase().replace(/\s+/g, '').trim();
+    let score = 0;
+    // Correspondance employeur
+    if (cNorm === empNorm) score += 10;
+    else if (cNorm.includes(empNorm.slice(0,6)) || empNorm.includes(cNorm.slice(0,6))) score += 5;
+    return { c, score };
+  })
+  .filter(x => x.score > 0)
+  .sort((a, b) => b.score - a.score)[0]?.c || null;
 }
 
 function confirmRattachement(id) {
