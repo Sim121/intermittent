@@ -2,7 +2,7 @@
    INTERMITTENT — app.js v3.0
    ============================================================ */
 
-const APP_VERSION = '3.1.17';
+const APP_VERSION = '3.1.18';
 const APP_DATE    = '2026-04-01';
 
 const MONTHS     = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
@@ -829,7 +829,16 @@ async function processFile(file) {
   if (lc) lc.style.opacity = '';
   document.getElementById('file-input').value = '';
 }
-
+   
+function switchDocType(type) {
+  currentDocType = type;
+  document.querySelectorAll('.pill').forEach(p => {
+    const t = p.getAttribute('onclick')?.match(/'([^']+)'/)?.[1];
+    p.classList.toggle('active', t === type);
+  });
+  if (pendingScanData) showScanResult(pendingScanData);
+}
+   
 function cancelScan() {
   pendingScanData = null;
   document.getElementById('scan-result-card').style.display = 'none';
@@ -846,18 +855,15 @@ function showScanResult(d) {
   let typeWarning = '';
   const typeLabels = {contrat:'Contrat', bulletin:'Bulletin', aem:'AEM', conges:'Congés Spectacle', frais:'Frais'};
   if (d.type && d.type !== currentDocType) {
-    typeWarning = `<div class="alert alert-warn" style="margin-bottom:12px;">
-      ⚠️ L'IA a reconnu ce document comme <strong>${typeLabels[d.type]||d.type}</strong> 
-      alors que tu as sélectionné <strong>${typeLabels[currentDocType]}</strong>.<br>
-      <div style="display:flex;gap:8px;margin-top:8px;">
-        <button class="btn btn-ghost btn-sm" onclick="currentDocType='${d.type}';showScanResult(pendingScanData)">
-          Utiliser ${typeLabels[d.type]||d.type}
-        </button>
-        <button class="btn btn-ghost btn-sm" onclick="this.closest('.alert-warn').remove()">
-          Garder ${typeLabels[currentDocType]}
-        </button>
-      </div>
-    </div>`;
+    const detectedType = typeLabels[d.type] || d.type;
+    const selectedType = typeLabels[currentDocType];
+    typeWarning = '<div class="alert alert-warn" style="margin-bottom:12px;">'
+      + '⚠️ L\'IA a reconnu ce document comme <strong>' + detectedType + '</strong> '
+      + 'alors que tu as sélectionné <strong>' + selectedType + '</strong>.<br>'
+      + '<div style="display:flex;gap:8px;margin-top:8px;">'
+      + '<button class="btn btn-ghost btn-sm" onclick="switchDocType(\'' + d.type + '\')">Utiliser ' + detectedType + '</button>'
+      + '<button class="btn btn-ghost btn-sm" onclick="this.closest(\'.alert-warn\').remove()">Garder ' + selectedType + '</button>'
+      + '</div></div>';
   }
 
   // Détecte une correspondance potentielle avant d'afficher
