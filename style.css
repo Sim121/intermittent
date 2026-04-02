@@ -326,8 +326,13 @@ body {
     align-items: start;
   }
 
-  .contracts-layout .contract-panel {
+.contracts-layout .contract-panel {
     position: sticky; top: 24px;
+    display: none;
+  }
+
+  .contracts-layout .contract-panel.show {
+    display: block;
   }
 
   /* Scan : upload gauche, résultat droite */
