@@ -2,7 +2,7 @@
    INTERMITTENT — app.js v3.0
    ============================================================ */
 
-const APP_VERSION = '3.1.29';
+const APP_VERSION = '3.1.31';
 const APP_DATE    = '2026-04-01';
 
 const MONTHS     = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
@@ -967,7 +967,20 @@ function refuserRattachement() {
   const sel = document.getElementById('scan-contrat-select');
   if (sel) sel.value = '';
   document.getElementById('btn-confirm-scan').style.display = 'block';
-  document.querySelector('.alert-ok')?.remove();
+  // Change la bannière en mode "création d'un nouveau contrat" sans la supprimer
+  const banner = document.querySelector('.alert-ok');
+  if (banner) {
+    banner.className = 'alert alert-warn';
+    banner.innerHTML = '📄 Ce document créera un <strong>nouveau contrat</strong>.'
+      + '<div style="display:flex;gap:8px;margin-top:8px;">'
+      + '<button class="btn btn-ghost btn-sm" onclick="revenirRattachement()">↩ Finalement, rattacher</button>'
+      + '</div>';
+  }
+}
+
+function revenirRattachement() {
+  // Remet la bannière de correspondance originale
+  if (pendingScanData) showScanResult(pendingScanData);
 }
 
 function confirmScanInline() {
