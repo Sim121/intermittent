@@ -2,7 +2,7 @@
    INTERMITTENT — app.js v3.0
    ============================================================ */
 
-const APP_VERSION = '3.1.3';
+const APP_VERSION = '3.1.4';
 const APP_DATE    = '2026-04-01';
 
 const MONTHS     = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
@@ -333,10 +333,12 @@ function openDetail(id) {
   if (isDesktop) {
     // Sur desktop : affiche le panel de droite
     document.getElementById('desktop-detail-panel').classList.add('show');
-  } else {
-    document.getElementById('detail-view').classList.add('show');
-    document.body.style.overflow = 'hidden';
-  }
+   } else {
+       const dv = document.getElementById('detail-view');
+       dv.classList.add('show');
+       dv.style.transform = 'translateX(0)';
+       document.body.style.overflow = 'hidden';
+   }
 }
 
 function closeDetail() {
