@@ -2,7 +2,7 @@
    INTERMITTENT — app.js v3.0
    ============================================================ */
 
-const APP_VERSION = '3.0.0';
+const APP_VERSION = '3.1.0';
 const APP_DATE    = '2026-04-01';
 
 const MONTHS     = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
@@ -431,6 +431,67 @@ function deleteCurrentContrat() {
   saveState();
   closeDetail();
   toast('🗑️ Contrat supprimé');
+}
+
+function openMergeContrat(id) {
+  const c = state.contrats.find(x => x.id === id);
+  if (!c) return;
+  const others = state.contrats.filter(x => x.id !== id);
+  if (!others.length) { toast('Aucun autre contrat à fusionner'); return; }
+
+  const opts = others.map(o =>
+    `<option value="${o.id}">${o.employeur} — ${fmtDate(o.dateDebut)}${o.dateDebut !== o.dateFin ? ' → '+fmtDate(o.dateFin) : ''} (${fmt(o.brutV)})</option>`
+  ).join('');
+
+  // Affiche un mini panel de fusion dans le détail
+  const mergeHtml = `
+    <div class="card" style="background:var(--blue-light);border-color:rgba(26,74,122,.2);margin-top:12px;" id="merge-panel">
+      <div class="card-head"><div class="card-head-title" style="color:var(--blue);">Fusionner avec…</div><button class="btn btn-ghost btn-sm" onclick="document.getElementById('merge-panel').remove()">✕</button></div>
+      <div class="field">
+        <label>Choisir le contrat à absorber</label>
+        <select id="merge-target-select">${opts}</select>
+      </div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:12px;">Le contrat sélectionné sera <strong>fusionné dans "${c.employeur}"</strong> et supprimé. Les valeurs manquantes seront complétées.</div>
+      <button class="btn btn-primary" onclick="doMergeContrat('${id}')">🔀 Fusionner</button>
+    </div>`;
+
+  const body = document.getElementById('detail-body');
+  if (body) body.insertAdjacentHTML('beforeend', mergeHtml);
+  const dp = document.getElementById('desktop-detail-body');
+  if (dp) dp.insertAdjacentHTML('beforeend', mergeHtml.replace('id="merge-panel"','id="merge-panel-desktop"').replace("document.getElementById('merge-panel').remove()","document.getElementById('merge-panel-desktop').remove()").replace("doMergeContrat('${id}')","doMergeContrat('${id}')"));
+}
+
+function doMergeContrat(keepId) {
+  const sel = document.getElementById('merge-target-select') || document.getElementById('merge-target-select');
+  if (!sel) return;
+  const absorbId = sel.value;
+  const keep   = state.contrats.find(x => x.id === keepId);
+  const absorb = state.contrats.find(x => x.id === absorbId);
+  if (!keep || !absorb) return;
+  if (!confirm(`Fusionner "${absorb.employeur} (${fmtDate(absorb.dateDebut)})" dans "${keep.employeur} (${fmtDate(keep.dateDebut)})" ?`)) return;
+
+  // Fusionne : prend les valeurs manquantes de l'absorbé
+  if (!keep.brutV  && absorb.brutV)  keep.brutV  = absorb.brutV;
+  if (!keep.netImp && absorb.netImp) keep.netImp = absorb.netImp;
+  if (!keep.netV   && absorb.netV)   keep.netV   = absorb.netV;
+  if (!keep.pasV   && absorb.pasV)   keep.pasV   = absorb.pasV;
+  if (!keep.heures && absorb.heures) keep.heures = absorb.heures;
+  if (!keep.cachets && absorb.cachets) keep.cachets = absorb.cachets;
+  if (!keep.poste  && absorb.poste)  keep.poste  = absorb.poste;
+  if (!keep.ref    && absorb.ref)    keep.ref    = absorb.ref;
+  keep.hasBulletin = keep.hasBulletin || absorb.hasBulletin;
+  keep.hasAEM      = keep.hasAEM      || absorb.hasAEM;
+  keep.hasCS       = keep.hasCS       || absorb.hasCS;
+  // Réaffecte les frais de l'absorbé
+  state.frais.forEach(f => { if (f.contratId === absorbId) f.contratId = keepId; });
+  // Supprime l'absorbé
+  state.contrats = state.contrats.filter(x => x.id !== absorbId);
+
+  saveState();
+  toast('✅ Contrats fusionnés');
+  renderDetailBody(keep);
+  renderContrats();
+  renderBilan();
 }
 
 function editContrat(id) {
