@@ -23,6 +23,7 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   // Ne jamais mettre en cache les appels API
   if (e.request.url.includes('anthropic.com') ||
+      e.request.url.includes('script.google.com') ||
       e.request.url.includes('workers.dev') ||
       e.request.url.includes('googleapis.com') ||
       e.request.url.includes('accounts.google.com')) {
