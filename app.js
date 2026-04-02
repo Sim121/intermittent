@@ -105,7 +105,7 @@ async function saveUrlFromLogin() {
   document.getElementById('login-apps-script-url').value = url;
 }
 
-function handleLogin() {
+async function handleLogin() {
   const password = document.getElementById('login-password').value;
   const btn      = document.getElementById('login-btn');
   const error    = document.getElementById('login-error');
