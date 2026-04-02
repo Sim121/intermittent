@@ -2,7 +2,7 @@
    INTERMITTENT — app.js v3.0
    ============================================================ */
 
-const APP_VERSION = '3.1.20';
+const APP_VERSION = '3.1.23';
 const APP_DATE    = '2026-04-01';
 
 const MONTHS     = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
@@ -936,9 +936,11 @@ function refuserRattachement() {
 function confirmScanInline() {
   if (!pendingScanData) return;
   const d = pendingScanData;
+  // Utilise TOUJOURS le type détecté par l'IA, pas currentDocType
+  const docType = d.type || currentDocType;
   const linkedId = document.getElementById('scan-contrat-select')?.value || '';
 
-  if (d.type === 'contrat' || currentDocType === 'contrat') {
+  if (d.type === 'contrat' || docType === 'contrat') {
     const match = linkedId
       ? state.contrats.find(x => x.id === linkedId)
       : findMatchingContrat(d.employeur, d.date_debut);
@@ -965,7 +967,7 @@ function confirmScanInline() {
       toast('✅ Contrat enregistré');
     }
 
-  } else if (d.type === 'bulletin' || currentDocType === 'bulletin') {
+  } else if (d.type === 'bulletin' || docType === 'bulletin') {
     const mi = MONTHS.indexOf(d.mois);
     const an = d.annee || new Date().getFullYear();
     // Utilise la date exacte de travail si disponible, sinon le 1er du mois
@@ -994,7 +996,7 @@ function confirmScanInline() {
       toast('✅ Bulletin → nouveau contrat');
     }
 
-  } else if (d.type === 'aem' || currentDocType === 'aem') {
+  } else if (d.type === 'aem' || docType === 'aem') {
     const mi = MONTHS.indexOf(d.mois);
     const an = d.annee || new Date().getFullYear();
     const dateStr = d.date_debut || (mi >= 0 ? `${an}-${String(mi+1).padStart(2,'0')}-01` : new Date().toISOString().slice(0,10));
@@ -1018,7 +1020,7 @@ function confirmScanInline() {
       toast('✅ AEM → nouveau contrat');
     }
 
-} else if (d.type === 'conges' || currentDocType === 'conges') {
+} else if (d.type === 'conges' || docType === 'conges') {
     // Cherche un contrat correspondant (même employeur + mêmes dates)
     const csDate = d.date_debut || new Date().toISOString().slice(0,10);
     const match = linkedId
@@ -1048,7 +1050,7 @@ function confirmScanInline() {
       toast('✅ Congés Spectacle → nouveau contrat');
     }
 
-  } else if (d.type === 'frais' || currentDocType === 'frais') {
+  } else if (d.type === 'frais' || docType === 'frais') {
     state.frais.push({
       id: Date.now().toString(), cat: d.categorie||'autre',
       desc: d.description||d.nature||'',
