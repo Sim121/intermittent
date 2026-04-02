@@ -282,6 +282,7 @@ body {
     margin-left: var(--sidebar-w);
     flex: 1;
     min-height: 100dvh;
+    display: block;
   }
 
   /* Desktop header (remplace le header mobile) */
@@ -294,7 +295,7 @@ body {
   .page-wrap { padding: 0 0 48px; }
 
   /* Pages visibles en desktop */
-  .page.active { display: flex; flex-direction: column; }
+  .page.active { display: block; }
 
   /* ── DESKTOP GRID LAYOUTS ── */
 
