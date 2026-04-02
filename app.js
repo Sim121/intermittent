@@ -2,7 +2,7 @@
    INTERMITTENT — app.js v3.0
    ============================================================ */
 
-const APP_VERSION = '3.1.9';
+const APP_VERSION = '3.1.10';
 const APP_DATE    = '2026-04-01';
 
 const MONTHS     = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
