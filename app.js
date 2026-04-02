@@ -2,7 +2,7 @@
    INTERMITTENT — app.js v3.0
    ============================================================ */
 
-const APP_VERSION = '3.1.14';
+const APP_VERSION = '3.1.15';
 const APP_DATE    = '2026-04-01';
 
 const MONTHS     = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
@@ -1313,6 +1313,8 @@ function init() {
    setTimeout(() => {
     const sVel = document.getElementById('sidebar-version');
     if (sVel) sVel.textContent = 'v' + APP_VERSION;
+    const lVel = document.getElementById('login-version');
+    if (lVel) lVel.textContent = 'v' + APP_VERSION;  
   }, 500);
 
   // Pré-remplit l'URL Apps Script dans le login si déjà configurée
