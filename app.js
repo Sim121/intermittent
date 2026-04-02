@@ -874,14 +874,13 @@ function showScanResult(d) {
     const dateStr = d.date_travail || d.date_debut || (mi >= 0 ? `${an}-${String(mi+1).padStart(2,'0')}-01` : new Date().toISOString().slice(0,10));
     const match = findMatchingContrat(d.employeur, dateStr);
     if (match) {
-      matchInfo = `<div class="alert alert-ok" style="margin-bottom:12px;">
-        🔗 Correspondance trouvée : <strong>${match.employeur}</strong> (${fmtDate(match.dateDebut)})<br>
-        <small>Confirmes-tu le rattachement à ce contrat ?</small>
-        <div style="display:flex;gap:8px;margin-top:8px;">
-          <button class="btn btn-primary btn-sm" onclick="confirmRattachement('${match.id}')">✓ Oui, rattacher</button>
-          <button class="btn btn-ghost btn-sm" onclick="refuserRattachement()">Non, créer nouveau</button>
-        </div>
-      </div>`;
+      matchInfo = '<div class="alert alert-ok" style="margin-bottom:12px;">'
+        + '🔗 Correspondance trouvée : <strong>' + match.employeur + '</strong> (' + fmtDate(match.dateDebut) + ')<br>'
+        + '<small>Confirmes-tu le rattachement à ce contrat ?</small>'
+        + '<div style="display:flex;gap:8px;margin-top:8px;">'
+        + '<button class="btn btn-primary btn-sm" onclick="confirmRattachement(\'' + match.id + '\')">✓ Oui, rattacher</button>'
+        + '<button class="btn btn-ghost btn-sm" onclick="refuserRattachement()">Non, créer nouveau</button>'
+        + '</div></div>';
       // Masque le bouton Enregistrer jusqu'à confirmation
       document.getElementById('btn-confirm-scan').style.display = 'none';
       const sel = document.getElementById('scan-contrat-select');
