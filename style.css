@@ -335,6 +335,12 @@ body {
     display: block !important;
   }
 
+  #desktop-detail-body .btn {
+    white-space: normal;
+    width: 100% !important;
+    box-sizing: border-box;
+  }
+
   /* Scan : upload gauche, résultat droite */
   .scan-layout {
     display: grid;
