@@ -2,7 +2,7 @@
    INTERMITTENT — app.js v3.0
    ============================================================ */
 
-const APP_VERSION = '3.1.10';
+const APP_VERSION = '3.1.11';
 const APP_DATE    = '2026-04-01';
 
 const MONTHS     = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
@@ -367,6 +367,7 @@ function renderDetailBody(c) {
     <div class="card">
       <div class="card-head"><div class="card-head-title">Documents rattachés</div></div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <span class="tag ${c.hasContrat ? 'tag-green' : 'tag-gray'}">📝 Contrat ${c.hasContrat ? '✓' : 'manquant'}</span>
         <span class="tag ${c.hasBulletin ? 'tag-green' : 'tag-gray'}">📄 Bulletin ${c.hasBulletin ? '✓' : 'manquant'}</span>
         <span class="tag ${c.hasAEM ? 'tag-green' : 'tag-gray'}">📋 AEM ${c.hasAEM ? '✓' : 'manquante'}</span>
         <span class="tag ${c.hasCS ? 'tag-green' : 'tag-gray'}">🌴 Congés Spectacle ${c.hasCS ? '✓' : 'manquants'}</span>
@@ -622,6 +623,13 @@ function renderContrats() {
             <div class="contrat-stat"><strong>${c.cachets||0}</strong> cachet${(c.cachets||0)>1?'s':''}</div>
             <div class="contrat-stat"><strong>${c.heures||0}h</strong></div>
             <div class="contrat-stat"><strong style="color:var(--gold)">${fmt(c.brutV)}</strong> brut</div>
+            <div class="contrat-stat"><strong style="color:var(--green)">${fmt(c.netV)}</strong> net</div>
+          </div>
+          <div style="display:flex;gap:6px;margin-top:8px;">
+            <span style="font-size:9px;" class="tag ${c.hasContrat?'tag-green':'tag-gray'}">📝</span>
+            <span style="font-size:9px;" class="tag ${c.hasBulletin?'tag-green':'tag-gray'}">📄</span>
+            <span style="font-size:9px;" class="tag ${c.hasAEM?'tag-green':'tag-gray'}">📋</span>
+            <span style="font-size:9px;" class="tag ${c.hasCS?'tag-green':'tag-gray'}">🌴</span>
           </div>
         </div>`;
       });
@@ -822,17 +830,31 @@ function confirmScanInline() {
   const linkedId = document.getElementById('scan-contrat-select')?.value || '';
 
   if (d.type === 'contrat' || currentDocType === 'contrat') {
-    state.contrats.push({
-      id: Date.now().toString(),
-      employeur: d.employeur||'', poste: d.poste||d.nature_contrat||'',
-      dateDebut: d.date_debut||new Date().toISOString().slice(0,10),
-      dateFin: d.date_fin||d.date_debut||new Date().toISOString().slice(0,10),
-      cachets: d.cachets||0, heures: d.h_prevues||0,
-      brutV: d.cachet_brut_total||0, netImp:0, netV:0, pasV:0,
-      paye: null, ref:'', comment:'', docs:[],
-      hasBulletin: false, hasAEM: false, hasCS: false
-    });
-    toast('✅ Contrat enregistré');
+    const match = linkedId
+      ? state.contrats.find(x => x.id === linkedId)
+      : findMatchingContrat(d.employeur, d.date_debut);
+    if (match) {
+      // Complète le contrat existant avec les infos du contrat signé
+      if (!match.poste && (d.poste||d.nature_contrat)) match.poste = d.poste||d.nature_contrat;
+      if (!match.dateDebut && d.date_debut) match.dateDebut = d.date_debut;
+      if (!match.dateFin && d.date_fin) match.dateFin = d.date_fin;
+      if (!match.heures && d.h_prevues) match.heures = d.h_prevues;
+      if (!match.brutV && d.cachet_brut_total) match.brutV = d.cachet_brut_total;
+      match.hasContrat = true;
+      toast('✅ Contrat rattaché à : ' + match.employeur);
+    } else {
+      state.contrats.push({
+        id: Date.now().toString(),
+        employeur: d.employeur||'', poste: d.poste||d.nature_contrat||'',
+        dateDebut: d.date_debut||new Date().toISOString().slice(0,10),
+        dateFin: d.date_fin||d.date_debut||new Date().toISOString().slice(0,10),
+        cachets: d.cachets||0, heures: d.h_prevues||0,
+        brutV: d.cachet_brut_total||0, netImp:0, netV:0, pasV:0,
+        paye: null, ref:'', comment:'', docs:[],
+        hasContrat: true, hasBulletin: false, hasAEM: false, hasCS: false
+      });
+      toast('✅ Contrat enregistré');
+    }
 
   } else if (d.type === 'bulletin' || currentDocType === 'bulletin') {
     const mi = MONTHS.indexOf(d.mois);
@@ -864,10 +886,9 @@ function confirmScanInline() {
     }
 
   } else if (d.type === 'aem' || currentDocType === 'aem') {
-    // Date AEM : utiliser mois+annee, pas la date du jour de travail
     const mi = MONTHS.indexOf(d.mois);
     const an = d.annee || new Date().getFullYear();
-    const dateStr = mi >= 0 ? `${an}-${String(mi+1).padStart(2,'0')}-01` : new Date().toISOString().slice(0,10);
+    const dateStr = d.date_debut || (mi >= 0 ? `${an}-${String(mi+1).padStart(2,'0')}-01` : new Date().toISOString().slice(0,10));
     const match = linkedId ? state.contrats.find(x => x.id === linkedId) : findMatchingContrat(d.employeur, dateStr);
 
     if (match) {
