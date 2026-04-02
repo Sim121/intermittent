@@ -88,7 +88,24 @@ function isSessionValid() {
   return new Date(session.expiresAt) > new Date();
 }
 
-async function handleLogin() {
+async function saveUrlFromLogin() {
+  const url = document.getElementById('login-apps-script-url').value.trim();
+  if (!url.includes('script.google.com')) { 
+    showLoginError('URL invalide — doit contenir script.google.com');
+    return;
+  }
+  localStorage.setItem('apps-script-url', url);
+  // Pré-remplit aussi le champ dans Réglages
+  const el = document.getElementById('apps-script-url');
+  if (el) el.value = url;
+  // Affiche la confirmation
+  document.getElementById('login-url-saved').style.display = 'block';
+  document.getElementById('login-error').classList.remove('show');
+  // Pré-remplit le champ URL dans le login si déjà en localStorage
+  document.getElementById('login-apps-script-url').value = url;
+}
+
+function handleLogin() {
   const password = document.getElementById('login-password').value;
   const btn      = document.getElementById('login-btn');
   const error    = document.getElementById('login-error');
@@ -1010,6 +1027,11 @@ function init() {
   const dEl = document.getElementById('app-date-display');
   if (vEl) vEl.textContent = APP_VERSION;
   if (dEl) dEl.textContent = APP_DATE;
+
+  // Pré-remplit l'URL Apps Script dans le login si déjà configurée
+  const savedUrl = localStorage.getItem('apps-script-url');
+  const loginUrlEl = document.getElementById('login-apps-script-url');
+  if (savedUrl && loginUrlEl) loginUrlEl.value = savedUrl;
 
   // Enter sur le champ mot de passe
   const pwEl = document.getElementById('login-password');
