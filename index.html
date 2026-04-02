@@ -233,13 +233,9 @@
         <div class="scan-layout">
           <div class="section" style="padding-top:0;">
             <div class="card">
-              <div class="card-head"><div class="card-head-title">Type de document</div></div>
-              <div class="type-pills">
-                <div class="pill active" onclick="setDocType(this,'bulletin')">📄 Bulletin</div>
-                <div class="pill" onclick="setDocType(this,'contrat')">📝 Contrat</div>
-                <div class="pill" onclick="setDocType(this,'aem')">📋 AEM</div>
-                <div class="pill" onclick="setDocType(this,'conges')">🌴 Congés</div>
-                <div class="pill" onclick="setDocType(this,'frais')">🧾 Frais</div>
+              <div class="card">
+                <div class="card-head"><div class="card-head-title">Scanner un document</div></div>
+                <div style="font-size:13px;color:var(--muted);">L'IA détecte automatiquement le type de document.</div>
               </div>
             </div>
             <div class="card" id="scan-contrat-link-card" style="display:none;">
