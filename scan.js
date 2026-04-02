@@ -5,6 +5,7 @@
 
 let fileQueue      = [];
 let fileQueueIndex = 0;
+let currentAbortController = null;
 
 // ── UPLOAD ──
 function handleDrop(e) {
@@ -65,9 +66,10 @@ async function processFile(file) {
   document.getElementById('scan-loading').style.display    = 'block';
   document.getElementById('scan-result-card').style.display = 'none';
 
-  try {
+ try {
     const base64 = await fileToBase64(file);
-    const res    = await appsScriptPost({ action: 'scanDoc', docType: currentDocType, base64Data: base64, mediaType: file.type });
+    currentAbortController = new AbortController();
+    const res = await appsScriptPost({ action: 'scanDoc', docType: currentDocType, base64Data: base64, mediaType: file.type }, currentAbortController.signal);
     document.getElementById('scan-loading').style.display = 'none';
     if (res.ok) {
       pendingScanData = res.data;
