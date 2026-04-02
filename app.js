@@ -2,7 +2,7 @@
    INTERMITTENT — app.js v3.0
    ============================================================ */
 
-const APP_VERSION = '3.1.6';
+const APP_VERSION = '3.1.7';
 const APP_DATE    = '2026-04-01';
 
 const MONTHS     = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
@@ -817,7 +817,8 @@ function confirmScanInline() {
   } else if (d.type === 'bulletin' || currentDocType === 'bulletin') {
     const mi = MONTHS.indexOf(d.mois);
     const an = d.annee || new Date().getFullYear();
-    const dateStr = mi >= 0 ? `${an}-${String(mi+1).padStart(2,'0')}-01` : new Date().toISOString().slice(0,10);
+    // Utilise la date exacte de travail si disponible, sinon le 1er du mois
+    const dateStr = d.date_travail || (mi >= 0 ? `${an}-${String(mi+1).padStart(2,'0')}-01` : new Date().toISOString().slice(0,10));
     const match = linkedId ? state.contrats.find(x => x.id === linkedId) : findMatchingContrat(d.employeur, dateStr);
 
     if (match) {
