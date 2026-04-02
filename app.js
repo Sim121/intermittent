@@ -1034,6 +1034,8 @@ function init() {
   if (savedUrl && loginUrlEl) loginUrlEl.value = savedUrl;
 
   // Enter sur le champ mot de passe
+  const btnSaveUrl = document.getElementById('btn-save-url');
+  if (btnSaveUrl) btnSaveUrl.addEventListener('click', saveUrlFromLogin);
   const pwEl = document.getElementById('login-password');
   if (pwEl) pwEl.addEventListener('keydown', e => { if (e.key==='Enter') handleLogin(); });
 
