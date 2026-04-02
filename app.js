@@ -2,7 +2,7 @@
    INTERMITTENT — app.js v3.0
    ============================================================ */
 
-const APP_VERSION = '3.1.8';
+const APP_VERSION = '3.1.9';
 const APP_DATE    = '2026-04-01';
 
 const MONTHS     = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
@@ -802,14 +802,16 @@ function showScanResult(d) {
 // Trouve un contrat existant correspondant (même employeur + même période)
 function findMatchingContrat(employeur, dateStr) {
   if (!employeur || !dateStr) return null;
-  const empNorm = employeur.toLowerCase().trim();
+  const empNorm = employeur.toLowerCase().replace(/\s+/g, '').trim();
   const [y, m] = dateStr.split('-').map(Number);
   return state.contrats.find(c => {
     if (!c.dateDebut) return false;
     const cd = new Date(c.dateDebut);
     const sameMonth = cd.getFullYear() === y && cd.getMonth() === m - 1;
-    const empMatch = c.employeur.toLowerCase().trim().includes(empNorm.slice(0,6)) ||
-                     empNorm.includes(c.employeur.toLowerCase().trim().slice(0,6));
+    const cNorm = c.employeur.toLowerCase().replace(/\s+/g, '').trim();
+    // Comparaison insensible à la casse et aux espaces, sur 6 caractères minimum
+    const empMatch = cNorm.includes(empNorm.slice(0,6)) ||
+                     empNorm.includes(cNorm.slice(0,6));
     return sameMonth && empMatch;
   });
 }
