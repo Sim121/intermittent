@@ -375,7 +375,16 @@
   <!-- SHEET : Ajouter contrat -->
   <div class="bottom-sheet" id="sheet-add-contrat">
     <div class="sheet-handle"></div>
-    <div class="sheet-title" id="sheet-contrat-title">Nouveau contrat</div>
+    <div class="sheet-handle"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+      <div class="sheet-title" id="sheet-contrat-title" style="margin-bottom:0;">Nouveau contrat</div>
+      <button class="btn btn-ghost btn-sm" onclick="closeSheet()">✕</button>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:20px;">
+      <button class="btn btn-primary" style="flex:1;" onclick="showPage('scan');closeSheet()">📄 Scanner un doc</button>
+      <button class="btn btn-ghost" style="flex:1;" onclick="document.getElementById('contrat-form').style.display='block';this.parentElement.style.display='none'">✏️ Saisir manuellement</button>
+    </div>
+    <div id="contrat-form" style="display:none;">
     <div class="field"><label>Employeur</label><input type="text" id="c-emp" placeholder="Nom de la compagnie"></div>
     <div class="field"><label>Poste / Nature</label><input type="text" id="c-poste" placeholder="Ex: Comédien, Metteur en scène…"></div>
     <div class="field-row">
@@ -396,8 +405,8 @@
     </div>
     <div class="field"><label>Référence fichier(s)</label><input type="text" id="c-ref" placeholder="Contrat.pdf, Bulletin.pdf…"></div>
     <div class="field"><label>Commentaire</label><textarea id="c-comment" placeholder="Notes…"></textarea></div>
-    <button class="btn btn-primary" id="btn-save-contrat" onclick="addContrat()" style="margin-top:8px;">✓ Enregistrer</button>
-  </div>
+     <button class="btn btn-primary" id="btn-save-contrat" onclick="addContrat()" style="margin-top:8px;">✓ Enregistrer</button>
+    </div><!-- /contrat-form -->
 
   <!-- SHEET : Ajouter frais -->
   <div class="bottom-sheet" id="sheet-add-frais">
