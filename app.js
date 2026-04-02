@@ -2,7 +2,7 @@
    INTERMITTENT — app.js v3.0
    ============================================================ */
 
-const APP_VERSION = '3.1.25';
+const APP_VERSION = '3.1.26';
 const APP_DATE    = '2026-04-01';
 
 const MONTHS     = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
@@ -864,7 +864,8 @@ function showScanResult(d) {
   if (d.type === 'bulletin' || d.type === 'aem' || d.type === 'conges' || d.type === 'contrat') {
     const mi = MONTHS.indexOf(d.mois);
     const an = d.annee || new Date().getFullYear();
-    const dateStr = d.date_travail || d.date_debut || (mi >= 0 ? `${an}-${String(mi+1).padStart(2,'0')}-01` : new Date().toISOString().slice(0,10));
+    const fallback = (mi >= 0 && !isNaN(an)) ? `${an}-${String(mi+1).padStart(2,'0')}-01` : new Date().toISOString().slice(0,10);
+    const dateStr = d.date_travail || d.date_debut || d.date_fin || fallback;
     const match = findMatchingContrat(d.employeur, dateStr);
     if (match) {
       matchInfo = '<div class="alert alert-ok" style="margin-bottom:12px;">'
@@ -883,7 +884,7 @@ function showScanResult(d) {
   const numF = ['salaire_brut','net_imposable','net_percu','pas_preleve','montant_ttc','montant_ht','cachet_brut'];
   const intF = ['cachets','nb_cachets','nb_jours_cachets','nb_heures','h_totales','h_cachets','annee'];
   const rows = '<div style="padding:8px 0;border-bottom:1px solid var(--border2);display:flex;justify-content:space-between;">'
-    + '<span style="font-family:\'DM Mono\',monospace;font-size:10px;color:var(--muted);text-transform:uppercase;">Type détecté</span>'
+    + '<span style="font-family:\'DM Mono\',monospace;font-size:10px;color:var(--muted);text-transform:uppercase;">Type initialement détecté</span>'
     + '<span style="font-size:13px;font-weight:700;">' + (typeLabels[d.type] || d.type || '—') + '</span>'
     + '</div>'
     + Object.entries(d)
@@ -907,16 +908,18 @@ function showScanResult(d) {
 function findMatchingContrat(employeur, dateStr) {
   if (!employeur || !dateStr) return null;
   const empNorm = employeur.toUpperCase().replace(/\s+/g, '').trim();
-  const [y, m] = dateStr.split('-').map(Number);
+  const parts = dateStr.split('-').map(Number);
+  const y = parts[0], m = parts[1];
+  if (!y || !m || isNaN(y) || isNaN(m)) return null;
+
   return state.contrats.find(c => {
     if (!c.dateDebut) return false;
     const cd = new Date(c.dateDebut);
     const sameMonth = cd.getFullYear() === y && cd.getMonth() === m - 1;
+    if (!sameMonth) return false;
     const cNorm = c.employeur.toUpperCase().replace(/\s+/g, '').trim();
-    // Comparaison insensible à la casse et aux espaces, sur 6 caractères minimum
-    const empMatch = cNorm.includes(empNorm.slice(0,6)) ||
-                     empNorm.includes(cNorm.slice(0,6));
-    return sameMonth && empMatch;
+    // Comparaison sur 6 caractères minimum
+    return cNorm.includes(empNorm.slice(0,6)) || empNorm.includes(cNorm.slice(0,6));
   });
 }
 
@@ -972,8 +975,8 @@ function confirmScanInline() {
   } else if (d.type === 'bulletin' || docType === 'bulletin') {
     const mi = MONTHS.indexOf(d.mois);
     const an = d.annee || new Date().getFullYear();
-    // Utilise la date exacte de travail si disponible, sinon le 1er du mois
-    const dateStr = d.date_travail || (mi >= 0 ? `${an}-${String(mi+1).padStart(2,'0')}-01` : new Date().toISOString().slice(0,10));
+    const fallback = (mi >= 0 && !isNaN(an)) ? `${an}-${String(mi+1).padStart(2,'0')}-01` : new Date().toISOString().slice(0,10);
+    const dateStr = d.date_travail || d.date_debut || fallback;
     const match = linkedId ? state.contrats.find(x => x.id === linkedId) : findMatchingContrat(d.employeur, dateStr);
 
     if (match) {
@@ -1001,7 +1004,8 @@ function confirmScanInline() {
   } else if (d.type === 'aem' || docType === 'aem') {
     const mi = MONTHS.indexOf(d.mois);
     const an = d.annee || new Date().getFullYear();
-    const dateStr = d.date_debut || (mi >= 0 ? `${an}-${String(mi+1).padStart(2,'0')}-01` : new Date().toISOString().slice(0,10));
+    const fallback = (mi >= 0 && !isNaN(an)) ? `${an}-${String(mi+1).padStart(2,'0')}-01` : new Date().toISOString().slice(0,10);
+    const dateStr = d.date_debut || d.date_travail || fallback;
     const match = linkedId ? state.contrats.find(x => x.id === linkedId) : findMatchingContrat(d.employeur, dateStr);
 
     if (match) {
