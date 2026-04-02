@@ -116,7 +116,10 @@
       <div class="page-wrap">
         <div class="section" style="padding-top:20px;">
           <div class="section-title">Bilan <span class="accent">2026</span></div>
-          <div class="section-sub">Vue annuelle · Sauvegarde auto</div>
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
+  <div class="section-sub" style="margin-bottom:0;">Bilan annuel</div>
+  <select id="bilan-year-select" onchange="renderBilan()" style="font-family:'DM Mono',monospace;font-size:12px;padding:4px 10px;border-radius:20px;border:1px solid var(--border);background:var(--bg2);color:var(--ink);appearance:none;-webkit-appearance:none;cursor:pointer;"></select>
+</div>
         </div>
         <div class="section">
           <div class="stat-row">
