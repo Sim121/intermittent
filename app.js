@@ -973,29 +973,26 @@ function refuserRattachement() {
 function confirmScanInline() {
   if (!pendingScanData) return;
   const d = pendingScanData;
-  // Utilise TOUJOURS le type détecté par l'IA, pas currentDocType
   const docType = d.type || currentDocType;
   const linkedId = document.getElementById('scan-contrat-select')?.value || '';
 
-  if (d.type === 'contrat' || docType === 'contrat') {
-    const match = linkedId
-      ? state.contrats.find(x => x.id === linkedId)
-      : findMatchingContrat(d.employeur, d.date_debut);
+  if (docType === 'contrat') {
+    const dateDebut = parseDate(d.date_debut) || parseDate(d.date_travail) || new Date().toISOString().slice(0,10);
+    const dateFin   = parseDate(d.date_fin) || dateDebut;
+    const match = linkedId ? state.contrats.find(x => x.id === linkedId) : findMatchingContrat(d.employeur, dateDebut);
     if (match) {
-      // Complète le contrat existant avec les infos du contrat signé
       if (!match.poste && (d.poste||d.nature_contrat)) match.poste = d.poste||d.nature_contrat;
-      if (!match.dateDebut && d.date_debut) match.dateDebut = d.date_debut;
-      if (!match.dateFin && d.date_fin) match.dateFin = d.date_fin;
       if (!match.heures && d.h_prevues) match.heures = d.h_prevues;
       if (!match.brutV && d.cachet_brut_total) match.brutV = d.cachet_brut_total;
+      if (!match.cachets && d.cachets) match.cachets = d.cachets;
       match.hasContrat = true;
       toast('✅ Contrat rattaché à : ' + match.employeur);
     } else {
       state.contrats.push({
         id: Date.now().toString(),
-        employeur: (d.employeur||'').toUpperCase().trim(), poste: d.poste||d.nature_contrat||'',
-        dateDebut: parseDate(d.date_debut)||new Date().toISOString().slice(0,10),
-        dateFin: parseDate(d.date_fin)||parseDate(d.date_debut)||new Date().toISOString().slice(0,10),
+        employeur: (d.employeur||'').toUpperCase().trim(),
+        poste: d.poste||d.nature_contrat||'',
+        dateDebut, dateFin,
         cachets: d.cachets||0, heures: d.h_prevues||0,
         brutV: d.cachet_brut_total||0, netImp:0, netV:0, pasV:0,
         paye: null, ref:'', comment:'', docs:[],
@@ -1004,13 +1001,12 @@ function confirmScanInline() {
       toast('✅ Contrat enregistré');
     }
 
-  } else if (d.type === 'bulletin' || docType === 'bulletin') {
+  } else if (docType === 'bulletin') {
     const mi = MONTHS.indexOf(d.mois);
-    const an = d.annee || new Date().getFullYear();
+    const an = parseInt(d.annee) || new Date().getFullYear();
     const fallback = (mi >= 0 && !isNaN(an)) ? `${an}-${String(mi+1).padStart(2,'0')}-01` : new Date().toISOString().slice(0,10);
-    const dateStr = d.date_travail || d.date_debut || fallback;
+    const dateStr = parseDate(d.date_travail) || parseDate(d.date_debut) || fallback;
     const match = linkedId ? state.contrats.find(x => x.id === linkedId) : findMatchingContrat(d.employeur, dateStr);
-
     if (match) {
       if (!match.brutV) match.brutV = d.salaire_brut||0;
       if (!match.netImp) match.netImp = d.net_imposable||0;
@@ -1022,24 +1018,24 @@ function confirmScanInline() {
       toast('✅ Bulletin rattaché à : ' + match.employeur);
     } else {
       state.contrats.push({
-        id: Date.now().toString(), employeur: (d.employeur||'').toUpperCase().trim(), poste:'',
+        id: Date.now().toString(),
+        employeur: (d.employeur||'').toUpperCase().trim(), poste:'',
         dateDebut: dateStr, dateFin: dateStr,
         cachets: d.cachets||0, heures: d.h_totales||0,
         brutV: d.salaire_brut||0, netImp: d.net_imposable||0,
         netV: d.net_percu||0, pasV: d.pas_preleve||0,
         paye: null, ref:'', comment:'', docs:[],
-        hasBulletin: true, hasAEM: false, hasCS: false
+        hasContrat: false, hasBulletin: true, hasAEM: false, hasCS: false
       });
       toast('✅ Bulletin → nouveau contrat');
     }
 
-  } else if (d.type === 'aem' || docType === 'aem') {
+  } else if (docType === 'aem') {
     const mi = MONTHS.indexOf(d.mois);
-    const an = d.annee || new Date().getFullYear();
+    const an = parseInt(d.annee) || new Date().getFullYear();
     const fallback = (mi >= 0 && !isNaN(an)) ? `${an}-${String(mi+1).padStart(2,'0')}-01` : new Date().toISOString().slice(0,10);
-    const dateStr = d.date_debut || d.date_travail || fallback;
+    const dateStr = parseDate(d.date_debut) || parseDate(d.date_travail) || fallback;
     const match = linkedId ? state.contrats.find(x => x.id === linkedId) : findMatchingContrat(d.employeur, dateStr);
-
     if (match) {
       if (!match.heures) match.heures = d.nb_heures||0;
       if (!match.cachets) match.cachets = d.nb_cachets||0;
@@ -1048,52 +1044,48 @@ function confirmScanInline() {
       toast('✅ AEM rattachée à : ' + match.employeur);
     } else {
       state.contrats.push({
-        id: Date.now().toString(), employeur: (d.employeur||'').toUpperCase().trim(), poste:'AEM',
+        id: Date.now().toString(),
+        employeur: (d.employeur||'').toUpperCase().trim(), poste:'AEM',
         dateDebut: dateStr, dateFin: dateStr,
         cachets: d.nb_cachets||0, heures: d.nb_heures||0,
         brutV: d.salaire_brut||0, netImp:0, netV:0, pasV:0,
         paye: null, ref:'AEM', comment:'', docs:[],
-        hasBulletin: false, hasAEM: true, hasCS: false
+        hasContrat: false, hasBulletin: false, hasAEM: true, hasCS: false
       });
       toast('✅ AEM → nouveau contrat');
     }
 
-} else if (d.type === 'conges' || docType === 'conges') {
-    // Cherche un contrat correspondant (même employeur + mêmes dates)
-    const csDate = parseDate(d.date_debut) || parseDate(d.date_fin) || new Date().toISOString().slice(0,10);
-    const match = linkedId
-      ? state.contrats.find(x => x.id === linkedId)
-      : findMatchingContrat(d.employeur, csDate);
-
+  } else if (docType === 'conges') {
+    const dateStr = parseDate(d.date_debut) || parseDate(d.date_fin) || new Date().toISOString().slice(0,10);
+    const match = linkedId ? state.contrats.find(x => x.id === linkedId) : findMatchingContrat(d.employeur, dateStr);
     if (match) {
       match.hasCS = true;
       if (!match.brutV && d.salaire_brut) match.brutV = d.salaire_brut;
       toast('✅ Congés Spectacle rattachés à : ' + match.employeur);
     } else {
-      // Crée un nouveau contrat
       state.contrats.push({
         id: Date.now().toString(),
         employeur: (d.employeur||'').toUpperCase().trim(),
         poste: d.emploi||'',
-        dateDebut: d.date_debut||csDate,
-        dateFin: d.date_fin||csDate,
-        cachets: d.nb_jours_cachets||0,
-        heures: 0,
-        brutV: d.salaire_brut||0,
-        netImp: 0, netV: 0, pasV: 0,
-        paye: null, ref:'', comment:'',
-        docs: [],
-        hasBulletin: false, hasAEM: false, hasCS: true
+        dateDebut: parseDate(d.date_debut) || dateStr,
+        dateFin: parseDate(d.date_fin) || dateStr,
+        cachets: d.nb_jours_cachets||0, heures: 0,
+        brutV: d.salaire_brut||0, netImp:0, netV:0, pasV:0,
+        paye: null, ref:'', comment:'', docs:[],
+        hasContrat: false, hasBulletin: false, hasAEM: false, hasCS: true
       });
       toast('✅ Congés Spectacle → nouveau contrat');
     }
 
-  } else if (d.type === 'frais' || docType === 'frais') {
+  } else if (docType === 'frais') {
+    const dateStr = parseDate(d.date) || new Date().toISOString().slice(0,10);
     state.frais.push({
-      id: Date.now().toString(), cat: d.categorie||'autre',
+      id: Date.now().toString(),
+      cat: d.categorie||'autre',
       desc: d.description||d.nature||'',
-      date: d.date||new Date().toISOString().slice(0,10),
-      montant: d.montant_ttc||0, km:0, repas:0, ref:'', contratId: linkedId||''
+      date: dateStr,
+      montant: d.montant_ttc||0, km:0, repas:0, ref:'',
+      contratId: linkedId||''
     });
     toast('✅ Frais enregistré');
   }
@@ -1102,7 +1094,6 @@ function confirmScanInline() {
   pendingScanData = null;
   document.getElementById('scan-result-card').style.display = 'none';
   renderBilan();
-  // Passe au document suivant si queue active
   if (fileQueue.length > 0) nextInQueue();
 }
 
