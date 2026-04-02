@@ -829,7 +829,11 @@ function switchDocType(type) {
   });
   if (pendingScanData) showScanResult(pendingScanData);
 }
-   
+
+function overrideDocType(type) {
+  if (pendingScanData) pendingScanData.type = type;
+}
+
 function cancelScan() {
   pendingScanData = null;
   document.getElementById('scan-result-card').style.display = 'none';
@@ -848,13 +852,13 @@ function showScanResult(d) {
   if (d.type && d.type !== currentDocType) {
     const detectedType = typeLabels[d.type] || d.type;
     const selectedType = typeLabels[currentDocType];
-    typeWarning = '<div class="alert alert-warn" style="margin-bottom:12px;">'
-      + '⚠️ L\'IA a reconnu ce document comme <strong>' + detectedType + '</strong> '
-      + 'alors que tu as sélectionné <strong>' + selectedType + '</strong>.<br>'
-      + '<div style="display:flex;gap:8px;margin-top:8px;">'
-      + '<button class="btn btn-ghost btn-sm" onclick="switchDocType(\'' + d.type + '\')">Utiliser ' + detectedType + '</button>'
-      + '<button class="btn btn-ghost btn-sm" onclick="this.closest(\'.alert-warn\').remove()">Garder ' + selectedType + '</button>'
-      + '</div></div>';
+    const typeLabels = {contrat:'📝 Contrat', bulletin:'📄 Bulletin', aem:'📋 AEM', conges:'🌴 Congés Spectacle', frais:'🧾 Frais'};
+  const typeSelector = '<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;padding:10px 14px;background:var(--bg2);border-radius:var(--r-sm);">'
+    + '<span style="font-family:\'DM Mono\',monospace;font-size:10px;color:var(--muted);text-transform:uppercase;">Type détecté</span>'
+    + '<select onchange="overrideDocType(this.value)" style="flex:1;padding:6px 10px;border-radius:8px;border:1.5px solid var(--border);background:var(--surface);font-size:13px;font-weight:600;">'
+    + Object.entries(typeLabels).map(([v,l]) => '<option value="' + v + '"' + (v === d.type ? ' selected' : '') + '>' + l + '</option>').join('')
+    + '</select>'
+    + '</div>';
   }
 
   // Détecte une correspondance potentielle avant d'afficher
@@ -894,6 +898,7 @@ function showScanResult(d) {
   card.innerHTML = `
     <div class="card">
       <div class="card-head"><div class="card-head-title">Extraction IA</div><span class="tag tag-green">✓ OK</span></div>
+      ${typeSelector}
       ${matchInfo}
       ${rows}
       <button class="btn btn-primary" id="btn-confirm-scan" onclick="confirmScanInline()" style="margin-top:16px;">✓ Enregistrer</button>
