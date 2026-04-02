@@ -50,16 +50,3 @@ function heuresFT(c) {
   if (c.heures && c.heures > 0) return c.heures;
   return (c.cachets || 0) * 12;
 }
-```
-
-**Dans `Code.gs`**, dans le prompt `aem`, trouve :
-```
-"nb_heures":0,
-```
-Remplace par :
-```
-"nb_heures":0,"nb_heures_reelles":0,
-```
-Et dans l'instruction du prompt ajoute après `Ne jamais arrondir.` :
-```
-IMPORTANT: "nb_heures" = heures effectivement inscrites sur le document (souvent 0 ou vide pour annexe 10). "nb_heures_reelles" = même valeur. Ne jamais inventer des heures si elles ne sont pas explicitement indiquées.
