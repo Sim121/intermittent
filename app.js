@@ -3,7 +3,7 @@
    Core : state, auth, sync, navigation, settings, init
    ============================================================ */
 
-const APP_VERSION = '3.2.21';
+const APP_VERSION = '3.2.22';
 const APP_DATE    = '2026-04-03';
 
 // ── STATE GLOBAL ──
@@ -180,6 +180,8 @@ async function syncToServer(showToast = false) {
       const ts = new Date().toLocaleString('fr-FR', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' });
       setSyncStatus('ok', 'Sync ✓');
       document.getElementById('last-sync-label').textContent = ts;
+       const sst = document.getElementById('sidebar-sync-time');
+      if (sst) sst.textContent = ts;
       if (showToast) toast('☁️ Sauvegardé sur Drive !');
     } else {
       setSyncStatus('error', 'Erreur');
