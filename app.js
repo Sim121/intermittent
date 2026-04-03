@@ -293,6 +293,7 @@ function populateContratSelects() {
   if (s2) s2.innerHTML = '<option value="">— Aucun —</option>' + opts;
 }
 
+
 // ============================================================
 // CONFIG & SETTINGS
 // ============================================================
