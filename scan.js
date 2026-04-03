@@ -505,3 +505,151 @@ function goScanFor(contratId, docType) {
   if (sel) sel.value = contratId;
   toast('📄 Scanne le document manquant — ' + docType);
 }
+
+// ── UPLOAD INLINE DEPUIS FICHE CONTRAT ──
+function openInlineUpload(contratId, docType) {
+  const typeLabels = {contrat:'Contrat', bulletin:'Bulletin de salaire', aem:'AEM', conges:'Congés Spectacle'};
+  const contrat = state.contrats.find(x => x.id === contratId);
+  if (!contrat) return;
+
+  // Retire un éventuel uploader inline déjà ouvert
+  document.getElementById('inline-upload-panel')?.remove();
+
+  const panel = document.createElement('div');
+  panel.id = 'inline-upload-panel';
+  panel.className = 'card';
+  panel.style.cssText = 'background:var(--accent-light);border:1.5px solid var(--accent);margin-top:12px;';
+  panel.innerHTML = `
+    <div class="card-head">
+      <div class="card-head-title" style="color:var(--accent);">📎 Ajouter — ${typeLabels[docType]}</div>
+      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('inline-upload-panel').remove()">✕</button>
+    </div>
+    <div style="font-size:12px;color:var(--ink2);margin-bottom:12px;">
+      Pour : <strong>${contrat.employeur}</strong> · ${fmtDate(contrat.dateDebut)}
+    </div>
+    <label style="display:block;border:2px dashed var(--accent);border-radius:8px;padding:20px;text-align:center;cursor:pointer;background:var(--surface);position:relative;">
+      <input type="file" accept=".pdf,.jpg,.jpeg,.png,.heic,.heif,.webp,.tiff,.bmp" style="position:absolute;inset:0;opacity:0;cursor:pointer;" onchange="handleInlineFile(event,'${contratId}','${docType}')">
+      <div style="font-size:24px;margin-bottom:6px;">📂</div>
+      <div style="font-size:13px;font-weight:600;color:var(--accent);">Glisse ou clique pour uploader</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:4px;">PDF, JPG, PNG, HEIC…</div>
+    </label>
+    <div id="inline-upload-result" style="margin-top:12px;"></div>
+  `;
+
+  // Insère dans le bon panneau (mobile ou desktop)
+  const body = document.getElementById('detail-body');
+  const dp   = document.getElementById('desktop-detail-body');
+  if (dp && dp.innerHTML.trim()) dp.appendChild(panel.cloneNode(true));
+  else if (body) body.appendChild(panel);
+}
+
+async function handleInlineFile(event, contratId, docType) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const resultEl = document.getElementById('inline-upload-result');
+  if (!resultEl) return;
+
+  resultEl.innerHTML = '<div class="loading-block"><div class="loader"></div><div style="font-size:12px;color:var(--muted);margin-top:8px;">Analyse en cours…</div></div>';
+
+  try {
+    const base64 = await fileToBase64(file);
+    const res    = await appsScriptPost({ action: 'scanDoc', docType, base64Data: base64, mediaType: file.type });
+
+    if (!res.ok) {
+      resultEl.innerHTML = '<div class="alert alert-err">❌ ' + (res.error||'Erreur') + '</div>';
+      return;
+    }
+
+    const d       = res.data;
+    const contrat = state.contrats.find(x => x.id === contratId);
+
+    // Vérification cohérence
+    const issues = checkInlineCoherence(d, contrat, docType);
+
+    if (issues.length > 0) {
+      resultEl.innerHTML = '<div class="alert alert-err" style="flex-direction:column;">'
+        + '<strong>⚠️ Incohérences détectées</strong>'
+        + '<ul style="margin-top:8px;padding-left:16px;font-size:12px;">'
+        + issues.map(i => '<li>' + i + '</li>').join('')
+        + '</ul>'
+        + '<div style="font-size:11px;margin-top:8px;color:var(--red);">Ce document ne semble pas correspondre à ce contrat. Utilise la page Scanner pour l\'importer manuellement.</div>'
+        + '</div>';
+      return;
+    }
+
+    // Tout va bien — affiche le récap et propose de valider
+    const typeLabels = {contrat:'📝 Contrat', bulletin:'📄 Bulletin', aem:'📋 AEM', conges:'🌴 Congés Spectacle'};
+    resultEl.innerHTML = '<div class="alert alert-ok" style="flex-direction:column;gap:8px;">'
+      + '<strong>✅ Document reconnu : ' + (typeLabels[d.type]||docType) + '</strong>'
+      + '<div style="font-size:12px;display:grid;grid-template-columns:1fr 1fr;gap:4px;">'
+      + (d.employeur ? '<span>🏢 ' + d.employeur + '</span>' : '')
+      + (d.salaire_brut ? '<span>💰 ' + fmt(d.salaire_brut) + ' brut</span>' : '')
+      + (d.date_travail||d.date_debut ? '<span>📅 ' + fmtDate(parseDate(d.date_travail||d.date_debut)) + '</span>' : '')
+      + (d.cachets||d.nb_cachets ? '<span>🎭 ' + (d.cachets||d.nb_cachets) + ' cachet(s)</span>' : '')
+      + '</div>'
+      + '<button class="btn btn-primary btn-sm" style="margin-top:4px;" onclick="confirmInlineUpload(' + JSON.stringify(d).replace(/"/g,'&quot;') + ',\'' + contratId + '\',\'' + docType + '\')">✓ Valider et rattacher</button>'
+      + '</div>';
+
+  } catch(e) {
+    resultEl.innerHTML = '<div class="alert alert-err">❌ ' + e.message + '</div>';
+  }
+}
+
+function checkInlineCoherence(d, contrat, docType) {
+  const issues = [];
+  const empNorm  = (d.employeur||'').toUpperCase().replace(/\s+/g,'');
+  const cNorm    = contrat.employeur.toUpperCase().replace(/\s+/g,'');
+  const sameEmp  = cNorm === empNorm || cNorm.includes(empNorm.slice(0,5)) || empNorm.includes(cNorm.slice(0,5));
+  if (d.employeur && !sameEmp) {
+    issues.push('Employeur différent : document indique "' + d.employeur + '", contrat indique "' + contrat.employeur + '"');
+  }
+  // Vérification date
+  const docDate = parseDate(d.date_travail) || parseDate(d.date_debut) || parseDate(d.date_fin);
+  if (docDate && contrat.dateDebut) {
+    const dd = new Date(docDate + 'T12:00:00');
+    const cd = new Date(contrat.dateDebut + 'T12:00:00');
+    if (dd.getFullYear() !== cd.getFullYear() || dd.getMonth() !== cd.getMonth()) {
+      issues.push('Période différente : document indique ' + fmtDate(docDate) + ', contrat indique ' + fmtDate(contrat.dateDebut));
+    }
+  }
+  // Vérification montant (tolérance 10%)
+  const docBrut = d.salaire_brut || d.cachet_brut_total || 0;
+  if (docBrut > 0 && contrat.brutV > 0) {
+    const diff = Math.abs(docBrut - contrat.brutV) / contrat.brutV;
+    if (diff > 0.10) {
+      issues.push('Salaire brut différent : document indique ' + fmt(docBrut) + ', contrat indique ' + fmt(contrat.brutV));
+    }
+  }
+  return issues;
+}
+
+function confirmInlineUpload(d, contratId, docType) {
+  const contrat = state.contrats.find(x => x.id === contratId);
+  if (!contrat) return;
+
+  if (docType === 'bulletin') {
+    if (!contrat.brutV)  contrat.brutV  = d.salaire_brut||0;
+    if (!contrat.netImp) contrat.netImp = d.net_imposable||0;
+    if (!contrat.netV)   contrat.netV   = d.net_percu||0;
+    if (!contrat.pasV)   contrat.pasV   = d.pas_preleve||0;
+    if (!contrat.heures) contrat.heures = d.h_totales||0;
+    contrat.hasBulletin = true;
+  } else if (docType === 'aem') {
+    if (!contrat.heures)  contrat.heures  = d.nb_heures||0;
+    if (!contrat.cachets) contrat.cachets = d.nb_cachets||0;
+    if (!contrat.brutV)   contrat.brutV   = d.salaire_brut||0;
+    contrat.hasAEM = true;
+  } else if (docType === 'conges') {
+    contrat.hasCS = true;
+    if (!contrat.brutV && d.salaire_brut) contrat.brutV = d.salaire_brut;
+  } else if (docType === 'contrat') {
+    if (!contrat.poste && d.poste)   contrat.poste   = d.poste;
+    if (!contrat.brutV && d.cachet_brut_total) contrat.brutV = d.cachet_brut_total;
+    contrat.hasContrat = true;
+  }
+
+  saveState();
+  document.getElementById('inline-upload-panel')?.remove();
+  renderDetailBody(contrat);
+  toast('✅ Document rattaché à ' + contrat.employeur);
+}
