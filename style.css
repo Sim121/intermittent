@@ -755,11 +755,15 @@ body {
 
 /* ── REDUCTION ONGLETS ── */
 .card-collapsible .card-body {
-  transition: max-height .3s ease, opacity .3s ease;
+  transition: max-height .3s ease, opacity .2s ease;
   max-height: 2000px; opacity: 1; overflow: hidden;
 }
 .card-collapsible.collapsed .card-body {
-  max-height: 0; opacity: 0;
+  max-height: 0; opacity: 0; pointer-events: none;
 }
+.card-collapsible.collapsed .card-head span:last-child::before { content: '+'; }
+.card-collapsible .card-head span:last-child::before { content: '−'; }
+.card-collapsible .card-head span:last-child { font-size: 14px; color: var(--muted); }
+
 .page.active .section  { animation: fadeUp .25s ease both; }
 .page.active .stat-row { animation: fadeUp .25s .04s ease both; }
