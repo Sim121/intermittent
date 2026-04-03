@@ -3,7 +3,7 @@
    Core : state, auth, sync, navigation, settings, init
    ============================================================ */
 
-const APP_VERSION = '3.2.13';
+const APP_VERSION = '3.2.14';
 const APP_DATE    = '2026-04-03';
 
 // ── STATE GLOBAL ──
@@ -383,6 +383,15 @@ function migrateData() {
     }
     if (c.dateFin && !/^\d{4}-\d{2}-\d{2}$/.test(c.dateFin)) {
       c.dateFin = parseDate(c.dateFin) || c.dateFin; changed = true;
+    }
+    if (!c.sources) {
+      c.sources = {
+        contrat:  c.hasContrat  ? { brutV: c.brutV, cachets: c.cachets, heures: c.heures, poste: c.poste } : null,
+        bulletin: c.hasBulletin ? { brutV: c.brutV, netImp: c.netImp, netV: c.netV, pasV: c.pasV, heures: c.heures, cachets: c.cachets } : null,
+        aem:      c.hasAEM      ? { brutV: c.brutV, cachets: c.cachets, heures: c.heures } : null,
+        conges:   c.hasCS       ? { brutV: c.brutV, cachets: c.cachets } : null
+      };
+      changed = true;
     }
   });
   if (changed) saveLocal();
