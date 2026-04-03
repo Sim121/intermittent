@@ -416,11 +416,11 @@ function confirmScanInline() {
     const match   = linkedId ? state.contrats.find(x => x.id === linkedId) : findMatchingContrat(d.employeur, dateStr);
     if (match) {
       if (!match.sources) match.sources = {};
-      match.sources.aem = { brutV: d.salaire_brut||0, cachets: d.nb_cachets||0, heures: d.nb_heures||0 };
+      match.sources.aem = { brutV: d.salaire_brut||0, cachets: d.nb_cachets || d.cachets||0, heures: d.nb_heures||0 };
       recalcContrat(match);
       toast('✅ AEM rattachée à : ' + match.employeur);
     } else {
-      const c = { id: Date.now().toString(), employeur: (d.employeur||'').toUpperCase().trim(), poste:'AEM', dateDebut: dateStr, dateFin: dateStr, paye:false, ref:'AEM', comment:'', docs:[], sources: { contrat:null, bulletin:null, aem: { brutV: d.salaire_brut||0, cachets: d.nb_cachets||0, heures: d.nb_heures||0 }, conges:null } };
+      const c = { id: Date.now().toString(), employeur: (d.employeur||'').toUpperCase().trim(), poste:'AEM', dateDebut: dateStr, dateFin: dateStr, paye:false, ref:'AEM', comment:'', docs:[], sources: { contrat:null, bulletin:null, aem: { brutV: d.salaire_brut||0, cachets: d.nb_cachets || d.cachets||0, heures: d.nb_heures||0 }, conges:null } };
       recalcContrat(c);
       state.contrats.push(c);
       toast('✅ AEM → nouveau contrat');
@@ -619,7 +619,7 @@ function confirmInlineUpload(d, contratId, docType) {
   if (docType === 'bulletin') {
     contrat.sources.bulletin = { brutV: d.salaire_brut||0, netImp: d.net_imposable||0, netV: d.net_percu||0, pasV: d.pas_preleve||0, heures: d.h_totales||0, cachets: d.cachets||0 };
   } else if (docType === 'aem') {
-    contrat.sources.aem = { brutV: d.salaire_brut||0, cachets: d.nb_cachets||0, heures: d.nb_heures||0 };
+    contrat.sources.aem = { brutV: d.salaire_brut||0, cachets: d.nb_cachets || d.cachets||0, heures: d.nb_heures||0 };
   } else if (docType === 'conges') {
     contrat.sources.conges = { brutV: d.salaire_brut||0, cachets: d.nb_jours_cachets||0 };
   } else if (docType === 'contrat') {
