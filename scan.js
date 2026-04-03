@@ -536,12 +536,16 @@ function openInlineUpload(contratId, docType) {
     <div id="inline-upload-result" style="margin-top:12px;"></div>
   `;
 
-  // Insère dans le bon panneau (mobile ou desktop)
-  const dp   = document.getElementById('desktop-detail-body');
-  const body = document.getElementById('detail-body');
-  const target = (dp && dp.children.length > 0) ? dp : body;
-  if (target) target.appendChild(panel);
-}
+  // Insère juste après la card "Documents rattachés"
+  const docsCard = document.getElementById('docs-card-' + contratId);
+  if (docsCard) {
+    docsCard.insertAdjacentElement('afterend', panel);
+  } else {
+    const dp   = document.getElementById('desktop-detail-body');
+    const body = document.getElementById('detail-body');
+    const target = (dp && dp.children.length > 0) ? dp : body;
+    if (target) target.appendChild(panel);
+  }
 
 async function handleInlineFile(event, contratId, docType) {
   const file = event.target.files[0];
