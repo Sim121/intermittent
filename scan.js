@@ -548,8 +548,20 @@ async function handleInlineFile(event, contratId, docType) {
       return;
     }
 
-    // Tout va bien — affiche le récap et propose de valider
+   // Alerte si type détecté ≠ type cliqué
     const typeLabels = {contrat:'📝 Contrat', bulletin:'📄 Bulletin', aem:'📋 AEM', conges:'🌴 Congés Spectacle'};
+    if (d.type && d.type !== docType) {
+      resultEl.innerHTML = '<div class="alert alert-warn" style="flex-direction:column;gap:10px;">'
+        + '<strong>⚠️ Type de document différent</strong>'
+        + '<div style="font-size:12px;">Vous avez cliqué sur <strong>' + (typeLabels[docType]||docType) + '</strong> mais l\'IA a détecté un <strong>' + (typeLabels[d.type]||d.type) + '</strong>.</div>'
+        + '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;">'
+        + '<button class="btn btn-primary btn-sm" onclick="confirmInlineUpload(' + JSON.stringify(d).replace(/"/g,'&quot;') + ',\'' + contratId + '\',\'' + d.type + '\')">✓ Charger comme ' + (typeLabels[d.type]||d.type) + '</button>'
+        + '<button class="btn btn-ghost btn-sm" onclick="confirmInlineUpload(' + JSON.stringify(d).replace(/"/g,'&quot;') + ',\'' + contratId + '\',\'' + docType + '\')">⚠️ Forcer comme ' + (typeLabels[docType]||docType) + '</button>'
+        + '</div>'
+        + '</div>';
+      return;
+    }
+
     resultEl.innerHTML = '<div class="alert alert-ok" style="flex-direction:column;gap:8px;">'
       + '<strong>✅ Document reconnu : ' + (typeLabels[d.type]||docType) + '</strong>'
       + '<div style="font-size:12px;display:grid;grid-template-columns:1fr 1fr;gap:4px;">'
