@@ -167,6 +167,9 @@ body {
 /* ============================================================
    DESKTOP SIDEBAR
    ============================================================ */
+/* Cache la sidebar sur mobile */
+.sidebar { display: none; }
+
 @media (min-width: 768px) {
 
   body { display: flex; }
