@@ -602,29 +602,19 @@ function checkInlineCoherence(d, contrat, docType) {
 function confirmInlineUpload(d, contratId, docType) {
   const contrat = state.contrats.find(x => x.id === contratId);
   if (!contrat) return;
+  if (!contrat.sources) contrat.sources = {};
 
   if (docType === 'bulletin') {
-    if (!contrat.brutV)  contrat.brutV  = d.salaire_brut||0;
-    if (!contrat.netImp) contrat.netImp = d.net_imposable||0;
-    if (!contrat.netV)   contrat.netV   = d.net_percu||0;
-    if (!contrat.pasV)   contrat.pasV   = d.pas_preleve||0;
-    if (!contrat.heures) contrat.heures = d.h_totales||0;
-    contrat.hasBulletin = true;
-  } } else if (docType === 'aem') {
-    if (!contrat.heures)  contrat.heures  = d.nb_heures||0;
-    if (!contrat.cachets) contrat.cachets = d.nb_cachets||0;
-    // L'AEM prévaut TOUJOURS pour le salaire brut à déclarer
-    if (d.salaire_brut) contrat.brutV = d.salaire_brut;
-    contrat.hasAEM = true;
+    contrat.sources.bulletin = { brutV: d.salaire_brut||0, netImp: d.net_imposable||0, netV: d.net_percu||0, pasV: d.pas_preleve||0, heures: d.h_totales||0, cachets: d.cachets||0 };
+  } else if (docType === 'aem') {
+    contrat.sources.aem = { brutV: d.salaire_brut||0, cachets: d.nb_cachets||0, heures: d.nb_heures||0 };
   } else if (docType === 'conges') {
-    contrat.hasCS = true;
-    if (!contrat.brutV && d.salaire_brut) contrat.brutV = d.salaire_brut;
+    contrat.sources.conges = { brutV: d.salaire_brut||0, cachets: d.nb_jours_cachets||0 };
   } else if (docType === 'contrat') {
-    if (!contrat.poste && d.poste)   contrat.poste   = d.poste;
-    if (!contrat.brutV && d.cachet_brut_total) contrat.brutV = d.cachet_brut_total;
-    contrat.hasContrat = true;
+    contrat.sources.contrat = { brutV: d.cachet_brut_total||0, cachets: d.cachets||0, heures: d.h_prevues||0, poste: d.poste||'' };
   }
 
+  recalcContrat(contrat);
   saveState();
   document.getElementById('inline-upload-panel')?.remove();
   renderDetailBody(contrat);
