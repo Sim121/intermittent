@@ -752,5 +752,14 @@ body {
   from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: translateY(0); }
 }
+
+/* ── REDUCTION ONGLETS ── */
+.card-collapsible .card-body {
+  transition: max-height .3s ease, opacity .3s ease;
+  max-height: 2000px; opacity: 1; overflow: hidden;
+}
+.card-collapsible.collapsed .card-body {
+  max-height: 0; opacity: 0;
+}
 .page.active .section  { animation: fadeUp .25s ease both; }
 .page.active .stat-row { animation: fadeUp .25s .04s ease both; }
