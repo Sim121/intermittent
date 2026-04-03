@@ -164,10 +164,10 @@ function renderDetailBody(c) {
     <div class="card">
       <div class="card-head"><div class="card-head-title">Documents rattachés</div></div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
-        <span class="tag ${c.hasContrat?'tag-green':'tag-gray'}" style="${!c.hasContrat?'cursor:pointer':''}" onclick="${!c.hasContrat?`goScanFor('${c.id}','contrat')`:''}">📝 Contrat ${c.hasContrat?'✓':'+ Scanner'}</span>
-        <span class="tag ${c.hasBulletin?'tag-green':'tag-gray'}" style="${!c.hasBulletin?'cursor:pointer':''}" onclick="${!c.hasBulletin?`goScanFor('${c.id}','bulletin')`:''}">📄 Bulletin ${c.hasBulletin?'✓':'+ Scanner'}</span>
-        <span class="tag ${c.hasAEM?'tag-green':'tag-gray'}" style="${!c.hasAEM?'cursor:pointer':''}" onclick="${!c.hasAEM?`goScanFor('${c.id}','aem')`:''}">📋 AEM ${c.hasAEM?'✓':'+ Scanner'}</span>
-        <span class="tag ${c.hasCS?'tag-green':'tag-gray'}" style="${!c.hasCS?'cursor:pointer':''}" onclick="${!c.hasCS?`goScanFor('${c.id}','conges')`:''}">🌴 CS ${c.hasCS?'✓':'+ Scanner'}</span>
+        <span class="tag ${c.hasContrat?'tag-green':'tag-gray'}" style="${!c.hasContrat?'cursor:pointer':''}" onclick="${!c.hasContrat?`openInlineUpload('${c.id}','contrat')`:''}">📝 Contrat ${c.hasContrat?'✓':'+ Ajouter'}</span>
+        <span class="tag ${c.hasBulletin?'tag-green':'tag-gray'}" style="${!c.hasBulletin?'cursor:pointer':''}" onclick="${!c.hasBulletin?`openInlineUpload('${c.id}','bulletin')`:''}">📄 Bulletin ${c.hasBulletin?'✓':'+ Ajouter'}</span>
+        <span class="tag ${c.hasAEM?'tag-green':'tag-gray'}" style="${!c.hasAEM?'cursor:pointer':''}" onclick="${!c.hasAEM?`openInlineUpload('${c.id}','aem')`:''}">📋 AEM ${c.hasAEM?'✓':'+ Ajouter'}</span>
+        <span class="tag ${c.hasCS?'tag-green':'tag-gray'}" style="${!c.hasCS?'cursor:pointer':''}" onclick="${!c.hasCS?`openInlineUpload('${c.id}','conges')`:''}">🌴 CS ${c.hasCS?'✓':'+ Ajouter'}</span>
       </div>
     </div>
     <div class="card">
