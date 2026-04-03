@@ -191,7 +191,9 @@ function renderDetailBody(c) {
   const remuContent = `
     <div class="ft-row"><span class="ft-label">Cachets</span><span class="ft-value">${c.cachets||0}</span></div>
     <div class="ft-row"><span class="ft-label">Heures FT</span><span class="ft-value">${heuresFT(c)} h</span></div>
-    <div class="ft-row"><span class="ft-label">Salaire brut</span><span class="ft-value" style="color:var(--orange)">${fmt(c.brutV)}</span></div>
+    <div class="ft-row"><span class="ft-label">Salaire brut total</span><span class="ft-value" style="color:var(--orange)">${fmt(c.brutV)}</span></div>
+    ${c.sources?.contrat?.salaireBase ? `<div class="ft-row"><span class="ft-label">└ Salaire base</span><span class="ft-value">${fmt(c.sources.contrat.salaireBase)}</span></div>` : ''}
+    ${c.sources?.contrat?.droits ? `<div class="ft-row"><span class="ft-label">└ Droits complémentaires</span><span class="ft-value">${fmt(c.sources.contrat.droits)}</span></div>` : ''}
     <div class="ft-row"><span class="ft-label">Net imposable</span><span class="ft-value">${fmt(c.netImp)}</span></div>
     <div class="ft-row"><span class="ft-label">Net perçu</span><span class="ft-value" style="color:var(--green)">${fmt(c.netV)}</span></div>
     <div class="ft-row"><span class="ft-label">PAS prélevé</span><span class="ft-value" style="color:var(--red)">${fmt(c.pasV)}</span></div>`;
