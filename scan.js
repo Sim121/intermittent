@@ -437,7 +437,8 @@ function confirmScanInline() {
     if (match) {
       if (!match.heures)  match.heures  = d.nb_heures||0;
       if (!match.cachets) match.cachets = d.nb_cachets||0;
-      if (!match.brutV)   match.brutV   = d.salaire_brut||0;
+      // L'AEM prévaut TOUJOURS pour le brut
+      if (d.salaire_brut) match.brutV = d.salaire_brut;
       match.hasAEM = true;
       toast('✅ AEM rattachée à : ' + match.employeur);
     } else {
@@ -618,11 +619,16 @@ function checkInlineCoherence(d, contrat, docType) {
     }
   }
   // Vérification montant (tolérance 10%)
-  const docBrut = d.salaire_brut || d.cachet_brut_total || 0;
-  if (docBrut > 0 && contrat.brutV > 0) {
-    const diff = Math.abs(docBrut - contrat.brutV) / contrat.brutV;
-    if (diff > 0.10) {
-      issues.push('Salaire brut différent : document indique ' + fmt(docBrut) + ', contrat indique ' + fmt(contrat.brutV));
+ // Pour les contrats, ne pas vérifier le montant car le contrat peut afficher
+  // uniquement la base sans les droits complémentaires (DADR, etc.)
+  // L'AEM prévaut toujours sur le contrat pour les montants
+  if (docType !== 'contrat') {
+    const docBrut = d.salaire_brut || d.cachet_brut_total || 0;
+    if (docBrut > 0 && contrat.brutV > 0) {
+      const diff = Math.abs(docBrut - contrat.brutV) / Math.max(docBrut, contrat.brutV);
+      if (diff > 0.35) { // tolérance 35% pour couvrir les écarts base/total
+        issues.push('Salaire brut très différent : document indique ' + fmt(docBrut) + ', contrat indique ' + fmt(contrat.brutV));
+      }
     }
   }
   return issues;
@@ -639,10 +645,11 @@ function confirmInlineUpload(d, contratId, docType) {
     if (!contrat.pasV)   contrat.pasV   = d.pas_preleve||0;
     if (!contrat.heures) contrat.heures = d.h_totales||0;
     contrat.hasBulletin = true;
-  } else if (docType === 'aem') {
+  } } else if (docType === 'aem') {
     if (!contrat.heures)  contrat.heures  = d.nb_heures||0;
     if (!contrat.cachets) contrat.cachets = d.nb_cachets||0;
-    if (!contrat.brutV)   contrat.brutV   = d.salaire_brut||0;
+    // L'AEM prévaut TOUJOURS pour le salaire brut à déclarer
+    if (d.salaire_brut) contrat.brutV = d.salaire_brut;
     contrat.hasAEM = true;
   } else if (docType === 'conges') {
     contrat.hasCS = true;
