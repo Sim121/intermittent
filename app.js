@@ -1,9 +1,9 @@
 /* ============================================================
-   INTERMITTENT — app.js v3.2.0
+   INTERMITTENT — app.js v3.2.16
    Core : state, auth, sync, navigation, settings, init
    ============================================================ */
 
-const APP_VERSION = '3.2.15';
+const APP_VERSION = '3.2.16';
 const APP_DATE    = '2026-04-03';
 
 // ── STATE GLOBAL ──
