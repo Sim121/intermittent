@@ -4,6 +4,17 @@
    ============================================================ */
 
 // ── RENDER LISTE ──
+function removeSourceAndSave(contratId, sourceType) {
+  const c = state.contrats.find(x => x.id === contratId);
+  if (!c) return;
+  if (!confirm(`Retirer le ${sourceType} de ce contrat ? Les données associées seront supprimées.`)) return;
+  removeSource(c, sourceType);
+  saveState();
+  renderDetailBody(c);
+  renderBilan();
+  toast('🗑️ ' + sourceType + ' retiré');
+}
+
 function renderContrats() {
   const el = document.getElementById('contrats-list');
   if (!state.contrats.length) {
@@ -164,10 +175,10 @@ function renderDetailBody(c) {
 
   const docsContent = `
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
-      <span class="tag ${c.hasContrat?'tag-green':'tag-gray'}" style="${!c.hasContrat?'cursor:pointer':''}" onclick="${!c.hasContrat?`openInlineUpload('${c.id}','contrat')`:''}">📝 ${c.hasContrat?'Contrat ✓':'Contrat + Ajouter'}</span>
-      <span class="tag ${c.hasBulletin?'tag-green':'tag-gray'}" style="${!c.hasBulletin?'cursor:pointer':''}" onclick="${!c.hasBulletin?`openInlineUpload('${c.id}','bulletin')`:''}">📄 ${c.hasBulletin?'Bulletin ✓':'Bulletin + Ajouter'}</span>
-      <span class="tag ${c.hasAEM?'tag-green':'tag-gray'}" style="${!c.hasAEM?'cursor:pointer':''}" onclick="${!c.hasAEM?`openInlineUpload('${c.id}','aem')`:''}">📋 ${c.hasAEM?'AEM ✓':'AEM + Ajouter'}</span>
-      <span class="tag ${c.hasCS?'tag-green':'tag-gray'}" style="${!c.hasCS?'cursor:pointer':''}" onclick="${!c.hasCS?`openInlineUpload('${c.id}','conges')`:''}">🌴 ${c.hasCS?'CS ✓':'CS + Ajouter'}</span>
+      <span class="tag ${c.hasContrat?'tag-green':'tag-gray'}" style="${!c.hasContrat?'cursor:pointer':''}" onclick="${!c.hasContrat?`openInlineUpload('${c.id}','contrat')`:''}">📝 ${c.hasContrat?`Contrat ✓ <span onclick="event.stopPropagation();removeSourceAndSave('${c.id}','contrat')" style="margin-left:4px;opacity:.6;cursor:pointer;">✕</span>`:'Contrat + Ajouter'}</span>
+      <span class="tag ${c.hasBulletin?'tag-green':'tag-gray'}" style="${!c.hasBulletin?'cursor:pointer':''}" onclick="${!c.hasBulletin?`openInlineUpload('${c.id}','bulletin')`:''}">📄 ${c.hasBulletin?`Bulletin ✓ <span onclick="event.stopPropagation();removeSourceAndSave('${c.id}','bulletin')" style="margin-left:4px;opacity:.6;cursor:pointer;">✕</span>`:'Bulletin + Ajouter'}</span>
+      <span class="tag ${c.hasAEM?'tag-green':'tag-gray'}" style="${!c.hasAEM?'cursor:pointer':''}" onclick="${!c.hasAEM?`openInlineUpload('${c.id}','aem')`:''}">📋 ${c.hasAEM?`AEM ✓ <span onclick="event.stopPropagation();removeSourceAndSave('${c.id}','aem')" style="margin-left:4px;opacity:.6;cursor:pointer;">✕</span>`:'AEM + Ajouter'}</span>
+      <span class="tag ${c.hasCS?'tag-green':'tag-gray'}" style="${!c.hasCS?'cursor:pointer':''}" onclick="${!c.hasCS?`openInlineUpload('${c.id}','conges')`:''}">🌴 ${c.hasCS?`CS ✓ <span onclick="event.stopPropagation();removeSourceAndSave('${c.id}','conges')" style="margin-left:4px;opacity:.6;cursor:pointer;">✕</span>`:'CS + Ajouter'}</span>
     </div>`;
 
   const infoContent = `
