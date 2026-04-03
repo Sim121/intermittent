@@ -399,11 +399,11 @@ function confirmScanInline() {
     const match   = linkedId ? state.contrats.find(x => x.id === linkedId) : findMatchingContrat(d.employeur, dateStr);
     if (match) {
       if (!match.sources) match.sources = {};
-      match.sources.bulletin = { brutV: d.salaire_brut||0, netImp: d.net_imposable||0, netV: d.net_percu||0, pasV: d.pas_preleve||0, heures: d.h_totales||0, cachets: d.cachets||0 };
+      match.sources.bulletin = { brutV: d.salaire_brut||0, netImp: d.net_imposable||0, netV: d.net_percu||0, pasV: d.pas_preleve||0, tauxPas: d.taux_pas||0, heures: d.h_totales||0, cachets: d.cachets||0 };
       recalcContrat(match);
       toast('✅ Bulletin rattaché à : ' + match.employeur);
     } else {
-      const c = { id: Date.now().toString(), employeur: (d.employeur||'').toUpperCase().trim(), poste:'', dateDebut: dateStr, dateFin: dateStr, paye:false, ref:'', comment:'', docs:[], sources: { contrat:null, bulletin: { brutV: d.salaire_brut||0, netImp: d.net_imposable||0, netV: d.net_percu||0, pasV: d.pas_preleve||0, heures: d.h_totales||0, cachets: d.cachets||0 }, aem:null, conges:null } };
+      const c = { id: Date.now().toString(), employeur: (d.employeur||'').toUpperCase().trim(), poste:'', dateDebut: dateStr, dateFin: dateStr, paye:false, ref:'', comment:'', docs:[], sources: { contrat:null, bulletin: { brutV: d.salaire_brut||0, netImp: d.net_imposable||0, netV: d.net_percu||0, pasV: d.pas_preleve||0, tauxPas: d.taux_pas||0, heures: d.h_totales||0, cachets: d.cachets||0 }, aem:null, conges:null } };
       recalcContrat(c);
       state.contrats.push(c);
       toast('✅ Bulletin → nouveau contrat');
@@ -617,7 +617,7 @@ function confirmInlineUpload(d, contratId, docType) {
   if (!contrat.sources) contrat.sources = {};
 
   if (docType === 'bulletin') {
-    contrat.sources.bulletin = { brutV: d.salaire_brut||0, netImp: d.net_imposable||0, netV: d.net_percu||0, pasV: d.pas_preleve||0, heures: d.h_totales||0, cachets: d.cachets||0 };
+    contrat.sources.bulletin = { brutV: d.salaire_brut||0, netImp: d.net_imposable||0, netV: d.net_percu||0, pasV: d.pas_preleve||0, tauxPas: d.taux_pas||0, heures: d.h_totales||0, cachets: d.cachets||0 };
   } else if (docType === 'aem') {
     contrat.sources.aem = { brutV: d.salaire_brut||0, cachets: d.nb_cachets || d.cachets||0, heures: d.nb_heures||0 };
   } else if (docType === 'conges') {
