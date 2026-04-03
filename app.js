@@ -460,7 +460,7 @@ function init() {
     if (sVel) sVel.textContent = 'v' + APP_VERSION;
     const lVel = document.getElementById('login-version');
     if (lVel) lVel.textContent = 'v' + APP_VERSION;
-  }, 300);
+  }, 1000);
 
   const savedUrl   = localStorage.getItem('apps-script-url');
   const loginUrlEl = document.getElementById('login-apps-script-url');
