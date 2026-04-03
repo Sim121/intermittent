@@ -145,6 +145,10 @@ function showApp() {
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('app-shell').style.display    = 'block';
   showPage('bilan');
+  const sVel = document.getElementById('sidebar-version');
+  if (sVel) sVel.textContent = 'v' + APP_VERSION;
+  const lVel = document.getElementById('login-version');
+  if (lVel) lVel.textContent = 'v' + APP_VERSION;
 }
 
 // ============================================================
@@ -459,13 +463,6 @@ function init() {
   const dEl = document.getElementById('app-date-display');
   if (vEl) vEl.textContent = APP_VERSION;
   if (dEl) dEl.textContent = APP_DATE;
-
-  setTimeout(() => {
-    const sVel = document.getElementById('sidebar-version');
-    if (sVel) sVel.textContent = 'v' + APP_VERSION;
-    const lVel = document.getElementById('login-version');
-    if (lVel) lVel.textContent = 'v' + APP_VERSION;
-  }, 1000);
 
   const savedUrl   = localStorage.getItem('apps-script-url');
   const loginUrlEl = document.getElementById('login-apps-script-url');
