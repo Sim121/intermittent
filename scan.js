@@ -180,7 +180,7 @@ function showScanResult(d) {
     + '<span style="font-size:13px;font-weight:700;">' + (typeLabels[d.type] || d.type || '—') + '</span>'
     + '</div>'
     + Object.entries(d)
-      .filter(([k,v]) => k !== 'type' && v !== null && v !== '' && v !== 0)
+      .filter(([k,v]) => k !== 'type' && k !== 'nb_cachets' && v !== null && v !== '' && v !== 0)
       .map(([k,v]) => {
         const isNum = intF.includes(k) || numF.some(n => k.includes(n.split('_')[0])) || k.includes('brut') || k.includes('net') || k.includes('montant');
         const isMois = k === 'mois';
