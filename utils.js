@@ -66,10 +66,23 @@ function recalcContrat(c) {
   // brutV : AEM > Bulletin > Contrat
   c.brutV = (s.aem?.brutV) || (s.bulletin?.brutV) || (s.contrat?.brutV) || 0;
 
-  // netImp, netV, pasV : Bulletin uniquement
-  c.netImp = s.bulletin?.netImp || 0;
-  c.netV   = s.bulletin?.netV   || 0;
-  c.pasV   = s.bulletin?.pasV   || 0;
+  // netImp, netV, pasV : Bulletin en priorité, sinon estimation depuis le brut
+  if (s.bulletin) {
+    c.netImp = s.bulletin.netImp || 0;
+    c.netV   = s.bulletin.netV   || 0;
+    c.pasV   = s.bulletin.pasV   || 0;
+    c.isEstimated = false;
+  } else if (c.brutV > 0) {
+    // Estimation : cotisations salariales ~22% du brut
+    const tauxPas = (state.config?.tauxPas || 14.6) / 100;
+    c.netImp = Math.round(c.brutV * 0.78 * 100) / 100;
+    c.netV   = Math.round(c.netImp * (1 - tauxPas) * 100) / 100;
+    c.pasV   = Math.round(c.netImp * tauxPas * 100) / 100;
+    c.isEstimated = true;
+  } else {
+    c.netImp = 0; c.netV = 0; c.pasV = 0;
+    c.isEstimated = false;
+  }
 
   // cachets : AEM > Bulletin > Contrat
   c.cachets = (s.aem?.cachets) || (s.bulletin?.cachets) || (s.contrat?.cachets) || 0;
