@@ -151,64 +151,67 @@ function renderDetailBody(c) {
   const fraisLies  = state.frais.filter(f => f.contratId === c.id);
   const totalFrais = fraisLies.reduce((s,f) => s + f.montant, 0);
   const nbJours    = c.dateDebut && c.dateFin
-    ? Math.ceil((new Date(c.dateFin + 'T12:00:00') - new Date(c.dateDebut + 'T12:00:00')) / 86400000) + 1 : 0;
+    ? Math.ceil((new Date(c.dateFin+'T12:00:00') - new Date(c.dateDebut+'T12:00:00')) / 86400000) + 1 : 0;
+
+  const card = (title, content, extra='') => `
+    <div class="card card-collapsible" ${extra}>
+      <div class="card-head" onclick="toggleCard(this)" style="cursor:pointer;user-select:none;">
+        <div class="card-head-title" style="flex:1;">${title}</div>
+        <span style="font-size:11px;color:var(--muted);margin-left:8px;">−</span>
+      </div>
+      <div class="card-body">${content}</div>
+    </div>`;
+
+  const docsContent = `
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <span class="tag ${c.hasContrat?'tag-green':'tag-gray'}" style="${!c.hasContrat?'cursor:pointer':''}" onclick="${!c.hasContrat?`openInlineUpload('${c.id}','contrat')`:''}">📝 ${c.hasContrat?'Contrat ✓':'Contrat + Ajouter'}</span>
+      <span class="tag ${c.hasBulletin?'tag-green':'tag-gray'}" style="${!c.hasBulletin?'cursor:pointer':''}" onclick="${!c.hasBulletin?`openInlineUpload('${c.id}','bulletin')`:''}">📄 ${c.hasBulletin?'Bulletin ✓':'Bulletin + Ajouter'}</span>
+      <span class="tag ${c.hasAEM?'tag-green':'tag-gray'}" style="${!c.hasAEM?'cursor:pointer':''}" onclick="${!c.hasAEM?`openInlineUpload('${c.id}','aem')`:''}">📋 ${c.hasAEM?'AEM ✓':'AEM + Ajouter'}</span>
+      <span class="tag ${c.hasCS?'tag-green':'tag-gray'}" style="${!c.hasCS?'cursor:pointer':''}" onclick="${!c.hasCS?`openInlineUpload('${c.id}','conges')`:''}">🌴 ${c.hasCS?'CS ✓':'CS + Ajouter'}</span>
+    </div>`;
+
+  const infoContent = `
+    <div class="ft-row"><span class="ft-label">Employeur</span><span class="ft-value">${c.employeur||'—'}</span></div>
+    <div class="ft-row"><span class="ft-label">Poste</span><span class="ft-value">${c.poste||'—'}</span></div>
+    <div class="ft-row"><span class="ft-label">Début</span><span class="ft-value">${fmtDate(c.dateDebut)}</span></div>
+    <div class="ft-row"><span class="ft-label">Fin</span><span class="ft-value">${fmtDate(c.dateFin)}</span></div>
+    <div class="ft-row"><span class="ft-label">Durée</span><span class="ft-value">${nbJours} jour${nbJours>1?'s':''}</span></div>`;
+
+  const remuContent = `
+    <div class="ft-row"><span class="ft-label">Cachets</span><span class="ft-value">${c.cachets||0}</span></div>
+    <div class="ft-row"><span class="ft-label">Heures FT</span><span class="ft-value">${heuresFT(c)} h</span></div>
+    <div class="ft-row"><span class="ft-label">Salaire brut</span><span class="ft-value" style="color:var(--orange)">${fmt(c.brutV)}</span></div>
+    <div class="ft-row"><span class="ft-label">Net imposable</span><span class="ft-value">${fmt(c.netImp)}</span></div>
+    <div class="ft-row"><span class="ft-label">Net perçu</span><span class="ft-value" style="color:var(--green)">${fmt(c.netV)}</span></div>
+    <div class="ft-row"><span class="ft-label">PAS prélevé</span><span class="ft-value" style="color:var(--red)">${fmt(c.pasV)}</span></div>`;
+
+  const ftContent = `
+    <div class="ft-row"><span class="ft-label">Déclarer en</span><span class="ft-value" style="color:var(--accent)">${getMoisDeclaration(c.dateDebut)}</span></div>
+    <div class="ft-row"><span class="ft-label">Heures</span><span class="ft-value">${heuresFT(c)} h</span></div>
+    <div class="ft-row"><span class="ft-label">Brut à déclarer</span><span class="ft-value">${fmt(c.brutV)}</span></div>
+    <div class="ft-row"><span class="ft-label">Jours travaillés</span><span class="ft-value">${nbJours}</span></div>`;
+
+  const fraisContent = !fraisLies.length
+    ? '<div class="empty" style="padding:12px;"><div class="empty-text">Aucun frais affilié</div></div>'
+    : fraisLies.map(f => `<div class="ft-row"><span class="ft-label">${CAT_ICONS[f.cat]||'📦'} ${f.desc||CAT_LABELS[f.cat]}</span><span class="ft-value">${fmt(f.montant)}</span></div>`).join('')
+      + `<div class="ft-row" style="border-top:2px solid var(--border);margin-top:4px;padding-top:12px;"><span class="ft-label" style="font-weight:700;color:var(--ink);">Total</span><span class="ft-value" style="color:var(--accent)">${fmt(totalFrais)}</span></div>`;
 
   const html = `
     <div style="margin-bottom:16px;">
-      <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Statut paiement</div>
+      <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Statut paiement</div>
       <div class="paiement-toggle">
         <div class="paiement-btn ${c.paye===true?'active-paye':''}" onclick="togglePaiement('${c.id}',true)">✅ Payé</div>
         <div class="paiement-btn ${c.paye===false?'active-attente':''}" onclick="togglePaiement('${c.id}',false)">⏳ En attente</div>
       </div>
     </div>
-    <div class="card" id="docs-card-${c.id}">
-      <div class="card-head"><div class="card-head-title">Documents rattachés</div></div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;">
-        <span class="tag ${c.hasContrat?'tag-green':'tag-gray'}" style="${!c.hasContrat?'cursor:pointer':''}" onclick="${!c.hasContrat?`openInlineUpload('${c.id}','contrat')`:''}">📝 Contrat ${c.hasContrat?'✓':'+ Ajouter'}</span>
-        <span class="tag ${c.hasBulletin?'tag-green':'tag-gray'}" style="${!c.hasBulletin?'cursor:pointer':''}" onclick="${!c.hasBulletin?`openInlineUpload('${c.id}','bulletin')`:''}">📄 Bulletin ${c.hasBulletin?'✓':'+ Ajouter'}</span>
-        <span class="tag ${c.hasAEM?'tag-green':'tag-gray'}" style="${!c.hasAEM?'cursor:pointer':''}" onclick="${!c.hasAEM?`openInlineUpload('${c.id}','aem')`:''}">📋 AEM ${c.hasAEM?'✓':'+ Ajouter'}</span>
-        <span class="tag ${c.hasCS?'tag-green':'tag-gray'}" style="${!c.hasCS?'cursor:pointer':''}" onclick="${!c.hasCS?`openInlineUpload('${c.id}','conges')`:''}">🌴 CS ${c.hasCS?'✓':'+ Ajouter'}</span>
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-head"><div class="card-head-title">Informations</div></div>
-      <div class="ft-row"><span class="ft-label">Employeur</span><span class="ft-value">${c.employeur||'—'}</span></div>
-      <div class="ft-row"><span class="ft-label">Poste</span><span class="ft-value">${c.poste||'—'}</span></div>
-      <div class="ft-row"><span class="ft-label">Début</span><span class="ft-value">${fmtDate(c.dateDebut)}</span></div>
-      <div class="ft-row"><span class="ft-label">Fin</span><span class="ft-value">${fmtDate(c.dateFin)}</span></div>
-      <div class="ft-row"><span class="ft-label">Durée</span><span class="ft-value">${nbJours} jour${nbJours>1?'s':''}</span></div>
-    </div>
-    <div class="card">
-      <div class="card-head"><div class="card-head-title">Rémunération</div></div>
-      <div class="ft-row"><span class="ft-label">Cachets</span><span class="ft-value">${c.cachets||0}</span></div>
-      <div class="ft-row"><span class="ft-label">Heures</span><span class="ft-value">${c.heures||0} h</span></div>
-      <div class="ft-row"><span class="ft-label">Salaire brut</span><span class="ft-value" style="color:var(--gold)">${fmt(c.brutV)}</span></div>
-      <div class="ft-row"><span class="ft-label">Net imposable</span><span class="ft-value">${fmt(c.netImp)}</span></div>
-      <div class="ft-row"><span class="ft-label">Net perçu</span><span class="ft-value" style="color:var(--green)">${fmt(c.netV)}</span></div>
-      <div class="ft-row"><span class="ft-label">PAS prélevé</span><span class="ft-value" style="color:var(--red)">${fmt(c.pasV)}</span></div>
-    </div>
-    <div class="card" style="background:var(--blue-light);border-color:rgba(26,74,122,.2);">
-      <div class="card-head"><div class="card-head-title" style="color:var(--blue);">France Travail</div></div>
-      <div class="ft-row"><span class="ft-label">Déclarer en</span><span class="ft-value" style="color:var(--blue);">${getMoisDeclaration(c.dateDebut)}</span></div>
-      <div class="ft-row"><span class="ft-label">Heures</span><span class="ft-value">${heuresFT(c)} h</span></div>
-      <div class="ft-row"><span class="ft-label">Brut à déclarer</span><span class="ft-value">${fmt(c.brutV)}</span></div>
-      <div class="ft-row"><span class="ft-label">Jours travaillés</span><span class="ft-value">${nbJours}</span></div>
-    </div>
-    <div class="card">
-      <div class="card-head">
-        <div class="card-head-title">Frais affiliés</div>
-        <button class="btn btn-ghost btn-sm" onclick="closeDetail();setTimeout(()=>{openSheet('sheet-add-frais');document.getElementById('f-contrat-link').value='${c.id}'},150)">＋</button>
-      </div>
-      ${!fraisLies.length
-        ? '<div class="empty" style="padding:16px;"><div class="empty-text">Aucun frais affilié</div></div>'
-        : fraisLies.map(f => `<div class="ft-row"><span class="ft-label">${CAT_ICONS[f.cat]||'📦'} ${f.desc||CAT_LABELS[f.cat]}</span><span class="ft-value">${fmt(f.montant)}</span></div>`).join('')
-      }
-      ${fraisLies.length > 0 ? `<div class="ft-row" style="border-top:2px solid var(--border);margin-top:4px;padding-top:12px;"><span class="ft-label" style="color:var(--ink);font-weight:700;">Total</span><span class="ft-value" style="color:var(--blue);">${fmt(totalFrais)}</span></div>` : ''}
-    </div>
-    ${c.ref ? `<div class="card"><div class="card-head"><div class="card-head-title">Documents</div></div><div style="font-family:'DM Mono',monospace;font-size:12px;line-height:1.8;">${c.ref}</div></div>` : ''}
-    ${c.comment ? `<div class="card"><div class="card-head"><div class="card-head-title">Commentaire</div></div><div style="font-size:13px;line-height:1.6;">${c.comment}</div></div>` : ''}
+    ${card('📎 Documents rattachés', docsContent, `id="docs-card-${c.id}"`)}
+    ${card('ℹ️ Informations', infoContent)}
+    ${card('💰 Rémunération', remuContent)}
+    ${card('🏛️ France Travail', ftContent)}
+    ${card('🧾 Frais affiliés', fraisContent + `<button class="btn btn-ghost btn-sm" style="margin-top:8px;width:100%;" onclick="closeDetail();setTimeout(()=>{openSheet('sheet-add-frais');document.getElementById('f-contrat-link').value='${c.id}'},150)">＋ Ajouter un frais</button>`)}
+    ${c.comment ? card('💬 Commentaire', `<div style="font-size:13px;line-height:1.6;">${c.comment}</div>`) : ''}
     <button class="btn btn-ghost" onclick="editContrat('${c.id}')" style="width:100%;margin-bottom:8px;">✏️ Modifier</button>
-    <button class="btn btn-ghost" onclick="openMergeContrat('${c.id}')" style="width:100%;margin-bottom:10px;">🔀 Fusionner avec un autre contrat</button>`;
+    <button class="btn btn-ghost" onclick="openMergeContrat('${c.id}')" style="width:100%;margin-bottom:10px;">🔀 Fusionner</button>`;
 
   document.getElementById('detail-body').innerHTML = html;
   const dp = document.getElementById('desktop-detail-body');
