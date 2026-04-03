@@ -3,7 +3,7 @@
    Core : state, auth, sync, navigation, settings, init
    ============================================================ */
 
-const APP_VERSION = '3.2.20';
+const APP_VERSION = '3.2.21';
 const APP_DATE    = '2026-04-03';
 
 // ── STATE GLOBAL ──
@@ -151,11 +151,14 @@ function showApp() {
 // SYNC
 // ============================================================
 function setSyncStatus(s, l) {
-  document.getElementById('sync-dot').className     = 'sync-dot ' + s;
-  document.getElementById('sync-label').textContent = l;
+  const dot   = document.getElementById('sync-dot');
+  const label = document.getElementById('sync-label');
+  if (dot)   dot.className     = 'sync-dot ' + s;
+  if (label) label.textContent = l;
   const ds = document.getElementById('desktop-sync-dot');
   const dl = document.getElementById('desktop-sync-label');
-  if (ds) { ds.className = 'sync-dot ' + s; dl.textContent = l; }
+  if (ds) { ds.className = 'sync-dot ' + s; }
+  if (dl) { dl.textContent = l; }
 }
 
 function saveLocal() { localStorage.setItem('intermittent-v2', JSON.stringify(state)); }
