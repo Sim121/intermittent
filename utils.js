@@ -56,3 +56,42 @@ function toggleCard(headEl) {
   if (!card) return;
   card.classList.toggle('collapsed');
 }
+
+// Recalcule les valeurs d'un contrat depuis ses sources
+// Priorité : AEM > Bulletin > Contrat pour les montants
+function recalcContrat(c) {
+  if (!c.sources) c.sources = {};
+  const s = c.sources;
+
+  // brutV : AEM > Bulletin > Contrat
+  c.brutV = (s.aem?.brutV) || (s.bulletin?.brutV) || (s.contrat?.brutV) || 0;
+
+  // netImp, netV, pasV : Bulletin uniquement
+  c.netImp = s.bulletin?.netImp || 0;
+  c.netV   = s.bulletin?.netV   || 0;
+  c.pasV   = s.bulletin?.pasV   || 0;
+
+  // cachets : AEM > Bulletin > Contrat
+  c.cachets = (s.aem?.cachets) || (s.bulletin?.cachets) || (s.contrat?.cachets) || 0;
+
+  // heures : AEM > Bulletin > Contrat
+  c.heures = (s.aem?.heures) || (s.bulletin?.heures) || (s.contrat?.heures) || 0;
+
+  // poste : Contrat > existant
+  if (s.contrat?.poste) c.poste = s.contrat.poste;
+
+  // Flags
+  c.hasContrat  = !!s.contrat;
+  c.hasBulletin = !!s.bulletin;
+  c.hasAEM      = !!s.aem;
+  c.hasCS       = !!s.conges;
+
+  return c;
+}
+
+// Retire une source et recalcule
+function removeSource(c, sourceType) {
+  if (!c.sources) c.sources = {};
+  c.sources[sourceType] = null;
+  recalcContrat(c);
+}
