@@ -50,3 +50,9 @@ function heuresFT(c) {
   if (c.heures && c.heures > 0) return c.heures;
   return (c.cachets || 0) * 12;
 }
+
+function toggleCard(headEl) {
+  const card = headEl.closest('.card');
+  if (!card) return;
+  card.classList.toggle('collapsed');
+}
