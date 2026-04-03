@@ -143,14 +143,17 @@ function openDetail(id) {
     document.getElementById('desktop-detail-panel').classList.add('show');
   } else {
     const dv = document.getElementById('detail-view');
-    dv.classList.add('show');
+    dv.style.display = 'block';
     dv.style.transform = 'translateX(0)';
+    dv.classList.add('show');
     document.body.style.overflow = 'hidden';
   }
 }
 
 function closeDetail() {
-  document.getElementById('detail-view').classList.remove('show');
+  const dv = document.getElementById('detail-view');
+  dv.classList.remove('show');
+  dv.style.transform = '';
   const panel = document.getElementById('desktop-detail-panel');
   if (panel) panel.classList.remove('show');
   document.body.style.overflow = '';
