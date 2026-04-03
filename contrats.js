@@ -198,7 +198,7 @@ function renderDetailBody(c) {
     <div class="ft-row"><span class="ft-label">Net imposable</span><span class="ft-value">${fmt(c.netImp)}${c.isEstimated?' <span style="font-size:10px;color:var(--orange);">~</span>':''}</span></div>
     <div class="ft-row"><span class="ft-label">${c.paye===true ? 'Net perçu' : 'Net à percevoir'}</span><span class="ft-value" style="color:var(--green)">${fmt(c.netV)}${c.isEstimated?' <span style="font-size:10px;color:var(--orange);">~</span>':''}</span></div>
     <div class="ft-row"><span class="ft-label">PAS prélevé</span><span class="ft-value" style="color:var(--red)">${fmt(c.pasV)}${c.isEstimated?' <span style="font-size:10px;color:var(--orange);">~</span>':''}</span></div>
-    ${c.tauxPas ? `<div class="ft-row"><span class="ft-label">Taux PAS</span><span class="ft-value">${c.tauxPas} %</span></div>` : ''}
+    ${c.tauxPas ? `<div class="ft-row"><span class="ft-label">Taux PAS</span><span class="ft-value">${c.tauxPas} %</span></div>` : ''};
 
   const ftContent = `
     <div class="ft-row"><span class="ft-label">Déclarer en</span><span class="ft-value" style="color:var(--accent)">${getMoisDeclaration(c.dateDebut)}</span></div>
