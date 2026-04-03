@@ -379,78 +379,50 @@ function confirmScanInline() {
     const dateFin   = parseDate(d.date_fin) || dateDebut;
     const match     = linkedId ? state.contrats.find(x => x.id === linkedId) : findMatchingContrat(d.employeur, dateDebut);
     if (match) {
-      if (!match.poste   && (d.poste||d.nature_contrat)) match.poste   = d.poste||d.nature_contrat;
-      if (!match.heures  && d.h_prevues)                 match.heures  = d.h_prevues;
-      if (!match.brutV   && d.cachet_brut_total)         match.brutV   = d.cachet_brut_total;
-      if (!match.cachets && d.cachets)                   match.cachets = d.cachets;
-      match.hasContrat = true;
+      if (!match.sources) match.sources = {};
+      match.sources.contrat = { brutV: d.cachet_brut_total||0, cachets: d.cachets||0, heures: d.h_prevues||0, poste: d.poste||d.nature_contrat||'', dateDebut, dateFin };
+      if (!match.dateDebut) match.dateDebut = dateDebut;
+      if (!match.dateFin)   match.dateFin   = dateFin;
+      recalcContrat(match);
       toast('✅ Contrat rattaché à : ' + match.employeur);
     } else {
-      state.contrats.push({
-        id: Date.now().toString(),
-        employeur: (d.employeur||'').toUpperCase().trim(),
-        poste: d.poste||d.nature_contrat||'',
-        dateDebut, dateFin,
-        cachets: d.cachets||0, heures: d.h_prevues||0,
-        brutV: d.cachet_brut_total||0, netImp:0, netV:0, pasV:0,
-        paye: false, ref:'', comment:'', docs:[],
-        hasContrat:true, hasBulletin:false, hasAEM:false, hasCS:false
-      });
+      const c = { id: Date.now().toString(), employeur: (d.employeur||'').toUpperCase().trim(), poste: d.poste||d.nature_contrat||'', dateDebut, dateFin, paye:false, ref:'', comment:'', docs:[], sources: { contrat: { brutV: d.cachet_brut_total||0, cachets: d.cachets||0, heures: d.h_prevues||0, poste: d.poste||d.nature_contrat||'' }, bulletin:null, aem:null, conges:null } };
+      recalcContrat(c);
+      state.contrats.push(c);
       toast('✅ Contrat enregistré');
     }
 
   } else if (docType === 'bulletin') {
-    const mi       = MONTHS.indexOf(d.mois);
-    const an       = parseInt(d.annee) || new Date().getFullYear();
+    const mi = MONTHS.indexOf(d.mois); const an = parseInt(d.annee) || new Date().getFullYear();
     const fallback = (mi >= 0 && !isNaN(an)) ? `${an}-${String(mi+1).padStart(2,'0')}-01` : new Date().toISOString().slice(0,10);
-    const dateStr  = parseDate(d.date_travail) || parseDate(d.date_debut) || fallback;
-    const match    = linkedId ? state.contrats.find(x => x.id === linkedId) : findMatchingContrat(d.employeur, dateStr);
+    const dateStr = parseDate(d.date_travail) || parseDate(d.date_debut) || fallback;
+    const match   = linkedId ? state.contrats.find(x => x.id === linkedId) : findMatchingContrat(d.employeur, dateStr);
     if (match) {
-      if (!match.brutV)   match.brutV   = d.salaire_brut||0;
-      if (!match.netImp)  match.netImp  = d.net_imposable||0;
-      if (!match.netV)    match.netV    = d.net_percu||0;
-      if (!match.pasV)    match.pasV    = d.pas_preleve||0;
-      if (!match.heures)  match.heures  = d.h_totales||0;
-      if (!match.cachets) match.cachets = d.cachets||0;
-      match.hasBulletin = true;
+      if (!match.sources) match.sources = {};
+      match.sources.bulletin = { brutV: d.salaire_brut||0, netImp: d.net_imposable||0, netV: d.net_percu||0, pasV: d.pas_preleve||0, heures: d.h_totales||0, cachets: d.cachets||0 };
+      recalcContrat(match);
       toast('✅ Bulletin rattaché à : ' + match.employeur);
     } else {
-      state.contrats.push({
-        id: Date.now().toString(),
-        employeur: (d.employeur||'').toUpperCase().trim(), poste:'',
-        dateDebut: dateStr, dateFin: dateStr,
-        cachets: d.cachets||0, heures: d.h_totales||0,
-        brutV: d.salaire_brut||0, netImp: d.net_imposable||0,
-        netV: d.net_percu||0, pasV: d.pas_preleve||0,
-        paye: false, ref:'', comment:'', docs:[],
-        hasContrat:false, hasBulletin:true, hasAEM:false, hasCS:false
-      });
+      const c = { id: Date.now().toString(), employeur: (d.employeur||'').toUpperCase().trim(), poste:'', dateDebut: dateStr, dateFin: dateStr, paye:false, ref:'', comment:'', docs:[], sources: { contrat:null, bulletin: { brutV: d.salaire_brut||0, netImp: d.net_imposable||0, netV: d.net_percu||0, pasV: d.pas_preleve||0, heures: d.h_totales||0, cachets: d.cachets||0 }, aem:null, conges:null } };
+      recalcContrat(c);
+      state.contrats.push(c);
       toast('✅ Bulletin → nouveau contrat');
     }
 
   } else if (docType === 'aem') {
-    const mi       = MONTHS.indexOf(d.mois);
-    const an       = parseInt(d.annee) || new Date().getFullYear();
+    const mi = MONTHS.indexOf(d.mois); const an = parseInt(d.annee) || new Date().getFullYear();
     const fallback = (mi >= 0 && !isNaN(an)) ? `${an}-${String(mi+1).padStart(2,'0')}-01` : new Date().toISOString().slice(0,10);
-    const dateStr  = parseDate(d.date_debut) || parseDate(d.date_travail) || fallback;
-    const match    = linkedId ? state.contrats.find(x => x.id === linkedId) : findMatchingContrat(d.employeur, dateStr);
+    const dateStr = parseDate(d.date_debut) || parseDate(d.date_travail) || fallback;
+    const match   = linkedId ? state.contrats.find(x => x.id === linkedId) : findMatchingContrat(d.employeur, dateStr);
     if (match) {
-      if (!match.heures)  match.heures  = d.nb_heures||0;
-      if (!match.cachets) match.cachets = d.nb_cachets||0;
-      // L'AEM prévaut TOUJOURS pour le brut
-      if (d.salaire_brut) match.brutV = d.salaire_brut;
-      match.hasAEM = true;
+      if (!match.sources) match.sources = {};
+      match.sources.aem = { brutV: d.salaire_brut||0, cachets: d.nb_cachets||0, heures: d.nb_heures||0 };
+      recalcContrat(match);
       toast('✅ AEM rattachée à : ' + match.employeur);
     } else {
-      state.contrats.push({
-        id: Date.now().toString(),
-        employeur: (d.employeur||'').toUpperCase().trim(), poste:'AEM',
-        dateDebut: dateStr, dateFin: dateStr,
-        cachets: d.nb_cachets||0, heures: d.nb_heures||0,
-        brutV: d.salaire_brut||0, netImp:0, netV:0, pasV:0,
-        paye: false, ref:'AEM', comment:'', docs:[],
-        hasContrat:false, hasBulletin:false, hasAEM:true, hasCS:false
-      });
+      const c = { id: Date.now().toString(), employeur: (d.employeur||'').toUpperCase().trim(), poste:'AEM', dateDebut: dateStr, dateFin: dateStr, paye:false, ref:'AEM', comment:'', docs:[], sources: { contrat:null, bulletin:null, aem: { brutV: d.salaire_brut||0, cachets: d.nb_cachets||0, heures: d.nb_heures||0 }, conges:null } };
+      recalcContrat(c);
+      state.contrats.push(c);
       toast('✅ AEM → nouveau contrat');
     }
 
@@ -458,21 +430,14 @@ function confirmScanInline() {
     const dateStr = parseDate(d.date_debut) || parseDate(d.date_fin) || new Date().toISOString().slice(0,10);
     const match   = linkedId ? state.contrats.find(x => x.id === linkedId) : findMatchingContrat(d.employeur, dateStr);
     if (match) {
-      match.hasCS = true;
-      if (!match.brutV && d.salaire_brut) match.brutV = d.salaire_brut;
+      if (!match.sources) match.sources = {};
+      match.sources.conges = { brutV: d.salaire_brut||0, cachets: d.nb_jours_cachets||0 };
+      recalcContrat(match);
       toast('✅ Congés Spectacle rattachés à : ' + match.employeur);
     } else {
-      state.contrats.push({
-        id: Date.now().toString(),
-        employeur: (d.employeur||'').toUpperCase().trim(),
-        poste: d.emploi||'',
-        dateDebut: parseDate(d.date_debut)||dateStr,
-        dateFin:   parseDate(d.date_fin)||dateStr,
-        cachets: d.nb_jours_cachets||0, heures:0,
-        brutV: d.salaire_brut||0, netImp:0, netV:0, pasV:0,
-        paye: false, ref:'', comment:'', docs:[],
-        hasContrat:false, hasBulletin:false, hasAEM:false, hasCS:true
-      });
+      const c = { id: Date.now().toString(), employeur: (d.employeur||'').toUpperCase().trim(), poste: d.emploi||'', dateDebut: parseDate(d.date_debut)||dateStr, dateFin: parseDate(d.date_fin)||dateStr, paye:false, ref:'', comment:'', docs:[], sources: { contrat:null, bulletin:null, aem:null, conges: { brutV: d.salaire_brut||0, cachets: d.nb_jours_cachets||0 } } };
+      recalcContrat(c);
+      state.contrats.push(c);
       toast('✅ Congés Spectacle → nouveau contrat');
     }
 
