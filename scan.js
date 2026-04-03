@@ -537,10 +537,10 @@ function openInlineUpload(contratId, docType) {
   `;
 
   // Insère dans le bon panneau (mobile ou desktop)
-  const body = document.getElementById('detail-body');
   const dp   = document.getElementById('desktop-detail-body');
-  if (dp && dp.innerHTML.trim()) dp.appendChild(panel.cloneNode(true));
-  else if (body) body.appendChild(panel);
+  const body = document.getElementById('detail-body');
+  const target = (dp && dp.children.length > 0) ? dp : body;
+  if (target) target.appendChild(panel);
 }
 
 async function handleInlineFile(event, contratId, docType) {
