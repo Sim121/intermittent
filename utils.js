@@ -68,9 +68,10 @@ function recalcContrat(c) {
 
   // netImp, netV, pasV : Bulletin en priorité, sinon estimation depuis le brut
   if (s.bulletin) {
-    c.netImp = s.bulletin.netImp || 0;
-    c.netV   = s.bulletin.netV   || 0;
-    c.pasV   = s.bulletin.pasV   || 0;
+    c.netImp  = s.bulletin.netImp  || 0;
+    c.netV    = s.bulletin.netV    || 0;
+    c.pasV    = s.bulletin.pasV    || 0;
+    c.tauxPas = s.bulletin.tauxPas || 0;
     c.isEstimated = false;
   } else if (c.brutV > 0) {
     // Estimation : cotisations salariales ~22% du brut
