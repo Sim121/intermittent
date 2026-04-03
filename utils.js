@@ -91,8 +91,8 @@ function recalcContrat(c) {
   // heures : AEM > Bulletin > Contrat
   c.heures = (s.aem?.heures) || (s.bulletin?.heures) || (s.contrat?.heures) || 0;
 
-  // poste : Contrat > existant
-  if (s.contrat?.poste) c.poste = s.contrat.poste;
+  // poste : AEM > Bulletin > Contrat
+  c.poste = s.aem?.poste || s.bulletin?.poste || s.contrat?.poste || c.poste || '';
 
   // Flags
   c.hasContrat  = !!s.contrat;
