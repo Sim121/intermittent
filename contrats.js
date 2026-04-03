@@ -194,9 +194,10 @@ function renderDetailBody(c) {
     <div class="ft-row"><span class="ft-label">Salaire brut total</span><span class="ft-value" style="color:var(--orange)">${fmt(c.brutV)}</span></div>
     ${c.sources?.contrat?.salaireBase ? `<div class="ft-row"><span class="ft-label">└ Salaire base</span><span class="ft-value">${fmt(c.sources.contrat.salaireBase)}</span></div>` : ''}
     ${c.sources?.contrat?.droits ? `<div class="ft-row"><span class="ft-label">└ Droits complémentaires</span><span class="ft-value">${fmt(c.sources.contrat.droits)}</span></div>` : ''}
-    <div class="ft-row"><span class="ft-label">Net imposable</span><span class="ft-value">${fmt(c.netImp)}</span></div>
-    <div class="ft-row"><span class="ft-label">Net perçu</span><span class="ft-value" style="color:var(--green)">${fmt(c.netV)}</span></div>
-    <div class="ft-row"><span class="ft-label">PAS prélevé</span><span class="ft-value" style="color:var(--red)">${fmt(c.pasV)}</span></div>`;
+    ${c.isEstimated ? '<div class="alert alert-warn" style="font-size:11px;padding:8px 12px;margin-bottom:8px;">⚠️ Valeurs estimées — seront mises à jour une fois le bulletin scanné</div>' : ''}
+    <div class="ft-row"><span class="ft-label">Net imposable</span><span class="ft-value">${fmt(c.netImp)}${c.isEstimated?' <span style="font-size:10px;color:var(--orange);">~</span>':''}</span></div>
+    <div class="ft-row"><span class="ft-label">${c.paye===true ? 'Net perçu' : 'Net à percevoir'}</span><span class="ft-value" style="color:var(--green)">${fmt(c.netV)}${c.isEstimated?' <span style="font-size:10px;color:var(--orange);">~</span>':''}</span></div>
+    <div class="ft-row"><span class="ft-label">PAS prélevé</span><span class="ft-value" style="color:var(--red)">${fmt(c.pasV)}${c.isEstimated?' <span style="font-size:10px;color:var(--orange);">~</span>':''}</span></div>`;
 
   const ftContent = `
     <div class="ft-row"><span class="ft-label">Déclarer en</span><span class="ft-value" style="color:var(--accent)">${getMoisDeclaration(c.dateDebut)}</span></div>
@@ -372,20 +373,12 @@ function renderFT() {
   if (!val) return;
   const [y, m] = val.split('-').map(Number);
 
-  const contrats  = state.contrats.filter(c => {
+  const contrats = state.contrats.filter(c => {
     if (!c.dateDebut) return false;
     const d = new Date(c.dateDebut + 'T12:00:00');
     return d.getFullYear() === y && d.getMonth() === m - 1;
   });
-  const totalH    = contrats.reduce((s,c) => s+heuresFT(c), 0);
-  const totalBrut = contrats.reduce((s,c) => s+(c.brutV||0), 0);
-  const totalC    = contrats.reduce((s,c) => s+(c.cachets||0), 0);
-  const totalJ    = contrats.reduce((s,c) => {
-    if (!c.dateDebut || !c.dateFin) return s;
-    return s + Math.ceil((new Date(c.dateFin + 'T12:00:00') - new Date(c.dateDebut + 'T12:00:00')) / 86400000) + 1;
-  }, 0);
 
-  const moisDecl = new Date(y, m, 1);
   const el = document.getElementById('ft-content');
 
   if (!contrats.length) {
@@ -393,29 +386,46 @@ function renderFT() {
     return;
   }
 
+  const moisDecl = new Date(y, m, 1);
+
+  // Totaux
+  const totalH    = contrats.reduce((s,c) => s + (c.sources?.aem?.heures || 0), 0);
+  const totalBrut = contrats.reduce((s,c) => s + (c.sources?.aem?.brutV || c.brutV || 0), 0);
+  const totalC    = contrats.reduce((s,c) => s + (c.sources?.aem?.cachets || c.cachets || 0), 0);
+
+  const fmtJour = (dateStr) => {
+    if (!dateStr) return '—';
+    const d = new Date(dateStr + 'T12:00:00');
+    const jours = ['dimanche','lundi','mardi','mercredi','jeudi','vendredi','samedi'];
+    return `${jours[d.getDay()]} ${d.getDate()} ${MONTHS[d.getMonth()].toLowerCase()} ${d.getFullYear()}`;
+  };
+
   el.innerHTML = `
-    <div class="card" style="background:var(--blue-light);border-color:rgba(26,74,122,.2);">
-      <div class="card-head"><div class="card-head-title" style="color:var(--blue);">À déclarer en ${MONTHS[moisDecl.getMonth()]} ${moisDecl.getFullYear()}</div></div>
-      <div class="ft-row"><span class="ft-label">Heures travaillées</span><span class="ft-value">${totalH} h</span></div>
-      <div class="ft-row"><span class="ft-label">Salaire brut</span><span class="ft-value" style="color:var(--gold);">${fmt(totalBrut)}</span></div>
-      <div class="ft-row"><span class="ft-label">Cachets</span><span class="ft-value">${totalC}</span></div>
-      <div class="ft-row"><span class="ft-label">Jours travaillés</span><span class="ft-value">${totalJ}</span></div>
-      <div class="ft-row"><span class="ft-label">Employeurs</span><span class="ft-value">${[...new Set(contrats.map(c=>c.employeur))].length}</span></div>
+    <div class="card" style="background:var(--blue-light);border-color:rgba(37,99,235,.2);">
+      <div class="card-head"><div class="card-head-title" style="color:var(--accent);">À déclarer en ${MONTHS[moisDecl.getMonth()]} ${moisDecl.getFullYear()}</div></div>
+      <div class="ft-row"><span class="ft-label">Cachets totaux</span><span class="ft-value">${totalC}</span></div>
+      ${totalH > 0 ? `<div class="ft-row"><span class="ft-label">Heures totales</span><span class="ft-value">${totalH} h</span></div>` : ''}
+      <div class="ft-row"><span class="ft-label">Salaire brut total</span><span class="ft-value" style="color:var(--accent);">${Math.round(totalBrut)} €</span></div>
     </div>
+
     <div class="card">
-      <div class="card-head"><div class="card-head-title">Détail par contrat</div></div>
+      <div class="card-head"><div class="card-head-title">Détail par contrat — format France Travail</div></div>
       ${contrats.map(c => {
-        const nj = c.dateDebut && c.dateFin ? Math.ceil((new Date(c.dateFin+'T12:00:00')-new Date(c.dateDebut+'T12:00:00'))/86400000)+1 : 0;
-        return `<div style="padding:12px 0;border-bottom:1px solid var(--border2);">
-          <div style="font-size:14px;font-weight:700;margin-bottom:6px;">${c.employeur}</div>
-          <div style="display:flex;gap:16px;flex-wrap:wrap;">
-            <div class="contrat-stat"><strong>${c.heures||0}h</strong></div>
-            <div class="contrat-stat"><strong>${fmt(c.brutV)}</strong> brut</div>
-            <div class="contrat-stat"><strong>${c.cachets||0}</strong> cachet${(c.cachets||0)>1?'s':''}</div>
-            <div class="contrat-stat"><strong>${nj}j</strong></div>
-          </div>
-          <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);margin-top:4px;">${fmtDate(c.dateDebut)}${c.dateFin&&c.dateFin!==c.dateDebut?' → '+fmtDate(c.dateFin):''}</div>
-        </div>`;
+        const aem      = c.sources?.aem;
+        const cachets  = aem?.cachets || c.cachets || 0;
+        const heures   = aem?.heures  || 0;
+        const brutDecl = Math.round(aem?.brutV || c.brutV || 0);
+        const debut    = c.sources?.contrat?.dateDebut || c.dateDebut;
+        const fin      = c.sources?.contrat?.dateFin   || c.dateFin;
+        return `
+          <div style="padding:16px 0;border-bottom:1px solid var(--border2);">
+            <div style="font-size:14px;font-weight:700;margin-bottom:12px;color:var(--accent);">${c.employeur}</div>
+            ${heures > 0 ? `<div class="ft-row"><span class="ft-label">Heures travaillées</span><span class="ft-value">${heures} h</span></div>` : ''}
+            <div class="ft-row"><span class="ft-label">Nombre de cachets</span><span class="ft-value">${cachets}</span></div>
+            <div class="ft-row"><span class="ft-label">Salaire brut</span><span class="ft-value">${brutDecl} €</span></div>
+            <div class="ft-row"><span class="ft-label">Période d'activité</span><span class="ft-value" style="font-size:12px;">${fmtJour(debut)}${fin && fin !== debut ? ' → ' + fmtJour(fin) : ''}</span></div>
+            ${!aem ? '<div style="font-size:11px;color:var(--orange);margin-top:8px;">⚠️ AEM non scannée — données estimées</div>' : ''}
+          </div>`;
       }).join('')}
     </div>
     <button class="btn btn-ghost" style="width:100%;margin-bottom:10px;" onclick="copyFTRecap(${y},${m})">📋 Copier le récapitulatif</button>`;
@@ -427,10 +437,30 @@ function copyFTRecap(y, m) {
     const d = new Date(c.dateDebut + 'T12:00:00');
     return d.getFullYear() === y && d.getMonth() === m - 1;
   });
-  let text = `DÉCLARATION FRANCE TRAVAIL — ${MONTHS[m-1]} ${y}\n${'─'.repeat(40)}\n`;
-  text += `Heures : ${contrats.reduce((s,c)=>s+(c.heures||0),0)} h\n`;
-  text += `Brut : ${fmt(contrats.reduce((s,c)=>s+(c.brutV||0),0))}\n`;
-  text += `Cachets : ${contrats.reduce((s,c)=>s+(c.cachets||0),0)}\n\nDÉTAIL :\n`;
-  contrats.forEach(c => { text += `\n• ${c.employeur}\n  ${c.heures||0}h — ${fmt(c.brutV)} brut — ${c.cachets||0} cachet(s)\n`; });
+
+  const fmtJour = (dateStr) => {
+    if (!dateStr) return '—';
+    const d = new Date(dateStr + 'T12:00:00');
+    const jours = ['dimanche','lundi','mardi','mercredi','jeudi','vendredi','samedi'];
+    return `${jours[d.getDay()]} ${d.getDate()} ${MONTHS[d.getMonth()].toLowerCase()} ${d.getFullYear()}`;
+  };
+
+  let text = `DÉCLARATION FRANCE TRAVAIL — ${MONTHS[m-1]} ${y}\n${'─'.repeat(40)}\n\n`;
+
+  contrats.forEach(c => {
+    const aem     = c.sources?.aem;
+    const cachets = aem?.cachets || c.cachets || 0;
+    const heures  = aem?.heures  || 0;
+    const brut    = Math.round(aem?.brutV || c.brutV || 0);
+    const debut   = c.sources?.contrat?.dateDebut || c.dateDebut;
+    const fin     = c.sources?.contrat?.dateFin   || c.dateFin;
+
+    text += `${c.employeur}\n`;
+    if (heures > 0) text += `Heures travaillées : ${heures} h\n`;
+    text += `Nombre de cachets : ${cachets}\n`;
+    text += `Salaire brut : ${brut} €\n`;
+    text += `Période : ${fmtJour(debut)}${fin && fin !== debut ? ' → ' + fmtJour(fin) : ''}\n\n`;
+  });
+
   navigator.clipboard.writeText(text).then(() => toast('📋 Copié !')).catch(() => toast('❌ Impossible de copier'));
 }
