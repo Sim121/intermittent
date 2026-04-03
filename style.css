@@ -168,7 +168,11 @@ body {
    DESKTOP SIDEBAR
    ============================================================ */
 /* Cache la sidebar sur mobile */
-.sidebar { display: none; }
+@media (max-width: 767px) {
+  .app-header { display: flex; }
+  .bottom-nav { display: none; }
+  .page-wrap  { padding: 0 0 24px; }
+}
 
 @media (min-width: 768px) {
 
