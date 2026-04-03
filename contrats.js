@@ -161,7 +161,7 @@ function renderDetailBody(c) {
         <div class="paiement-btn ${c.paye===false?'active-attente':''}" onclick="togglePaiement('${c.id}',false)">⏳ En attente</div>
       </div>
     </div>
-    <div class="card">
+    <div class="card" id="docs-card-${c.id}">
       <div class="card-head"><div class="card-head-title">Documents rattachés</div></div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
         <span class="tag ${c.hasContrat?'tag-green':'tag-gray'}" style="${!c.hasContrat?'cursor:pointer':''}" onclick="${!c.hasContrat?`openInlineUpload('${c.id}','contrat')`:''}">📝 Contrat ${c.hasContrat?'✓':'+ Ajouter'}</span>
