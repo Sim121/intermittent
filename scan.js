@@ -546,6 +546,7 @@ function openInlineUpload(contratId, docType) {
     const target = (dp && dp.children.length > 0) ? dp : body;
     if (target) target.appendChild(panel);
   }
+}
 
 async function handleInlineFile(event, contratId, docType) {
   const file = event.target.files[0];
