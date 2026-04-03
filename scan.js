@@ -386,7 +386,7 @@ function confirmScanInline() {
       recalcContrat(match);
       toast('✅ Contrat rattaché à : ' + match.employeur);
     } else {
-      const c = { id: Date.now().toString(), employeur: (d.employeur||'').toUpperCase().trim(), poste: d.poste||d.nature_contrat||'', dateDebut, dateFin, paye:false, ref:'', comment:'', docs:[], sources: { contrat: { brutV: d.cachet_brut_total||0, cachets: d.cachets||0, heures: d.h_prevues||0, poste: d.poste||d.nature_contrat||'' }, bulletin:null, aem:null, conges:null } };
+      const c = { id: Date.now().toString(), employeur: (d.employeur||'').toUpperCase().trim(), poste: d.poste||d.nature_contrat||'', dateDebut, dateFin, paye:false, ref:'', comment:'', docs:[], sources: { contrat: { brutV: d.cachet_brut_total||0, salaireBase: d.salaire_base||0, droits: d.droits_complementaires||0, cachets: d.cachets||0, heures: d.h_prevues||0, poste: d.poste||d.nature_contrat||'' }, bulletin:null, aem:null, conges:null } };
       recalcContrat(c);
       state.contrats.push(c);
       toast('✅ Contrat enregistré');
