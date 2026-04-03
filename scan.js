@@ -380,7 +380,7 @@ function confirmScanInline() {
     const match     = linkedId ? state.contrats.find(x => x.id === linkedId) : findMatchingContrat(d.employeur, dateDebut);
     if (match) {
       if (!match.sources) match.sources = {};
-      match.sources.contrat = { brutV: d.cachet_brut_total||0, cachets: d.cachets||0, heures: d.h_prevues||0, poste: d.poste||d.nature_contrat||'', dateDebut, dateFin };
+      match.sources.contrat = { brutV: d.cachet_brut_total||0, salaireBase: d.salaire_base||0, droits: d.droits_complementaires||0, cachets: d.cachets||0, heures: d.h_prevues||0, poste: d.poste||d.nature_contrat||'', dateDebut, dateFin };
       if (!match.dateDebut) match.dateDebut = dateDebut;
       if (!match.dateFin)   match.dateFin   = dateFin;
       recalcContrat(match);
