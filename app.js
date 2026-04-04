@@ -3,14 +3,14 @@
    Core : state, auth, sync, navigation, settings, init
    ============================================================ */
 
-const APP_VERSION = '3.5.3';
+const APP_VERSION = '3.5.4';
 const APP_DATE    = '2026-04-03';
 
 // ── STATE GLOBAL ──
 let state = {
   contrats: [],
   frais: [],
-  config: { tauxPas:14.6, situation:2, mathilde:0, sjr:0, areReel:0, finDroits:'', annexe:8 }
+  config: { tauxPas:14.6, situation:2, conjoint:0, sjr:0, areReel:0, finDroits:'', annexe:8 }
 };
 
 let session = { token: null, expiresAt: null };
@@ -303,7 +303,7 @@ function loadConfig() {
   s('cfg-annexe',          state.config.annexe||8);
   s('cfg-statut-familial', state.config.statutFamilial||'celibataire');
   s('cfg-conjoint-prenom', state.config.conjointPrenom||'');
-  s('cfg-mathilde',        state.config.conjoint||'');
+  s('cfg-conjoint-revenus',        state.config.conjoint||'');
   s('cfg-enfants',         state.config.enfants||0);
   s('cfg-taux-pas',        state.config.tauxPas||14.6);
   s('cfg-are-jour',        state.config.areJour||'');
@@ -330,7 +330,7 @@ function saveConfig() {
   state.config.annexe         = gi('cfg-annexe', 8);
   state.config.statutFamilial = g('cfg-statut-familial', 'celibataire');
   state.config.conjointPrenom = g('cfg-conjoint-prenom', '');
-  state.config.conjoint       = gf('cfg-mathilde', 0);
+  state.config.conjoint       = gf('cfg-conjoint-revenus', 0);
   state.config.enfants        = gi('cfg-enfants', 0);
   state.config.tauxPas        = gf('cfg-taux-pas', 14.6);
   state.config.areJour        = gf('cfg-are-jour', 0);
