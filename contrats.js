@@ -196,6 +196,7 @@ function renderDetailBody(c) {
     </div>`;
 
   const infoContent = `
+    ${c.hasManualEdits ? `<div class="alert alert-warn" style="font-size:12px;padding:8px 12px;margin-bottom:10px;">✏️ Données modifiées manuellement à l'import : <strong>${(c.manualEditFields||[]).join(', ')}</strong></div>` : ''}
     <div class="ft-row"><span class="ft-label">Employeur</span><span class="ft-value">${c.employeur||'—'}</span></div>
     <div class="ft-row"><span class="ft-label">Poste</span><span class="ft-value">${c.poste||'—'}</span></div>
     <div class="ft-row"><span class="ft-label">Début</span><span class="ft-value">${fmtDate(c.dateDebut)}</span></div>
