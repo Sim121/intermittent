@@ -919,3 +919,39 @@ function closeCamera() {
   if (cameraStream) { cameraStream.getTracks().forEach(t => t.stop()); cameraStream = null; }
   document.getElementById('camera-modal').style.display = 'none';
 }
+
+// ── FILE D'ATTENTE VISUELLE ──
+function updateScanQueueUI() {
+  const panel = document.getElementById('scan-queue-panel');
+  const list  = document.getElementById('scan-queue-list');
+  if (!panel || !list) return;
+
+  if (fileQueue.length <= fileQueueIndex + 1) {
+    panel.style.display = 'none';
+    return;
+  }
+
+  const remaining = fileQueue.slice(fileQueueIndex + 1);
+  panel.style.display = 'block';
+  list.innerHTML = remaining.map((f, i) => `
+    <div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border2);">
+      <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);flex-shrink:0;">${fileQueueIndex + i + 2}/${fileQueue.length}</span>
+      <span style="flex:1;font-size:13px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${f.name}</span>
+      <button onclick="removeFromQueue(${fileQueueIndex + i + 1})" style="background:none;border:none;cursor:pointer;color:var(--red);font-size:14px;flex-shrink:0;">✕</button>
+    </div>
+  `).join('');
+}
+
+function removeFromQueue(index) {
+  fileQueue.splice(index, 1);
+  updateScanQueueUI();
+  toast('🗑️ Document retiré de la file');
+}
+
+function clearScanQueue() {
+  fileQueue = [];
+  fileQueueIndex = 0;
+  const panel = document.getElementById('scan-queue-panel');
+  if (panel) panel.style.display = 'none';
+  toast('🗑️ File d\'attente vidée');
+}
