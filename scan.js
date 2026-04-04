@@ -6,6 +6,7 @@
 let fileQueue      = [];
 let fileQueueIndex = 0;
 let currentAbortController = null;
+let pendingExtraDocs = [];
 
 // ── UPLOAD ──
 function handleDrop(e) {
@@ -87,6 +88,12 @@ async function processFile(file) {
     document.getElementById('scan-loading').style.display = 'none';
     if (res.ok) {
       pendingScanData = res.data;
+      if (res.extraDocs && res.extraDocs.length > 0) {
+        toast(`📄 ${1 + res.extraDocs.length} documents détectés dans ce fichier`);
+        pendingExtraDocs = res.extraDocs;
+      } else {
+        pendingExtraDocs = [];
+      }
       showScanResult(res.data);
     } else {
       document.getElementById('scan-result-card').style.display  = 'block';
@@ -474,6 +481,16 @@ function confirmScanInline() {
 
   saveState();
   pendingScanData = null;
+   // Traite les documents supplémentaires détectés dans le même fichier
+  if (pendingExtraDocs.length > 0) {
+    const next = pendingExtraDocs.shift();
+    setTimeout(() => {
+      pendingScanData = next;
+      toast(`📄 Document supplémentaire détecté : ${next.type}`);
+      showScanResult(next);
+    }, 500);
+    return;
+  }
   document.getElementById('scan-result-card').style.display = 'none';
   renderBilan();
   if (fileQueue.length > 0) nextInQueue();
