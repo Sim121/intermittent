@@ -253,14 +253,28 @@
                 <select id="scan-contrat-select"><option value="">— Aucun / nouveau contrat —</option></select>
               </div>
             </div>
+               <div id="multipage-panel" style="display:none;margin-bottom:12px;" class="card">
+              <div class="card-head">
+                <div class="card-head-title">📑 Document multi-pages</div>
+                <button class="btn btn-ghost btn-sm" onclick="clearMultipage()">✕ Annuler</button>
+              </div>
+              <div id="multipage-list" style="font-size:13px;color:var(--ink2);margin-bottom:12px;"></div>
+              <div style="display:flex;gap:8px;">
+                <label style="flex:1;cursor:pointer;">
+                  <input type="file" accept=".pdf,.jpg,.jpeg,.png,.heic,.heif,.webp,.tiff,.bmp" multiple style="display:none;" onchange="addMultipageFiles(event)">
+                  <div class="btn btn-ghost" style="width:100%;text-align:center;">＋ Ajouter des pages</div>
+                </label>
+                <button class="btn btn-primary" style="flex:1;" onclick="processMultipage()">🔍 Analyser</button>
+              </div>
+            </div>
             <div class="upload-zone" id="dropzone"
               ondragover="event.preventDefault();this.classList.add('active')"
               ondragleave="this.classList.remove('active')"
               ondrop="handleDrop(event)">
-              <input type="file" accept=".pdf,.jpg,.jpeg,.png,.heic,.heif,.webp,.tiff,.tif,.bmp" onchange="handleFile(event)" id="file-input" multiple>
+              <input type="file" accept=".pdf,.jpg,.jpeg,.png,.heic,.heif,.webp,.tiff,.bmp" multiple onchange="handleFile(event)" id="file-input">
               <div class="upload-emoji">📂</div>
-              <div class="upload-title">Glisse ou touche pour parcourir</div>
-              <div class="upload-sub">PDF, JPG, PNG · Photo iPhone OK</div>
+              <div class="upload-title">Glisse ou clique pour uploader</div>
+              <div class="upload-sub">PDF, JPG, PNG, HEIC · Multi-pages : <span style="color:var(--accent);cursor:pointer;font-weight:700;" onclick="showMultipagePanel()">mode assemblage</span></div>
             </div>
           </div>
           <div class="section" style="padding-top:0;">
