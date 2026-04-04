@@ -298,27 +298,71 @@ function populateContratSelects() {
 // CONFIG & SETTINGS
 // ============================================================
 function loadConfig() {
-  const set = (id, v) => { const el = document.getElementById(id); if (el && v !== undefined && v !== null) el.value = v; };
-  set('cfg-taux-pas',   state.config.tauxPas);
-  set('cfg-situation',  state.config.situation);
-  set('cfg-mathilde',   state.config.mathilde||'');
-  set('cfg-sjr',        state.config.sjr||'');
-  set('cfg-are-reel',   state.config.areReel||'');
-  set('cfg-fin-droits', state.config.finDroits||'');
-   set('cfg-annexe', state.config.annexe || 8);
+  const s = (id, v) => { const el = document.getElementById(id); if (el && v !== undefined && v !== null) el.value = v; };
+  s('cfg-prenom',          state.config.prenom||'');
+  s('cfg-annexe',          state.config.annexe||8);
+  s('cfg-statut-familial', state.config.statutFamilial||'celibataire');
+  s('cfg-conjoint-prenom', state.config.conjointPrenom||'');
+  s('cfg-mathilde',        state.config.mathilde||'');
+  s('cfg-enfants',         state.config.enfants||0);
+  s('cfg-taux-pas',        state.config.tauxPas||14.6);
+  s('cfg-are-jour',        state.config.areJour||'');
+  s('cfg-sr',              state.config.sr||'');
+  s('cfg-nht',             state.config.nht||'');
+  s('cfg-sjr',             state.config.sjr||'');
+  s('cfg-are-debut',       state.config.areDebut||'');
+  s('cfg-fin-droits',      state.config.finDroits||'');
+  s('cfg-are-reel',        state.config.areReel||'');
+  s('cfg-franchise-cp',    state.config.franchiseCp||'');
+  s('cfg-franchise-sal',   state.config.franchiseSal||'');
+  updateFamilialUI();
+  updateSituationFiscale();
   const url = localStorage.getItem('apps-script-url');
   if (url) { const el = document.getElementById('apps-script-url'); if (el) el.value = url; }
 }
 
 function saveConfig() {
-  state.config.tauxPas   = parseFloat(document.getElementById('cfg-taux-pas').value) || 14.6;
-  state.config.situation = parseFloat(document.getElementById('cfg-situation').value) || 2;
-  state.config.mathilde  = parseFloat(document.getElementById('cfg-mathilde').value) || 0;
-  state.config.sjr       = parseFloat(document.getElementById('cfg-sjr').value) || 0;
-  state.config.areReel   = parseFloat(document.getElementById('cfg-are-reel').value) || 0;
-  state.config.finDroits = document.getElementById('cfg-fin-droits').value || '';
-   state.config.annexe = parseInt(document.getElementById('cfg-annexe').value) || 8;
+  const g = (id, def) => { const el = document.getElementById(id); return el ? el.value : def; };
+  const gf = (id, def) => parseFloat(g(id, def)) || def || 0;
+  const gi = (id, def) => parseInt(g(id, def)) || def || 0;
+
+  state.config.prenom         = g('cfg-prenom', 'Simon');
+  state.config.annexe         = gi('cfg-annexe', 8);
+  state.config.statutFamilial = g('cfg-statut-familial', 'celibataire');
+  state.config.conjointPrenom = g('cfg-conjoint-prenom', '');
+  state.config.mathilde       = gf('cfg-mathilde', 0);
+  state.config.enfants        = gi('cfg-enfants', 0);
+  state.config.tauxPas        = gf('cfg-taux-pas', 14.6);
+  state.config.areJour        = gf('cfg-are-jour', 0);
+  state.config.sr             = gf('cfg-sr', 0);
+  state.config.nht            = gf('cfg-nht', 0);
+  state.config.sjr            = gf('cfg-sjr', 0);
+  state.config.areDebut       = g('cfg-are-debut', '');
+  state.config.finDroits      = g('cfg-fin-droits', '');
+  state.config.areReel        = gf('cfg-are-reel', 0);
+  state.config.franchiseCp    = gi('cfg-franchise-cp', 0);
+  state.config.franchiseSal   = gi('cfg-franchise-sal', 0);
+
+  // Calcule les parts fiscales depuis la situation réelle
+  updateSituationFiscale();
   saveState();
+}
+
+function updateFamilialUI() {
+  const statut = document.getElementById('cfg-statut-familial')?.value;
+  const bloc   = document.getElementById('cfg-conjoint-bloc');
+  if (bloc) bloc.style.display = statut === 'couple' ? 'block' : 'none';
+}
+
+function updateSituationFiscale() {
+  // Calcule les parts fiscales automatiquement
+  const statut  = state.config.statutFamilial || 'celibataire';
+  const enfants = state.config.enfants || 0;
+  let parts = statut === 'couple' ? 2 : 1;
+  if (enfants === 1) parts += 0.5;
+  else if (enfants === 2) parts += 1;
+  else if (enfants >= 3) parts += enfants - 1; // 2 parts à partir du 3e
+  state.config.situation = parts;
 }
 
 function saveAppsScriptUrl() {
@@ -341,6 +385,49 @@ async function testAppsScript() {
     btn.textContent = 'Tester';
     document.getElementById('as-test-result').innerHTML = `<div class="alert alert-err">❌ ${e.message}</div>`;
   }
+}
+
+async function importNotificationFT(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const statusEl = document.getElementById('are-import-status');
+  statusEl.style.display = 'block';
+  statusEl.className = 'alert alert-info';
+  statusEl.textContent = '⏳ Analyse de la notification en cours…';
+
+  try {
+    const base64 = await fileToBase64(file);
+    const res = await appsScriptPost({
+      action: 'scanDoc',
+      docType: 'notification_ft',
+      base64Data: base64,
+      mediaType: 'application/pdf'
+    });
+
+    if (res.ok && res.data) {
+      const d = res.data;
+      // Met à jour la config avec les données extraites
+      if (d.are_jour)       { state.config.areJour    = d.are_jour;    document.getElementById('cfg-are-jour').value    = d.are_jour; }
+      if (d.sr)             { state.config.sr          = d.sr;          document.getElementById('cfg-sr').value          = d.sr; }
+      if (d.nht)            { state.config.nht         = d.nht;         document.getElementById('cfg-nht').value         = d.nht; }
+      if (d.sjr)            { state.config.sjr         = d.sjr;         document.getElementById('cfg-sjr').value         = d.sjr; }
+      if (d.date_ouverture) { state.config.areDebut    = d.date_ouverture; document.getElementById('cfg-are-debut').value = d.date_ouverture; }
+      if (d.date_anniversaire) { state.config.finDroits = d.date_anniversaire; document.getElementById('cfg-fin-droits').value = d.date_anniversaire; }
+      if (d.franchise_cp)   { state.config.franchiseCp  = d.franchise_cp;  document.getElementById('cfg-franchise-cp').value  = d.franchise_cp; }
+      if (d.franchise_sal)  { state.config.franchiseSal = d.franchise_sal; document.getElementById('cfg-franchise-sal').value = d.franchise_sal; }
+      saveState();
+      statusEl.className = 'alert alert-ok';
+      statusEl.textContent = '✅ Notification importée — droits mis à jour';
+      renderBilan();
+    } else {
+      statusEl.className = 'alert alert-err';
+      statusEl.textContent = '❌ ' + (res.error || 'Erreur d\'analyse');
+    }
+  } catch(e) {
+    statusEl.className = 'alert alert-err';
+    statusEl.textContent = '❌ ' + e.message;
+  }
+  event.target.value = '';
 }
 
 // ============================================================
