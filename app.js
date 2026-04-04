@@ -433,6 +433,92 @@ function checkLayout() {
   document.body.classList.toggle('is-desktop', isDesktop);
 }
 
+// ── DRAG & DROP GLOBAL ──
+let globalDropFiles = [];
+
+function initGlobalDrop() {
+  let dragCounter = 0;
+
+  document.addEventListener('dragenter', e => {
+    if (!e.dataTransfer.types.includes('Files')) return;
+    dragCounter++;
+    document.getElementById('global-drop-overlay').style.display = 'block';
+  });
+
+  document.addEventListener('dragleave', e => {
+    dragCounter--;
+    if (dragCounter <= 0) {
+      dragCounter = 0;
+      document.getElementById('global-drop-overlay').style.display = 'none';
+    }
+  });
+
+  document.addEventListener('dragover', e => {
+    e.preventDefault();
+  });
+
+  document.addEventListener('drop', e => {
+    e.preventDefault();
+    dragCounter = 0;
+    document.getElementById('global-drop-overlay').style.display = 'none';
+
+    const files = Array.from(e.dataTransfer.files)
+      .filter(f => /\.(pdf|jpg|jpeg|png|heic|heif|webp|tiff|bmp)$/i.test(f.name))
+      .slice(0, 4);
+
+    if (!files.length) { toast('❌ Format non supporté'); return; }
+    globalDropFiles = files;
+    showGlobalDropModal(files);
+  });
+}
+
+function showGlobalDropModal(files) {
+  const list = document.getElementById('global-drop-list');
+  list.innerHTML = files.map((f, i) => `
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;margin-bottom:8px;">
+      <span style="font-size:20px;">${f.name.endsWith('.pdf') ? '📄' : '🖼️'}</span>
+      <span style="flex:1;font-size:13px;font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${f.name}</span>
+      <span style="font-size:11px;color:var(--muted);flex-shrink:0;">${(f.size/1024).toFixed(0)} Ko</span>
+      <button onclick="removeGlobalDropFile(${i})" style="background:none;border:none;cursor:pointer;color:var(--red);font-size:14px;flex-shrink:0;">✕</button>
+    </div>
+  `).join('');
+  if (files.length > 4) {
+    list.innerHTML += `<div style="font-size:12px;color:var(--orange);margin-top:4px;">⚠️ Maximum 4 fichiers — seuls les 4 premiers sont listés</div>`;
+  }
+  document.getElementById('global-drop-modal').style.display = 'flex';
+}
+
+function removeGlobalDropFile(i) {
+  globalDropFiles.splice(i, 1);
+  if (!globalDropFiles.length) { cancelGlobalDrop(); return; }
+  showGlobalDropModal(globalDropFiles);
+}
+
+function confirmGlobalDrop() {
+  document.getElementById('global-drop-modal').style.display = 'none';
+  if (!globalDropFiles.length) return;
+  showPage('scan');
+  // Réinitialise le type à auto
+  currentDocType = 'auto';
+  document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+  const autoPill = document.querySelector('.pill[data-type="auto"]');
+  if (autoPill) autoPill.classList.add('active');
+  // Lance la file d'attente
+  setTimeout(() => {
+    if (globalDropFiles.length === 1) {
+      processFile(globalDropFiles[0]);
+    } else {
+      processFileQueue(globalDropFiles);
+    }
+    globalDropFiles = [];
+  }, 300);
+}
+
+function cancelGlobalDrop() {
+  document.getElementById('global-drop-modal').style.display = 'none';
+  globalDropFiles = [];
+}
+
 // ============================================================
 // INIT
 // ============================================================
@@ -492,6 +578,8 @@ function init() {
     sheet.addEventListener('touchstart', e => { sY = e.touches[0].clientY; }, { passive: true });
     sheet.addEventListener('touchmove',  e => { if (e.touches[0].clientY - sY > 80) closeSheet(); }, { passive: true });
   });
+   
+   initGlobalDrop();
 }
 
 document.addEventListener('DOMContentLoaded', init);
