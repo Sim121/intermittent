@@ -697,7 +697,7 @@ function clearMultipage() {
 
 function addMultipageFiles(e) {
   const newFiles = Array.from(e.target.files);
-  multipageFiles = [...multipageFiles, ...newFiles].slice(0, 5);
+  multipageFiles = [...multipageFiles, ...newFiles].slice(0, 20);
   if (multipageFiles.length === 20) toast('⚠️ Maximum 20 pages atteint');
   updateMultipageList();
   e.target.value = '';
