@@ -453,6 +453,25 @@ function confirmScanInline() {
     toast('✅ Frais enregistré');
   }
 
+// Auto-marquer payé si contrat > 1 an
+  state.contrats.forEach(c => {
+    if (c.paye !== true && c.dateDebut) {
+      const debut = new Date(c.dateDebut + 'T12:00:00');
+      const unAn  = new Date();
+      unAn.setFullYear(unAn.getFullYear() - 1);
+      if (debut < unAn) {
+        c.paye = true;
+        // Date de paiement estimée : J+30 après début ou date de paie BS
+        const datePaie = c.sources?.bulletin?.datePaie
+          ? c.sources.bulletin.datePaie
+          : new Date(debut.getTime() + 30 * 86400000).toISOString().slice(0,10);
+        c.datePaiement = datePaie;
+        c.paiementAuto = true;
+        toast(`📅 ${c.employeur} marqué payé automatiquement (> 1 an)`);
+      }
+    }
+  });
+
   saveState();
   pendingScanData = null;
   document.getElementById('scan-result-card').style.display = 'none';
@@ -627,6 +646,17 @@ function confirmInlineUpload(d, contratId, docType) {
   }
 
   recalcContrat(contrat);
+// Auto-marquer payé si > 1 an
+  if (contrat.paye !== true && contrat.dateDebut) {
+    const debut = new Date(contrat.dateDebut + 'T12:00:00');
+    const unAn  = new Date(); unAn.setFullYear(unAn.getFullYear() - 1);
+    if (debut < unAn) {
+      contrat.paye = true;
+      contrat.datePaiement = new Date(debut.getTime() + 30 * 86400000).toISOString().slice(0,10);
+      contrat.paiementAuto = true;
+      toast(`📅 ${contrat.employeur} marqué payé automatiquement (> 1 an)`);
+    }
+  }
   saveState();
   document.getElementById('inline-upload-panel')?.remove();
   renderDetailBody(contrat);
