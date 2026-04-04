@@ -402,11 +402,11 @@ function confirmScanInline() {
   } else if (docType === 'bulletin') {
     const mi = MONTHS.indexOf(d.mois); const an = parseInt(d.annee) || new Date().getFullYear();
     const fallback = (mi >= 0 && !isNaN(an)) ? `${an}-${String(mi+1).padStart(2,'0')}-01` : new Date().toISOString().slice(0,10);
-    const dateStr = parseDate(d.date_travail) || parseDate(d.date_debut) || fallback;
+    const dateStr  = parseDate(d.date_debut) || fallback;
     const match   = linkedId ? state.contrats.find(x => x.id === linkedId) : findMatchingContrat(d.employeur, dateStr);
     if (match) {
       if (!match.sources) match.sources = {};
-      match.sources.bulletin = { brutV: d.salaire_brut||0, netImp: d.net_imposable||0, netV: d.net_percu||0, pasV: d.pas_preleve||0, tauxPas: d.taux_pas||0, heures: d.h_totales||0, cachets: d.cachets||0, poste: d.emploi_aem||d.poste||'' };
+      match.sources.bulletin = { brutV: d.salaire_brut||0, netImp: d.net_imposable||0, netV: d.net_percu||0, pasV: d.pas_preleve||0, tauxPas: d.taux_pas||0, heures: d.h_totales||0, cachets: d.cachets||0, poste: d.emploi_aem||d.poste||'', datePaie: parseDate(d.date_paiement)||'' };
       recalcContrat(match);
       toast('✅ Bulletin rattaché à : ' + match.employeur);
     } else {
@@ -653,7 +653,7 @@ function confirmInlineUpload(d, contratId, docType) {
   if (!contrat.sources) contrat.sources = {};
 
   if (docType === 'bulletin') {
-    contrat.sources.bulletin = { brutV: d.salaire_brut||0, netImp: d.net_imposable||0, netV: d.net_percu||0, pasV: d.pas_preleve||0, tauxPas: d.taux_pas||0, heures: d.h_totales||0, cachets: d.cachets||0, poste: d.emploi_aem||d.poste||'' };
+    contrat.sources.bulletin = { brutV: d.salaire_brut||0, netImp: d.net_imposable||0, netV: d.net_percu||0, pasV: d.pas_preleve||0, tauxPas: d.taux_pas||0, heures: d.h_totales||0, cachets: d.cachets||0, poste: d.emploi_aem||d.poste||'', datePaie: parseDate(d.date_paiement)||'' };
   } else if (docType === 'aem') {
     contrat.sources.aem = { brutV: d.salaire_brut||0, cachets: d.nb_cachets || d.cachets||0, heures: d.nb_heures||0, poste: d.emploi_aem||d.poste||'' };
   } else if (docType === 'conges') {
