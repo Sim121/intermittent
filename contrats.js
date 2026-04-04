@@ -153,7 +153,8 @@ function openDetail(id) {
 function closeDetail() {
   const dv = document.getElementById('detail-view');
   dv.classList.remove('show');
-  dv.style.transform = '';
+  dv.style.transform = 'translateX(100%)';
+  setTimeout(() => { dv.style.display = 'none'; dv.style.transform = ''; }, 300);
   const panel = document.getElementById('desktop-detail-panel');
   if (panel) panel.classList.remove('show');
   document.body.style.overflow = '';
