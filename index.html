@@ -367,22 +367,65 @@
             </div>
           </div>
 
+          <!-- PROFIL -->
+          <div class="card">
+            <div class="card-head"><div class="card-head-title">Profil</div></div>
+            <div class="field"><label>Prénom</label><input type="text" id="cfg-prenom" placeholder="Ex: Simon" oninput="saveConfig()"></div>
+            <div class="field"><label>Annexe intermittence</label>
+              <select id="cfg-annexe" onchange="saveConfig()">
+                <option value="8">Annexe 8 — Technicien / Ouvrier</option>
+                <option value="10">Annexe 10 — Artiste</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- SITUATION FAMILIALE -->
+          <div class="card">
+            <div class="card-head"><div class="card-head-title">Situation familiale</div></div>
+            <div class="field"><label>Statut</label>
+              <select id="cfg-statut-familial" onchange="updateFamilialUI();saveConfig()">
+                <option value="celibataire">Célibataire</option>
+                <option value="couple">En couple / Marié(e) / Pacsé(e)</option>
+              </select>
+            </div>
+            <div id="cfg-conjoint-bloc" style="display:none;">
+              <div class="field"><label>Prénom du/de la conjoint(e)</label><input type="text" id="cfg-conjoint-prenom" placeholder="Ex: Mathilde" oninput="saveConfig()"></div>
+              <div class="field"><label>Revenus annuels conjoint(e) (€)</label><input type="number" id="cfg-mathilde" placeholder="Ex: 21600" oninput="saveConfig()"></div>
+            </div>
+            <div class="field"><label>Nombre d'enfants à charge</label>
+              <select id="cfg-enfants" onchange="saveConfig()">
+                <option value="0">Aucun</option>
+                <option value="1">1 enfant</option>
+                <option value="2">2 enfants</option>
+                <option value="3">3 enfants</option>
+                <option value="4">4 enfants ou plus</option>
+              </select>
+            </div>
+          </div>
+
           <!-- FISCAL -->
           <div class="card">
             <div class="card-head"><div class="card-head-title">Paramètres fiscaux</div></div>
             <div class="field"><label>Taux PAS actuel (%)</label><input type="number" id="cfg-taux-pas" placeholder="Ex: 14.6" step="0.1" oninput="saveConfig()"></div>
-            <div class="field"><label>Situation familiale</label>
-              <select id="cfg-situation" onchange="saveConfig()">
-                <option value="1">Célibataire (1 part)</option>
-                <option value="2" selected>Couple sans enfant (2 parts)</option>
-                <option value="2.5">Couple + 1 enfant</option>
-                <option value="3">Couple + 2 enfants</option>
-              </select>
+          </div>
+
+          <!-- DROITS ARE -->
+          <div class="card" id="are-droits-card">
+            <div class="card-head">
+              <div class="card-head-title">Droits ARE en cours</div>
+              <button class="btn btn-ghost btn-sm" onclick="document.getElementById('file-input-ft').click()">📄 Importer notification</button>
+              <input type="file" id="file-input-ft" accept=".pdf" style="display:none;" onchange="importNotificationFT(event)">
             </div>
-            <div class="field"><label>Revenus Mathilde (annuels, €)</label><input type="number" id="cfg-mathilde" placeholder="Ex: 21600" oninput="saveConfig()"></div>
-            <div class="field"><label>SJR ARE actuel (€/jour)</label><input type="number" id="cfg-sjr" placeholder="Ex: 63" step="0.01" oninput="saveConfig()"></div>
+            <div id="are-import-status" style="display:none;" class="alert alert-ok" style="margin-bottom:12px;"></div>
+            <div class="field"><label>Allocation journalière nette (€)</label><input type="number" id="cfg-are-jour" placeholder="Ex: 67.78" step="0.01" oninput="saveConfig()"></div>
+            <div class="field"><label>Salaire de référence (€)</label><input type="number" id="cfg-sr" placeholder="Ex: 37705.64" step="0.01" oninput="saveConfig()"></div>
+            <div class="field"><label>Heures de référence</label><input type="number" id="cfg-nht" placeholder="Ex: 1204" oninput="saveConfig()"></div>
+            <div class="field"><label>SJR (€/jour)</label><input type="number" id="cfg-sjr" placeholder="Ex: 313.17" step="0.01" oninput="saveConfig()"></div>
+            <div class="field"><label>Date d'ouverture des droits</label><input type="date" id="cfg-are-debut" oninput="saveConfig()"></div>
+            <div class="field"><label>Date anniversaire (fin de droits)</label><input type="date" id="cfg-fin-droits" oninput="saveConfig()"></div>
             <div class="field"><label>ARE réellement touchée (€/mois)</label><input type="number" id="cfg-are-reel" placeholder="Ex: 1614" oninput="saveConfig()"></div>
-            <div class="field"><label>Date fin de droits ARE</label><input type="date" id="cfg-fin-droits" oninput="saveConfig()"></div>
+            <div class="field"><label>Franchise congés payés (jours)</label><input type="number" id="cfg-franchise-cp" placeholder="Ex: 10" oninput="saveConfig()"></div>
+            <div class="field"><label>Franchise salaires (jours)</label><input type="number" id="cfg-franchise-sal" placeholder="Ex: 16" oninput="saveConfig()"></div>
           </div>
 
           <!-- DONNÉES -->
