@@ -1,8 +1,48 @@
 /* ============================================================
    INTERMITTENT — bilan.js
-   Calculs bilan, impôts, ARE, frais réels
+   Calculs bilan, impôts, ARE (formule officielle FT), frais réels
    ============================================================ */
 
+// ── CALCUL ARE OFFICIEL (France Travail) ──
+// AJ minimale depuis le 1er juillet 2023
+const AJ_MIN    = 31.96;
+const AJ_PLAF   = 174.80; // plafond depuis 1er janvier 2024
+const AJ_PLANCH = { 8: 38, 10: 44 }; // planchers par annexe
+
+function calcAREJournaliere(srBrut, nht, annexe) {
+  const ann = parseInt(annexe) || 8;
+  if (!srBrut || !nht || nht < 507) return 0;
+
+  let partA, partB, partC;
+
+  if (ann === 8) {
+    // Annexe 8 — Techniciens/Ouvriers
+    const srA = Math.min(srBrut, 14400) * 0.42 + Math.max(0, srBrut - 14400) * 0.05;
+    partA = (AJ_MIN * srA) / 5000;
+    const nhtB = Math.min(nht, 720) * 0.26 + Math.max(0, nht - 720) * 0.08;
+    partB = (AJ_MIN * nhtB) / 507;
+    partC = AJ_MIN * 0.40;
+  } else {
+    // Annexe 10 — Artistes
+    const srA = Math.min(srBrut, 13700) * 0.36 + Math.max(0, srBrut - 13700) * 0.05;
+    partA = (AJ_MIN * srA) / 5000;
+    const nhtB = Math.min(nht, 690) * 0.26 + Math.max(0, nht - 690) * 0.08;
+    partB = (AJ_MIN * nhtB) / 507;
+    partC = AJ_MIN * 0.70;
+  }
+
+  const brute = partA + partB + partC;
+  return Math.min(AJ_PLAF, Math.max(AJ_PLANCH[ann] || 38, brute));
+}
+
+// SJR officiel : SR / (NHT/8) pour annexe 8, SR / (NHT/10) pour annexe 10
+function calcSJR(srBrut, nht, annexe) {
+  const ann = parseInt(annexe) || 8;
+  if (!nht) return 0;
+  return srBrut / (nht / (ann === 10 ? 10 : 8));
+}
+
+// ── RENDER BILAN ──
 function renderBilan() {
   const selectedYear = parseInt(document.getElementById('bilan-year-select')?.value) || new Date().getFullYear();
   const cs = state.contrats.filter(c => c.dateDebut && new Date(c.dateDebut + 'T12:00:00').getFullYear() === selectedYear);
@@ -13,31 +53,46 @@ function renderBilan() {
   const tPas    = cs.reduce((s,c) => s+(c.pasV||0), 0);
   const tH      = cs.reduce((s,c) => s+heuresFT(c), 0);
   const tC      = cs.reduce((s,c) => s+(c.cachets||0), 0);
-  const tF      = state.frais.filter(f => f.date && new Date(f.date + 'T12:00:00').getFullYear() === selectedYear)
-                             .reduce((s,f) => s+(f.montant||0), 0);
+  const tF      = state.frais
+                    .filter(f => f.date && new Date(f.date + 'T12:00:00').getFullYear() === selectedYear)
+                    .reduce((s,f) => s+(f.montant||0), 0);
 
   const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
 
-  set('b-brut', fmt(tBrut));
-  set('b-net', fmt(tNet));
+  set('b-brut',    fmt(tBrut));
+  set('b-net',     fmt(tNet));
   set('b-cachets', tC + ' cachet' + (tC > 1 ? 's' : ''));
-  set('b-heures', tH + ' h');
-  set('b-pas', fmt(tPas));
-  set('b-frais', fmt(tF));
+  set('b-heures',  tH + ' h');
+  set('b-pas',     fmt(tPas));
+  set('b-frais',   fmt(tF));
 
+  // Impôts
   const ie = calcImpots(tNetImp, tF, state.config.situation || 2);
   const tauxMoyen = tNetImp > 0 ? ((tPas / tNetImp) * 100).toFixed(1) : '—';
-  set('b-taux-pas', tauxMoyen + '% taux moyen');
-  set('b-impots-estim', fmt(ie));
-  set('b-impots-payes', fmt(tPas));
-  set('b-impots-reste', fmt(Math.max(0, ie - tPas)));
+  set('b-taux-pas',      tauxMoyen + '% taux moyen');
+  set('b-impots-estim',  fmt(ie));
+  set('b-impots-payes',  fmt(tPas));
+  set('b-impots-reste',  fmt(Math.max(0, ie - tPas)));
 
-  const sjr  = state.config.sjr || 0;
-  const areJ = sjr > 0 ? Math.min(sjr * 0.6 + 12.47, sjr * 0.75) : 0;
-  set('q-are-jour', sjr > 0 ? fmt(areJ) : '— €');
-  set('q-are-mois', sjr > 0 ? fmt(areJ * 30) : '— €');
+  // ARE — formule officielle France Travail
+  const annexe = parseInt(state.config.annexe) || 8;
+  const areJ   = calcAREJournaliere(tBrut, tH, annexe);
+  const sjr    = calcSJR(tBrut, tH, annexe);
+
+  if (tH >= 507) {
+    set('q-are-jour', fmt(areJ));
+    set('q-are-mois', fmt(areJ * 30));
+  } else {
+    set('q-are-jour', '— (507h non atteintes)');
+    set('q-are-mois', '—');
+  }
+
+  // Affiche aussi le SJR calculé si on a les données
+  const sjrEl = document.getElementById('q-sjr');
+  if (sjrEl) sjrEl.textContent = tH >= 507 ? fmt(sjr) + '/j' : '—';
+
+  // Progression 507h
   set('q-heures-prog', tH + ' / 507 h');
-
   const pct  = Math.min(100, (tH / 507) * 100);
   const fill = document.getElementById('q-heures-fill');
   if (fill) fill.style.width = pct + '%';
@@ -48,11 +103,14 @@ function renderBilan() {
     tag.className   = tH >= 507 ? 'tag tag-green' : 'tag tag-gold';
   }
 
-  set('foyer-simon', fmt(tNet));
+  // Foyer
+  const areAnnuelle = state.config.areReel || (areJ * 30 * 12);
+  set('foyer-simon',   fmt(tNet));
   set('foyer-mathilde', state.config.mathilde ? fmt(state.config.mathilde) : '—');
-  set('foyer-reste', fmt(tNet + (state.config.mathilde||0) + (state.config.areReel||0) * 12));
+  set('foyer-reste',   fmt(tNet + (state.config.mathilde||0) + (state.config.areReel||0) * 12));
 }
 
+// ── CALCUL IMPÔTS (barème 2024) ──
 function calcImpots(n, f, p) {
   if (!n) return 0;
   const a  = Math.min(n * 0.1, 14171);
@@ -67,6 +125,7 @@ function calcImpots(n, f, p) {
   return i * p;
 }
 
+// ── SÉLECTEUR D'ANNÉES ──
 function populateYearSelect() {
   const sel = document.getElementById('bilan-year-select');
   if (!sel) return;
@@ -80,9 +139,10 @@ function populateYearSelect() {
   sel.innerHTML = years.map(y => `<option value="${y}" ${y === current ? 'selected' : ''}>${y}</option>`).join('');
 }
 
+// ── FRAIS ──
 function renderFrais() {
-  const tF     = state.frais.reduce((s,f) => s+(f.montant||0), 0);
-  const tNI    = state.contrats.reduce((s,c) => s+(c.netImp||0), 0);
+  const tF      = state.frais.reduce((s,f) => s+(f.montant||0), 0);
+  const tNI     = state.contrats.reduce((s,c) => s+(c.netImp||0), 0);
   const forfait = Math.min(tNI * 0.1, 14171);
 
   const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
@@ -110,7 +170,10 @@ function renderFrais() {
   const tabsEl = document.getElementById('frais-month-tabs');
   if (tabsEl) {
     tabsEl.innerHTML = `<div class="month-tab ${selectedMonthFrais==='all'?'active':''}" onclick="filterFrais('all')">Tout</div>` +
-      moisDispo.map(m => { const [y,mo] = m.split('-'); return `<div class="month-tab ${selectedMonthFrais===m?'active':''}" onclick="filterFrais('${m}')">${MONTHS[parseInt(mo)-1]?.slice(0,3)||''} ${y}</div>`; }).join('');
+      moisDispo.map(m => {
+        const [y,mo] = m.split('-');
+        return `<div class="month-tab ${selectedMonthFrais===m?'active':''}" onclick="filterFrais('${m}')">${MONTHS[parseInt(mo)-1]?.slice(0,3)||''} ${y}</div>`;
+      }).join('');
   }
 
   const ff = selectedMonthFrais === 'all' ? state.frais : state.frais.filter(f => f.date?.startsWith(selectedMonthFrais));
@@ -142,12 +205,12 @@ function addFrais() {
   if (!date || !montant) { toast('❌ Date et montant requis'); return; }
   state.frais.push({
     id: Date.now().toString(),
-    cat: document.getElementById('f-cat').value,
+    cat:  document.getElementById('f-cat').value,
     desc: document.getElementById('f-desc').value.trim(),
     date, montant,
-    km: parseFloat(document.getElementById('f-km').value) || 0,
+    km:    parseFloat(document.getElementById('f-km').value) || 0,
     repas: parseFloat(document.getElementById('f-repas').value) || 0,
-    ref: document.getElementById('f-ref').value.trim(),
+    ref:   document.getElementById('f-ref').value.trim(),
     contratId: document.getElementById('f-contrat-link').value || ''
   });
   saveState();
@@ -155,7 +218,7 @@ function addFrais() {
   toast('✅ Frais enregistré');
   renderFrais();
   renderBilan();
-  ['f-desc','f-montant','f-km','f-repas','f-ref'].forEach(id => document.getElementById(id).value = '');
+  ['f-desc','f-montant','f-km','f-repas','f-ref'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
 }
 
 function deleteFrais(id) {
