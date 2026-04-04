@@ -237,23 +237,55 @@
         </div>
         <div class="scan-layout">
           <div class="section" style="padding-top:0;">
-            <div class="card">
-              <div class="card-head"><div class="card-head-title">Type de document</div></div>
+            <!-- Zone principale d'upload -->
+            <div class="upload-zone" id="dropzone"
+              ondragover="event.preventDefault();this.classList.add('active')"
+              ondragleave="this.classList.remove('active')"
+              ondrop="handleDrop(event)">
+              <input type="file" accept=".pdf,.jpg,.jpeg,.png,.heic,.heif,.webp,.tiff,.bmp" onchange="handleFile(event)" id="file-input" multiple>
+              <div class="upload-emoji">📂</div>
+              <div class="upload-title">Glisse ou clique pour uploader</div>
+              <div class="upload-sub">PDF, JPG, PNG, HEIC · Max 4 fichiers</div>
+            </div>
+
+            <!-- Boutons caméra -->
+            <div style="margin-top:8px;">
+              <button class="btn btn-ghost" style="width:100%;" onclick="openCamera()">📷 Scanner avec la caméra</button>
+            </div>
+
+            <!-- File d'attente -->
+            <div id="scan-queue-panel" style="display:none;" class="card" style="margin-top:12px;">
+              <div class="card-head">
+                <div class="card-head-title">File d'attente</div>
+                <button class="btn btn-ghost btn-sm" onclick="clearScanQueue()">✕ Vider</button>
+              </div>
+              <div id="scan-queue-list"></div>
+            </div>
+
+            <!-- Forcer un type de document -->
+            <div class="card" style="margin-top:12px;">
+              <div class="card-head"><div class="card-head-title">Forcer un type de document</div></div>
+              <div style="font-size:12px;color:var(--muted);margin-bottom:10px;">Par défaut l'IA détecte automatiquement. Force uniquement si l'IA se trompe — dans ce cas, un seul fichier à la fois.</div>
               <div class="type-pills">
-                <div class="pill active" onclick="setDocType(this,'bulletin')">📄 Bulletin</div>
-                <div class="pill" onclick="setDocType(this,'contrat')">📝 Contrat</div>
-                <div class="pill" onclick="setDocType(this,'aem')">📋 AEM</div>
-                <div class="pill" onclick="setDocType(this,'conges')">🌴 Congés</div>
-                <div class="pill" onclick="setDocType(this,'frais')">🧾 Frais</div>
+                <div class="pill active" data-type="auto" onclick="setDocType(this,'auto')">🤖 Auto</div>
+                <div class="pill" data-type="bulletin" onclick="setDocType(this,'bulletin')">📄 Bulletin</div>
+                <div class="pill" data-type="contrat" onclick="setDocType(this,'contrat')">📝 Contrat</div>
+                <div class="pill" data-type="aem" onclick="setDocType(this,'aem')">📋 AEM</div>
+                <div class="pill" data-type="conges" onclick="setDocType(this,'conges')">🌴 Congés</div>
+                <div class="pill" data-type="frais" onclick="setDocType(this,'frais')">🧾 Frais</div>
               </div>
             </div>
+
+            <!-- Rattacher à un contrat -->
             <div class="card" id="scan-contrat-link-card" style="display:none;">
               <div class="card-head"><div class="card-head-title">Rattacher à un contrat</div></div>
               <div class="field"><label>Contrat associé (optionnel)</label>
                 <select id="scan-contrat-select"><option value="">— Aucun / nouveau contrat —</option></select>
               </div>
             </div>
-               <div id="multipage-panel" style="display:none;margin-bottom:12px;" class="card">
+
+            <!-- Multi-pages -->
+            <div id="multipage-panel" style="display:none;margin-top:12px;" class="card">
               <div class="card-head">
                 <div class="card-head-title">📑 Document multi-pages</div>
                 <button class="btn btn-ghost btn-sm" onclick="clearMultipage()">✕ Annuler</button>
@@ -267,27 +299,14 @@
                 <button class="btn btn-primary" style="flex:1;" onclick="processMultipage()">🔍 Analyser</button>
               </div>
             </div>
-            <div class="upload-zone" id="dropzone"
-              ondragover="event.preventDefault();this.classList.add('active')"
-              ondragleave="this.classList.remove('active')"
-              ondrop="handleDrop(event)">
-              <input type="file" accept=".pdf,.jpg,.jpeg,.png,.heic,.heif,.webp,.tiff,.bmp" multiple onchange="handleFile(event)" id="file-input">
-              <div class="upload-emoji">📂</div>
-              <div class="upload-title">Glisse ou clique pour uploader</div>
-              <div class="upload-sub">PDF, JPG, PNG, HEIC</div>
-            </div>
-            <div style="display:flex;gap:8px;margin-top:8px;">
-  <button class="btn btn-ghost" style="flex:1;" onclick="openCamera()">📷 Scanner avec la caméra</button>
-  <button class="btn btn-ghost" style="flex:1;" onclick="showMultipagePanel()">📑 Importer des photos</button>
-</div>
-            </div>
           </div>
+
           <div class="section" style="padding-top:0;">
             <div id="scan-loading" style="display:none;" class="card">
               <div class="loading-block">
                 <div class="loader"></div>
                 <div style="font-size:13px;color:var(--muted);margin-top:12px;">Analyse IA en cours…</div>
-                <button onclick="cancelAnalysis()" style="margin-top:12px;background:none;border:1px solid var(--border);border-radius:20px;padding:6px 14px;font-size:12px;color:var(--muted);cursor:pointer;display:flex;align-items:center;gap:6px;margin-left:auto;margin-right:auto;">✕ Annuler</button>
+                <button onclick="cancelAnalysis()" style="margin-top:12px;background:none;border:1.5px solid var(--border);border-radius:20px;padding:6px 14px;font-size:12px;color:var(--muted);cursor:pointer;display:flex;align-items:center;gap:6px;margin-left:auto;margin-right:auto;">✕ Annuler</button>
               </div>
             </div>
             <div id="scan-result-card" style="display:none;"></div>
@@ -295,7 +314,6 @@
         </div>
       </div>
     </div>
-
     <!-- ═══ PAGE FRAIS ═══ -->
     <div class="page" id="page-frais">
       <div class="page-wrap">
