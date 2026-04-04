@@ -3,7 +3,7 @@
    Core : state, auth, sync, navigation, settings, init
    ============================================================ */
 
-const APP_VERSION = '3.2.35';
+const APP_VERSION = '3.3.0';
 const APP_DATE    = '2026-04-03';
 
 // ── STATE GLOBAL ──
