@@ -47,8 +47,13 @@ function toast(msg) {
 
 // Annexe 10 : 1 cachet = 12h pour France Travail si pas d'heures explicites
 function heuresFT(c) {
-  if (c.heures && c.heures > 0) return c.heures;
-  return (c.cachets || 0) * 12;
+  const heuresReelles = c.heures || 0;
+  const heuresCachets = (c.cachets || 0) * 12;
+  // Si pas d'heures réelles → uniquement cachets×12 (annexe 10)
+  // Si heures réelles → heures réelles + cachets×12 si cachets aussi
+  if (heuresReelles === 0) return heuresCachets;
+  if ((c.cachets || 0) === 0) return heuresReelles;
+  return heuresReelles + heuresCachets;
 }
 
 function toggleCard(headEl) {
