@@ -15,6 +15,16 @@ function removeSourceAndSave(contratId, sourceType) {
   toast('🗑️ ' + sourceType + ' retiré');
 }
 
+function setDatePaiement(id, date) {
+  const c = state.contrats.find(x => x.id === id);
+  if (!c) return;
+  c.datePaiement  = date;
+  c.paiementAuto  = false; // L'utilisateur a confirmé manuellement
+  saveState();
+  renderDetailBody(c);
+  toast('📅 Date de règlement mise à jour');
+}
+
 function renderContrats() {
   const el = document.getElementById('contrats-list');
   if (!state.contrats.length) {
@@ -219,9 +229,12 @@ function renderDetailBody(c) {
     <div style="margin-bottom:16px;">
       <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Statut paiement</div>
       <div class="paiement-toggle">
-        <div class="paiement-btn ${c.paye===true?'active-paye':''}" onclick="togglePaiement('${c.id}',true)">✅ Payé</div>
-        <div class="paiement-btn ${c.paye===false?'active-attente':''}" onclick="togglePaiement('${c.id}',false)">⏳ En attente</div>
-      </div>
+      <div class="paiement-btn ${c.paye===true?'active-paye':''}" onclick="togglePaiement('${c.id}',true)">✅ Payé</div>
+      <div class="paiement-btn ${c.paye===false?'active-attente':''}" onclick="togglePaiement('${c.id}',false)">⏳ En attente</div>
+    </div>
+    ${c.paye===true && c.datePaiement ? `<div style="font-size:12px;color:var(--green);margin-top:6px;font-family:'JetBrains Mono',monospace;">✓ Réglé le ${fmtDate(c.datePaiement)}${c.paiementAuto?' (estimé)':''}</div>` : ''}
+    ${c.paye===true ? `<div style="margin-top:8px;"><label style="font-size:12px;font-weight:600;color:var(--muted);">Date de règlement</label><input type="date" value="${c.datePaiement||''}" style="width:100%;margin-top:4px;padding:8px;border:2px solid var(--border);border-radius:6px;font-size:14px;" onchange="setDatePaiement('${c.id}',this.value)"></div>` : ''}
+    ${c.paiementAuto ? '<div class="alert alert-info" style="font-size:12px;margin-top:8px;">ℹ️ Ce contrat date de plus d\'un an — règlement estimé à J+30 après la fin du contrat. Modifie la date si nécessaire.</div>' : ''}
     </div>
     ${card('📎 Documents rattachés', docsContent, `id="docs-card-${c.id}"`)}
     ${card('ℹ️ Informations', infoContent)}
@@ -248,6 +261,13 @@ function togglePaiement(id, paye) {
   const c = state.contrats.find(x => x.id === id);
   if (!c) return;
   c.paye = paye;
+  if (paye && !c.datePaiement) {
+    // Date estimée : J+30 après fin du contrat
+    const fin = c.dateFin || c.dateDebut;
+    c.datePaiement = fin
+      ? new Date(new Date(fin+'T12:00:00').getTime() + 30*86400000).toISOString().slice(0,10)
+      : new Date().toISOString().slice(0,10);
+  }
   saveState();
   renderDetailBody(c);
   toast(paye ? '✅ Marqué comme payé' : '⏳ Marqué en attente');
