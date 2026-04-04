@@ -166,6 +166,10 @@ body {
   .app-header { display: flex; }
   .bottom-nav { display: none; }
   .page-wrap  { padding: 0 0 24px; }
+  .main-content { display: block; width: 100%; margin-left: 0; }
+  .page.active { display: block; }
+  .header-right { overflow-x: auto; gap: 4px; }
+  .header-right > div { flex-shrink: 0; padding: 4px 6px; font-size: 16px; }
 }
 
 /* ============================================================
@@ -646,6 +650,7 @@ body {
   overflow-y: auto;
 }
 .detail-view.show { display: block; transform: translateX(0); }
+
 .detail-header {
   position: sticky; top: 0;
   background: var(--surface); border-bottom: 2px solid var(--border);
