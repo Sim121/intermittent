@@ -276,7 +276,10 @@
               <div class="upload-title">Glisse ou clique pour uploader</div>
               <div class="upload-sub">PDF, JPG, PNG, HEIC</div>
             </div>
-            <button class="btn btn-ghost" style="width:100%;margin-top:8px;" onclick="showMultipagePanel()">📑 Scanner un document multi-pages</button>
+            <div style="display:flex;gap:8px;margin-top:8px;">
+  <button class="btn btn-ghost" style="flex:1;" onclick="openCamera()">📷 Scanner avec la caméra</button>
+  <button class="btn btn-ghost" style="flex:1;" onclick="showMultipagePanel()">📑 Importer des photos</button>
+</div>
             </div>
           </div>
           <div class="section" style="padding-top:0;">
