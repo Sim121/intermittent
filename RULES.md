@@ -179,3 +179,17 @@ PÉRIODE D'ACTIVITÉ : [jour] [chiffre] [mois] [année] → [jour] [chiffre] [mo
   }
 }
 ```
+
+---
+
+## 13. VARIABILITÉ DES FORMATS
+
+Les documents peuvent venir de logiciels différents — ne jamais hardcoder des mots-clés spécifiques à un seul logiciel.
+
+### Bulletins de paie
+- SILAE : "Entrée/Sortie", lignes "Du XX au XX (N°objet) BASE TAUX MONTANT"
+- SAGE, ADP, Kelio, Cegi : formats différents mais même logique BASE×TAUX=MONTANT
+- Chercher le SENS (période de travail, montant brut, net...) pas les mots exacts
+
+### Principe général
+L'IA doit raisonner sur le contenu du document, pas chercher des chaînes de caractères fixes. Chaque nouveau format rencontré enrichit la compréhension sans annuler les règles précédentes.
