@@ -46,9 +46,8 @@ function handleFile(e) {
 async function processFileQueue(files) {
   fileQueue      = Array.from(files);
   fileQueueIndex = 0;
-  toast(`📂 ${fileQueue.length} documents à traiter — confirme chaque extraction`);
+  updateScanQueueUI();
   await processFile(fileQueue[fileQueueIndex]);
-   updateScanQueueUI();
 }
 
 function nextInQueue() {
@@ -943,21 +942,47 @@ function updateScanQueueUI() {
   const panel = document.getElementById('scan-queue-panel');
   const list  = document.getElementById('scan-queue-list');
   if (!panel || !list) return;
+  if (!fileQueue.length) { panel.style.display = 'none'; return; }
 
-  if (fileQueue.length <= fileQueueIndex + 1) {
-    panel.style.display = 'none';
-    return;
-  }
-
-  const remaining = fileQueue.slice(fileQueueIndex + 1);
   panel.style.display = 'block';
-  list.innerHTML = remaining.map((f, i) => `
-    <div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border2);">
-      <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);flex-shrink:0;">${fileQueueIndex + i + 2}/${fileQueue.length}</span>
-      <span style="flex:1;font-size:13px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${f.name}</span>
-      <button onclick="removeFromQueue(${fileQueueIndex + i + 1})" style="background:none;border:none;cursor:pointer;color:var(--red);font-size:14px;flex-shrink:0;">✕</button>
-    </div>
-  `).join('');
+
+  // Barre de progression globale
+  const total    = fileQueue.length;
+  const done     = fileQueueIndex;
+  const pct      = Math.round((done / total) * 100);
+
+  const progressHtml = `
+    <div style="margin-bottom:12px;">
+      <div style="display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);margin-bottom:6px;">
+        <span>Document ${Math.min(done + 1, total)} / ${total}</span>
+        <span>${pct}%</span>
+      </div>
+      <div style="height:6px;background:var(--bg2);border-radius:3px;border:1.5px solid var(--border);overflow:hidden;">
+        <div style="height:100%;width:${pct}%;background:var(--accent);border-radius:3px;transition:width .4s ease;"></div>
+      </div>
+    </div>`;
+
+  // Liste des fichiers avec statut
+  const filesHtml = fileQueue.map((f, i) => {
+    let icon, style;
+    if (i < fileQueueIndex) {
+      icon = '✅'; style = 'color:var(--green);';
+    } else if (i === fileQueueIndex) {
+      icon = '<div class="loader" style="width:14px;height:14px;border-width:2px;display:inline-block;vertical-align:middle;"></div>';
+      style = 'color:var(--accent);font-weight:700;';
+    } else {
+      icon = '⏳'; style = 'color:var(--muted);';
+    }
+    const isNext = i > fileQueueIndex;
+    return `
+      <div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border2);">
+        <span style="flex-shrink:0;width:20px;text-align:center;">${icon}</span>
+        <span style="flex:1;font-size:13px;${style}overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${f.name}</span>
+        ${isNext ? `<button onclick="removeFromQueue(${i})" style="background:none;border:none;cursor:pointer;color:var(--red);font-size:13px;flex-shrink:0;padding:2px 4px;">✕</button>` : ''}
+      </div>`;
+  }).join('');
+
+  list.innerHTML = progressHtml + filesHtml;
 }
 
 function removeFromQueue(index) {
