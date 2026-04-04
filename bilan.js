@@ -107,8 +107,8 @@ function renderBilan() {
   const conjointEl = document.getElementById('foyer-mathilde-label');
   if (conjointEl) conjointEl.textContent = conjointLabel.toUpperCase();
   set('foyer-simon',    fmt(tNet));
-  set('foyer-mathilde', state.config.mathilde ? fmt(state.config.mathilde) : '—');
-  set('foyer-reste',    fmt(tNet + (state.config.mathilde||0) + (state.config.areReel||0) * 12));
+  set('foyer-conjoint', state.config.conjoint ? fmt(state.config.conjoint) : '—');
+  set('foyer-reste',    fmt(tNet + (state.config.conjoint||0) + (state.config.areReel||0) * 12));
 
   // Affiche aussi le SJR calculé si on a les données
   const sjrEl = document.getElementById('q-sjr');
@@ -129,8 +129,8 @@ function renderBilan() {
   // Foyer
   const areAnnuelle = state.config.areReel || (areJ * 30 * 12);
   set('foyer-simon',   fmt(tNet));
-  set('foyer-mathilde', state.config.mathilde ? fmt(state.config.mathilde) : '—');
-  set('foyer-reste',   fmt(tNet + (state.config.mathilde||0) + (state.config.areReel||0) * 12));
+  set('foyer-mathilde', state.config.conjoint ? fmt(state.config.conjoint) : '—');
+  set('foyer-reste',   fmt(tNet + (state.config.conjoint||0) + (state.config.areReel||0) * 12));
 }
 
 // ── CALCUL IMPÔTS (barème 2024) ──
