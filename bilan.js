@@ -74,18 +74,41 @@ function renderBilan() {
   set('b-impots-payes',  fmt(tPas));
   set('b-impots-reste',  fmt(Math.max(0, ie - tPas)));
 
-  // ARE — formule officielle France Travail
-  const annexe = parseInt(state.config.annexe) || 8;
-  const areJ   = calcAREJournaliere(tBrut, tH, annexe);
-  const sjr    = calcSJR(tBrut, tH, annexe);
+  // ARE — utilise les droits réels si disponibles, sinon calcule
+  const annexe  = parseInt(state.config.annexe) || 8;
+  const areJour = state.config.areJour > 0
+    ? state.config.areJour  // droits réels depuis notification FT
+    : calcAREJournaliere(tBrut, tH, annexe); // estimation
 
-  if (tH >= 507) {
-    set('q-are-jour', fmt(areJ));
-    set('q-are-mois', fmt(areJ * 30));
+  const areSource = state.config.areJour > 0 ? '(notification FT)' : '(estimation)';
+
+  if (tH >= 507 || state.config.areJour > 0) {
+    set('q-are-jour', fmt(areJour) + ' ' + areSource);
+    set('q-are-mois', fmt(state.config.areReel || areJour * 30));
   } else {
     set('q-are-jour', '— (507h non atteintes)');
     set('q-are-mois', '—');
   }
+
+  // Date anniversaire
+  if (state.config.finDroits) {
+    const fin    = new Date(state.config.finDroits + 'T12:00:00');
+    const today  = new Date();
+    const jRestants = Math.ceil((fin - today) / 86400000);
+    const dateAnnivEl = document.getElementById('q-date-anniversaire');
+    if (dateAnnivEl) {
+      dateAnnivEl.textContent = fmtDate(state.config.finDroits)
+        + (jRestants > 0 ? ` (dans ${jRestants}j)` : ' ⚠️ expiré');
+    }
+  }
+
+  // Foyer
+  const conjointLabel = state.config.conjointPrenom || 'Conjoint(e)';
+  const conjointEl = document.getElementById('foyer-mathilde-label');
+  if (conjointEl) conjointEl.textContent = conjointLabel.toUpperCase();
+  set('foyer-simon',    fmt(tNet));
+  set('foyer-mathilde', state.config.mathilde ? fmt(state.config.mathilde) : '—');
+  set('foyer-reste',    fmt(tNet + (state.config.mathilde||0) + (state.config.areReel||0) * 12));
 
   // Affiche aussi le SJR calculé si on a les données
   const sjrEl = document.getElementById('q-sjr');
