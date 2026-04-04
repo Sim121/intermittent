@@ -679,3 +679,84 @@ function confirmInlineUpload(d, contratId, docType) {
   renderDetailBody(contrat);
   toast('✅ Document rattaché à ' + contrat.employeur);
 }
+
+// ── MULTI-PAGES ──
+let multipageFiles = [];
+
+function showMultipagePanel() {
+  multipageFiles = [];
+  document.getElementById('multipage-panel').style.display = 'block';
+  updateMultipageList();
+}
+
+function clearMultipage() {
+  multipageFiles = [];
+  document.getElementById('multipage-panel').style.display = 'none';
+  document.getElementById('multipage-list').innerHTML = '';
+}
+
+function addMultipageFiles(e) {
+  const newFiles = Array.from(e.target.files);
+  multipageFiles = [...multipageFiles, ...newFiles].slice(0, 10);
+  updateMultipageList();
+  e.target.value = '';
+}
+
+function updateMultipageList() {
+  const el = document.getElementById('multipage-list');
+  if (!multipageFiles.length) {
+    el.innerHTML = '<div style="color:var(--muted);">Aucune page ajoutée</div>';
+    return;
+  }
+  el.innerHTML = multipageFiles.map((f, i) =>
+    `<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid var(--border2);">
+      <span style="font-family:\'JetBrains Mono\',monospace;font-size:11px;color:var(--muted);">P${i+1}</span>
+      <span style="flex:1;font-size:13px;">${f.name}</span>
+      <button onclick="removeMultipagePage(${i})" style="background:none;border:none;cursor:pointer;color:var(--red);font-size:14px;">✕</button>
+    </div>`
+  ).join('') + `<div style="font-size:12px;color:var(--muted);margin-top:8px;">${multipageFiles.length} page(s) — seront envoyées comme un seul document</div>`;
+}
+
+function removeMultipagePage(i) {
+  multipageFiles.splice(i, 1);
+  updateMultipageList();
+}
+
+async function processMultipage() {
+  if (!multipageFiles.length) { toast('⚠️ Ajoute au moins une page'); return; }
+  if (!getAppsScriptUrl()) { showPage('settings'); return; }
+
+  document.getElementById('scan-loading').style.display = 'block';
+  document.getElementById('scan-result-card').style.display = 'none';
+
+  try {
+    // Convertit toutes les pages en base64
+    const pages = await Promise.all(multipageFiles.map(async (f, i) => ({
+      page: i + 1,
+      base64: await fileToBase64(f),
+      mediaType: f.type
+    })));
+
+    const res = await appsScriptPost({
+      action: 'scanDoc',
+      docType: currentDocType,
+      base64Data: pages[0].base64,
+      mediaType: pages[0].mediaType,
+      extraPages: pages.slice(1)
+    });
+
+    document.getElementById('scan-loading').style.display = 'none';
+    if (res.ok) {
+      pendingScanData = res.data;
+      showScanResult(res.data);
+      clearMultipage();
+    } else {
+      document.getElementById('scan-result-card').style.display = 'block';
+      document.getElementById('scan-result-card').innerHTML = '<div class="alert alert-err">❌ ' + (res.error||'Erreur') + '</div>';
+    }
+  } catch(e) {
+    document.getElementById('scan-loading').style.display = 'none';
+    document.getElementById('scan-result-card').style.display = 'block';
+    document.getElementById('scan-result-card').innerHTML = '<div class="alert alert-err">❌ ' + e.message + '</div>';
+  }
+}
