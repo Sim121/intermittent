@@ -3,14 +3,14 @@
    Core : state, auth, sync, navigation, settings, init
    ============================================================ */
 
-const APP_VERSION = '3.5.2';
+const APP_VERSION = '3.5.3';
 const APP_DATE    = '2026-04-03';
 
 // ── STATE GLOBAL ──
 let state = {
   contrats: [],
   frais: [],
-  config: { tauxPas:14.6, situation:2, mathilde:0, sjr:0, areReel:0, finDroits:'' }
+  config: { tauxPas:14.6, situation:2, mathilde:0, sjr:0, areReel:0, finDroits:'', annexe:8 }
 };
 
 let session = { token: null, expiresAt: null };
