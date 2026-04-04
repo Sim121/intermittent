@@ -28,17 +28,17 @@ function setDocType(el, type) {
 function handleDrop(e) {
   e.preventDefault();
   document.getElementById('dropzone').classList.remove('active');
-  const files = Array.from(e.dataTransfer.files).slice(0, 4);
+  const files = Array.from(e.dataTransfer.files).slice(0, 20);
   if (!files.length) return;
-  if (e.dataTransfer.files.length > 4) toast('⚠️ Maximum 4 fichiers — seuls les 4 premiers sont traités');
+  if (e.dataTransfer.files.length > 20) toast('⚠️ Maximum 20 fichiers — seuls les 20 premiers sont traités');
   if (files.length === 1) processFile(files[0]);
   else processFileQueue(files);
 }
 
 function handleFile(e) {
-  const files = Array.from(e.target.files).slice(0, 4);
+  const files = Array.from(e.target.files).slice(0, 20);
   if (!files.length) return;
-  if (e.target.files.length > 4) toast('⚠️ Maximum 4 fichiers — seuls les 4 premiers sont traités');
+  if (e.target.files.length > 20) toast('⚠️ Maximum 20 fichiers — seuls les 20 premiers sont traités');
   if (files.length === 1) { processFile(files[0]); return; }
   processFileQueue(files);
 }
@@ -220,7 +220,9 @@ function showScanResult(d) {
               + MONTHS.map(m => '<option value="' + m + '"' + (m === v ? ' selected' : '') + '>' + m + '</option>').join('')
               + '</select>'
             : '<input id="scan-input-' + k + '" type="' + inputType + '" value="' + (k.includes('date') ? parseDate(v)||v : v) + '" step="0.01" style="display:none;padding:4px 8px;border:1.5px solid var(--accent);border-radius:6px;font-size:13px;font-weight:600;width:120px;background:var(--surface);" onchange="updateScanField(\'' + k + '\',this.value)">')
-          + '<button onclick="toggleScanField(\'' + k + '\')" style="background:none;border:none;cursor:pointer;padding:2px;color:var(--muted);font-size:12px;flex-shrink:0;" title="Modifier">✏️</button>'
+          + '<button onclick="toggleScanField(\'' + k + '\')" style="background:none;border:none;cursor:pointer;padding:2px;font-size:12px;flex-shrink:0;" title="Modifier">'
+          + (d._manualEdits?.includes(k) ? '✏️🔵' : '✏️')
+          + '</button>'
           + '</div>'
           + '</div>';
       }).join('');
@@ -336,6 +338,9 @@ function updateScanField(key, value) {
   if (!pendingScanData) return;
   const parsed = isNaN(value) ? value : (value.includes('.') ? parseFloat(value) : parseInt(value));
   pendingScanData[key] = parsed;
+  // Trace les champs modifiés manuellement
+  if (!pendingScanData._manualEdits) pendingScanData._manualEdits = [];
+  if (!pendingScanData._manualEdits.includes(key)) pendingScanData._manualEdits.push(key);
   // Met à jour l'affichage
   const span = document.getElementById('scan-val-' + key);
   const numF = ['salaire_brut','net_imposable','net_percu','pas_preleve','montant_ttc','montant_ht','cachet_brut'];
@@ -476,7 +481,22 @@ function confirmScanInline() {
     });
     toast('✅ Frais enregistré');
   }
-
+// Ajoute mention si données modifiées manuellement
+  if (pendingScanData?._manualEdits?.length > 0) {
+    const contratModifie = state.contrats[state.contrats.length - 1];
+    // Cherche le contrat qui vient d'être créé/modifié
+    const cible = linkedId ? state.contrats.find(x => x.id === linkedId) : state.contrats[state.contrats.length - 1];
+    if (cible) {
+      cible.hasManualEdits = true;
+      cible.manualEditFields = pendingScanData._manualEdits;
+      if (!cible.comment) cible.comment = '';
+      const mention = '⚠️ Données modifiées manuellement à l\'import : ' + pendingScanData._manualEdits.join(', ');
+      if (!cible.comment.includes('modifiées manuellement')) {
+        cible.comment = cible.comment ? cible.comment + '\n' + mention : mention;
+      }
+    }
+  }
+   
 // Auto-marquer payé si contrat > 1 an
   state.contrats.forEach(c => {
     if (c.paye !== true && c.dateDebut) {
