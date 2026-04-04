@@ -697,7 +697,8 @@ function clearMultipage() {
 
 function addMultipageFiles(e) {
   const newFiles = Array.from(e.target.files);
-  multipageFiles = [...multipageFiles, ...newFiles].slice(0, 10);
+  multipageFiles = [...multipageFiles, ...newFiles].slice(0, 5);
+  if (multipageFiles.length === 20) toast('⚠️ Maximum 20 pages atteint');
   updateMultipageList();
   e.target.value = '';
 }
@@ -725,17 +726,20 @@ function removeMultipagePage(i) {
 async function processMultipage() {
   if (!multipageFiles.length) { toast('⚠️ Ajoute au moins une page'); return; }
   if (!getAppsScriptUrl()) { showPage('settings'); return; }
+  if (multipageFiles.length > 20) { toast('⚠️ Maximum 20 pages — retire les pages en trop'); return; }
+
+  const btn = document.querySelector('#multipage-panel .btn-primary');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Envoi…'; btn.style.opacity = '0.6'; }
 
   document.getElementById('scan-loading').style.display = 'block';
   document.getElementById('scan-result-card').style.display = 'none';
 
   try {
     // Convertit toutes les pages en base64
-    const pages = await Promise.all(multipageFiles.map(async (f, i) => ({
-      page: i + 1,
-      base64: await fileToBase64(f),
-      mediaType: f.type
-    })));
+    const pages = await Promise.all(multipageFiles.map(async (f, i) => {
+      const compressed = await compressImage(f, 800, 0.5);
+      return { page: i + 1, base64: compressed.base64, mediaType: compressed.mediaType };
+    }));
 
     const res = await appsScriptPost({
       action: 'scanDoc',
@@ -758,5 +762,34 @@ async function processMultipage() {
     document.getElementById('scan-loading').style.display = 'none';
     document.getElementById('scan-result-card').style.display = 'block';
     document.getElementById('scan-result-card').innerHTML = '<div class="alert alert-err">❌ ' + e.message + '</div>';
+  } finally {
+    const btn = document.querySelector('#multipage-panel .btn-primary');
+    if (btn) { btn.disabled = false; btn.textContent = '🔍 Analyser'; btn.style.opacity = ''; }
   }
+}
+
+function compressImage(file, maxWidth, quality) {
+  return new Promise((resolve) => {
+    // Les PDFs ne se compressent pas — on les passe tels quels
+    if (file.type === 'application/pdf') {
+      fileToBase64(file).then(base64 => resolve({ base64, mediaType: file.type }));
+      return;
+    }
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const scale  = Math.min(1, maxWidth / img.width);
+      const canvas = document.createElement('canvas');
+      canvas.width  = Math.round(img.width  * scale);
+      canvas.height = Math.round(img.height * scale);
+      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+      const dataUrl = canvas.toDataURL('image/jpeg', quality);
+      resolve({ base64: dataUrl.split(',')[1], mediaType: 'image/jpeg' });
+    };
+    img.onerror = () => {
+      fileToBase64(file).then(base64 => resolve({ base64, mediaType: file.type }));
+    };
+    img.src = url;
+  });
 }
