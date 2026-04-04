@@ -63,8 +63,8 @@ function recalcContrat(c) {
   if (!c.sources) c.sources = {};
   const s = c.sources;
 
-  // brutV : AEM > Bulletin > Contrat
-  c.brutV = (s.aem?.brutV) || (s.bulletin?.brutV) || (s.contrat?.brutV) || 0;
+  // brutV : AEM > Bulletin > Contrat > Congés Spectacle
+  c.brutV = (s.aem?.brutV) || (s.bulletin?.brutV) || (s.contrat?.brutV) || (s.conges?.brutV) || 0;
 
   // netImp, netV, pasV : Bulletin en priorité, sinon estimation depuis le brut
   if (s.bulletin) {
