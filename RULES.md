@@ -44,6 +44,11 @@ L'AEM a deux cases distinctes :
 - "Nombre de CACHETS" (colonne droite, uniquement artistes)
 - "Nombre de JOURS travaillés" (colonne centrale)
 
+### Lecture d'un bulletin SILAE
+Ligne "Du 18/12/2023 au 20/12/2023 (N°objet: ...) **20.00** 75.0000 1 500.00"
+→ 20.00 = HEURES (h_totales), pas cachets
+→ "Nombre de jour(s)/cachet(s) travaillé(s) : 3.00" = 3 jours pour technicien (cachets=0)
+
 **L'AEM prévaut TOUJOURS** sur le contrat et le bulletin pour ces valeurs.
 
 ---
