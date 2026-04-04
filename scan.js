@@ -793,3 +793,129 @@ function compressImage(file, maxWidth, quality) {
     img.src = url;
   });
 }
+
+// ── SCANNER CAMÉRA ──
+let cameraStream    = null;
+let cameraFacing    = 'environment'; // caméra arrière par défaut
+let cameraPages     = []; // { base64, mediaType }
+
+async function openCamera() {
+  cameraPages = [];
+  updateCameraThumbs();
+  document.getElementById('camera-modal').style.display = 'flex';
+  await startCamera();
+}
+
+async function startCamera() {
+  if (cameraStream) { cameraStream.getTracks().forEach(t => t.stop()); }
+  try {
+    cameraStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: cameraFacing, width: { ideal: 1920 }, height: { ideal: 1080 } },
+      audio: false
+    });
+    document.getElementById('camera-video').srcObject = cameraStream;
+  } catch(e) {
+    toast('❌ Caméra inaccessible : ' + e.message);
+    closeCamera();
+  }
+}
+
+async function switchCamera() {
+  cameraFacing = cameraFacing === 'environment' ? 'user' : 'environment';
+  await startCamera();
+}
+
+function capturePhoto() {
+  const video  = document.getElementById('camera-video');
+  const canvas = document.getElementById('camera-canvas');
+  canvas.width  = video.videoWidth;
+  canvas.height = video.videoHeight;
+  canvas.getContext('2d').drawImage(video, 0, 0);
+  // Compression
+  const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
+  cameraPages.push({ base64: dataUrl.split(',')[1], mediaType: 'image/jpeg' });
+  updateCameraThumbs();
+  // Flash visuel
+  const flash = document.createElement('div');
+  flash.style.cssText = 'position:fixed;inset:0;background:#fff;z-index:600;opacity:0.8;pointer-events:none;';
+  document.body.appendChild(flash);
+  setTimeout(() => flash.remove(), 150);
+}
+
+function updateCameraThumbs() {
+  const el    = document.getElementById('camera-thumbs');
+  const empty = document.getElementById('camera-thumbs-empty');
+  const count = document.getElementById('camera-count');
+  const btn   = document.getElementById('camera-analyze-btn');
+
+  count.textContent = cameraPages.length + ' page(s)';
+
+  if (!cameraPages.length) {
+    if (empty) empty.style.display = 'block';
+    btn.style.opacity = '0.4'; btn.style.pointerEvents = 'none';
+    return;
+  }
+  if (empty) empty.style.display = 'none';
+  btn.style.opacity = '1'; btn.style.pointerEvents = '';
+
+  // Retire les anciennes thumbs
+  el.querySelectorAll('.cam-thumb').forEach(t => t.remove());
+
+  cameraPages.forEach((p, i) => {
+    const div = document.createElement('div');
+    div.className = 'cam-thumb';
+    div.style.cssText = 'position:relative;flex-shrink:0;';
+    div.innerHTML = `
+      <img src="data:image/jpeg;base64,${p.base64}" style="height:56px;width:40px;object-fit:cover;border-radius:4px;border:2px solid #fff;">
+      <div style="position:absolute;top:-4px;right:-4px;background:#fff;color:#000;border-radius:50%;width:16px;height:16px;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;">${i+1}</div>
+      <button onclick="removeCameraPage(${i})" style="position:absolute;bottom:-4px;right:-4px;background:var(--red);border:none;color:#fff;border-radius:50%;width:16px;height:16px;font-size:9px;cursor:pointer;padding:0;">✕</button>`;
+    el.appendChild(div);
+  });
+}
+
+function removeCameraPage(i) {
+  cameraPages.splice(i, 1);
+  updateCameraThumbs();
+}
+
+async function analyzeCameraPages() {
+  if (!cameraPages.length) return;
+  const btn = document.getElementById('camera-analyze-btn');
+  btn.textContent = '⏳'; btn.style.opacity = '0.6'; btn.style.pointerEvents = 'none';
+
+  // Transfert vers multipageFiles et ferme la caméra
+  closeCamera();
+
+  // Lance l'analyse directement
+  document.getElementById('scan-loading').style.display = 'block';
+  document.getElementById('scan-result-card').style.display = 'none';
+
+  try {
+    const res = await appsScriptPost({
+      action: 'scanDoc',
+      docType: currentDocType,
+      base64Data: cameraPages[0].base64,
+      mediaType: cameraPages[0].mediaType,
+      extraPages: cameraPages.slice(1)
+    });
+
+    document.getElementById('scan-loading').style.display = 'none';
+    if (res.ok) {
+      pendingScanData = res.data;
+      if (res.extraDocs?.length > 0) pendingExtraDocs = res.extraDocs;
+      showScanResult(res.data);
+    } else {
+      document.getElementById('scan-result-card').style.display = 'block';
+      document.getElementById('scan-result-card').innerHTML = '<div class="alert alert-err">❌ ' + (res.error||'Erreur') + '</div>';
+    }
+  } catch(e) {
+    document.getElementById('scan-loading').style.display = 'none';
+    document.getElementById('scan-result-card').style.display = 'block';
+    document.getElementById('scan-result-card').innerHTML = '<div class="alert alert-err">❌ ' + e.message + '</div>';
+  }
+}
+
+function closeCamera() {
+  if (cameraStream) { cameraStream.getTracks().forEach(t => t.stop()); cameraStream = null; }
+  document.getElementById('camera-modal').style.display = 'none';
+}
