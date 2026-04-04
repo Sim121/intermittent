@@ -514,6 +514,28 @@
   </div>
 </div>
 <canvas id="camera-canvas" style="display:none;"></canvas>
+
+     <!-- DRAG & DROP GLOBAL -->
+<div id="global-drop-overlay" style="display:none;position:fixed;inset:0;z-index:800;background:rgba(26,86,219,0.15);border:3px dashed var(--accent);pointer-events:none;">
+  <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;background:var(--surface);padding:32px 48px;border-radius:16px;border:2px solid var(--accent);box-shadow:0 8px 32px rgba(0,0,0,0.15);">
+    <div style="font-size:48px;margin-bottom:12px;">📂</div>
+    <div style="font-size:18px;font-weight:800;color:var(--accent);">Déposer pour analyser</div>
+    <div style="font-size:13px;color:var(--muted);margin-top:6px;">PDF, JPG, PNG, HEIC — max 4 fichiers</div>
+  </div>
+</div>
+
+<!-- MODAL CONFIRMATION DROP -->
+<div id="global-drop-modal" style="display:none;position:fixed;inset:0;z-index:810;background:rgba(0,0,0,0.4);align-items:center;justify-content:center;padding:24px;">
+  <div style="background:var(--surface);border:2px solid var(--border);border-radius:16px;padding:28px;width:100%;max-width:480px;box-shadow:0 8px 32px rgba(0,0,0,0.15);">
+    <div style="font-size:18px;font-weight:800;margin-bottom:6px;">📂 Importer des documents</div>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:16px;">Ces documents seront analysés par l'IA :</div>
+    <div id="global-drop-list" style="margin-bottom:20px;"></div>
+    <div style="display:flex;gap:10px;">
+      <button class="btn btn-primary" style="flex:1;" onclick="confirmGlobalDrop()">✓ Analyser</button>
+      <button class="btn btn-ghost" style="flex:1;" onclick="cancelGlobalDrop()">Annuler</button>
+    </div>
+  </div>
+</div>
      
      
      <!-- /app-shell -->
