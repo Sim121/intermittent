@@ -9,6 +9,22 @@ let currentAbortController = null;
 let pendingExtraDocs = [];
 
 // ── UPLOAD ──
+function setDocType(el, type) {
+  document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  currentDocType = type;
+  // Rattachement visible si type spécifique
+  document.getElementById('scan-contrat-link-card').style.display =
+    (type !== 'auto') ? 'block' : 'none';
+  // Si type forcé : limite à 1 fichier
+  const input = document.getElementById('file-input');
+  if (input) input.multiple = (type === 'auto');
+  // Info utilisateur
+  if (type !== 'auto') {
+    toast('⚠️ Type forcé — un seul fichier à la fois');
+  }
+}
+
 function handleDrop(e) {
   e.preventDefault();
   document.getElementById('dropzone').classList.remove('active');
@@ -32,6 +48,7 @@ async function processFileQueue(files) {
   fileQueueIndex = 0;
   toast(`📂 ${fileQueue.length} documents à traiter — confirme chaque extraction`);
   await processFile(fileQueue[fileQueueIndex]);
+   updateScanQueueUI();
 }
 
 function nextInQueue() {
@@ -44,6 +61,7 @@ function nextInQueue() {
     fileQueueIndex = 0;
     toast('✅ Tous les documents traités');
   }
+   updateScanQueueUI();
 }
 
 function fileToBase64(f) {
