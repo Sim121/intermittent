@@ -305,6 +305,7 @@ function loadConfig() {
   set('cfg-sjr',        state.config.sjr||'');
   set('cfg-are-reel',   state.config.areReel||'');
   set('cfg-fin-droits', state.config.finDroits||'');
+   set('cfg-annexe', state.config.annexe || 8);
   const url = localStorage.getItem('apps-script-url');
   if (url) { const el = document.getElementById('apps-script-url'); if (el) el.value = url; }
 }
@@ -316,6 +317,7 @@ function saveConfig() {
   state.config.sjr       = parseFloat(document.getElementById('cfg-sjr').value) || 0;
   state.config.areReel   = parseFloat(document.getElementById('cfg-are-reel').value) || 0;
   state.config.finDroits = document.getElementById('cfg-fin-droits').value || '';
+   state.config.annexe = parseInt(document.getElementById('cfg-annexe').value) || 8;
   saveState();
 }
 
