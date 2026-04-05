@@ -3,7 +3,7 @@
    Core : state, auth, sync, navigation, settings, init
    ============================================================ */
 
-const APP_VERSION = '3.5.10';
+const APP_VERSION = '3.5.11';
 const APP_DATE    = '2026-0s4-03';
 
 // ── STATE GLOBAL ──
@@ -371,33 +371,56 @@ function loadConfig() {
     const histEl = document.getElementById('are-historique');
     if (!histEl) return;
     const hist = state.config.historiqueAre || [];
-    if (!hist.length) {
+
+    // Construit la liste complète : historique + droits actuels
+    const current = state.config.areJour ? [{
+      date:         state.config.areDebut,
+      areJour:      state.config.areJour,
+      sr:           state.config.sr,
+      nht:          state.config.nht,
+      sjr:          state.config.sjr,
+      finDroits:    state.config.finDroits,
+      franchiseCp:  state.config.franchiseCp,
+      franchiseSal: state.config.franchiseSal,
+      isCurrent:    true
+    }] : [];
+
+    const all = [...current, ...hist].sort((a, b) => (b.date||'').localeCompare(a.date||''));
+
+    if (!all.length) {
       histEl.innerHTML = '<div style="font-size:12px;color:var(--muted);">Aucun historique — importe ta première notification FT</div>';
       return;
     }
 
     // Détecte les renouvellements anticipés
-    const sorted = [...hist].sort((a, b) => (a.date||'').localeCompare(b.date||''));
+    const sorted = [...all].sort((a, b) => (a.date||'').localeCompare(b.date||''));
     const withFlags = sorted.map((h, i) => {
-      let flag = '';
+      let anticipé = null;
       if (i > 0) {
         const prev = sorted[i-1];
-        // Si la nouvelle ouverture est avant la date anniversaire précédente → anticipé
         if (prev.finDroits && h.date && h.date < prev.finDroits) {
-          flag = `<span class="tag tag-orange" style="font-size:10px;margin-left:6px;">↩ Renouvellement anticipé</span>`;
+          const jAvant = Math.ceil((new Date(prev.finDroits) - new Date(h.date)) / 86400000);
+          anticipé = `Renouvellement anticipé — ${jAvant}j avant la date anniversaire du ${fmtDate(prev.finDroits)}`;
         }
       }
-      return { ...h, flag };
+      return { ...h, anticipé };
     });
 
     histEl.innerHTML = '<div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:8px;">Historique des droits</div>'
       + [...withFlags].reverse().map((h, i) => {
-        const realIdx = hist.length - 1 - i; // index dans le tableau original
+        const isInHist = !h.isCurrent;
+        const realIdx  = hist.findIndex(x => x.date === h.date && x.areJour === h.areJour);
         return `
           <div style="padding:10px 0;border-bottom:1px solid var(--border2);">
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
-              <div style="font-size:13px;font-weight:700;">${fmtDate(h.date)} → ${fmtDate(h.finDroits)} ${h.flag||''}</div>
-              <button onclick="removeHistoriqueAre(${realIdx})" style="background:none;border:none;cursor:pointer;color:var(--red);font-size:14px;padding:2px 6px;" title="Supprimer">✕</button>
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:4px;">
+              <div>
+                <div style="font-size:13px;font-weight:700;display:flex;align-items:center;gap:6px;">
+                  ${h.isCurrent ? '<span class="tag tag-green" style="font-size:10px;">EN COURS</span>' : ''}
+                  ${fmtDate(h.date)} → ${fmtDate(h.finDroits)}
+                </div>
+                ${h.anticipé ? `<div class="alert alert-warn" style="font-size:11px;padding:5px 8px;margin-top:4px;">↩ ${h.anticipé}</div>` : ''}
+              </div>
+              ${isInHist && realIdx >= 0 ? `<button onclick="removeHistoriqueAre(${realIdx})" style="background:none;border:none;cursor:pointer;color:var(--red);font-size:14px;padding:2px 6px;flex-shrink:0;" title="Supprimer">✕</button>` : ''}
             </div>
             <div style="font-size:12px;color:var(--muted);font-family:'JetBrains Mono',monospace;">
               ${fmt(h.areJour)}/j · ${h.nht||'—'}h · SR ${fmt(h.sr)}
@@ -447,6 +470,31 @@ function clearDroitsARE() {
   loadConfig();
   renderBilan();
   toast('🗑️ Droits ARE supprimés — archivés dans l\'historique');
+}
+
+function forceMigrateAreToHistorique() {
+  if (!state.config.historiqueAre) state.config.historiqueAre = [];
+  if (!state.config.areJour) { toast('ℹ️ Aucun droit ARE actuel à archiver'); return; }
+  
+  // Vérifie si déjà dans l'historique
+  const alreadyIn = state.config.historiqueAre.some(h => 
+    h.date === state.config.areDebut && h.areJour === state.config.areJour
+  );
+  if (alreadyIn) { toast('ℹ️ Ces droits sont déjà dans l\'historique'); return; }
+
+  state.config.historiqueAre.push({
+    date:         state.config.areDebut,
+    areJour:      state.config.areJour,
+    sr:           state.config.sr,
+    nht:          state.config.nht,
+    sjr:          state.config.sjr,
+    finDroits:    state.config.finDroits,
+    franchiseCp:  state.config.franchiseCp,
+    franchiseSal: state.config.franchiseSal
+  });
+  saveState();
+  loadConfig();
+  toast('✅ Droits actuels ajoutés à l\'historique');
 }
 
 function saveConfig() {
