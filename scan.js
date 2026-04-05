@@ -135,8 +135,13 @@ function showScanResult(d) {
   const card = document.getElementById('scan-result-card');
   card.style.display = 'block';
 
-  const typeLabels = {contrat:'📝 Contrat', bulletin:'📄 Bulletin', aem:'📋 AEM', conges:'🌴 Congés Spectacle', frais:'🧾 Frais'};
-
+  const typeLabels = {
+    contrat:'📝 Contrat', bulletin:'📄 Bulletin', aem:'📋 AEM',
+    conges:'🌴 Congés Spectacle', frais:'🧾 Frais',
+    notification_ft:'🏛️ Notif. ARE', courrier_csg:'📮 Courrier CSG',
+    courrier_ft:'📑 Courrier FT', droits_auteur:'🎵 Droits d\'auteur',
+    releve_conges:'🌴 Relevé Congés', document_ft:'📋 Doc FT autre'
+  };
   // Sélecteur de type
   const typeSelector = '<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;padding:10px 14px;background:var(--bg2);border-radius:var(--r-sm);">'
     + '<span style="font-family:\'DM Mono\',monospace;font-size:10px;color:var(--muted);text-transform:uppercase;">Type détecté</span>'
@@ -241,7 +246,13 @@ function showScanResult(d) {
 function overrideDocType(type) {
   if (pendingScanData) {
     pendingScanData.type = type;
-    const typeLabels = {contrat:'📝 Contrat', bulletin:'📄 Bulletin', aem:'📋 AEM', conges:'🌴 Congés Spectacle', frais:'🧾 Frais'};
+    const typeLabels = {
+    contrat:'📝 Contrat', bulletin:'📄 Bulletin', aem:'📋 AEM',
+    conges:'🌴 Congés Spectacle', frais:'🧾 Frais',
+    notification_ft:'🏛️ Notif. ARE', courrier_csg:'📮 Courrier CSG',
+    courrier_ft:'📑 Courrier FT', droits_auteur:'🎵 Droits d\'auteur',
+    releve_conges:'🌴 Relevé Congés', document_ft:'📋 Doc FT autre'
+  };
     const btn = document.getElementById('btn-confirm-scan');
     if (btn) btn.textContent = '✓ Enregistrer comme ' + (typeLabels[type]||type);
   }
