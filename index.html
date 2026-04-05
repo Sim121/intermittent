@@ -157,6 +157,9 @@
 <div style="font-size:13px;color:var(--muted);margin-top:4px;">≈ <span id="q-are-mois">— €</span>/mois</div>
 <div class="ft-row" style="margin-top:12px;"><span class="ft-label">Ouverture des droits</span><span class="ft-value" id="q-date-ouverture">—</span></div>
 <div class="ft-row"><span class="ft-label">Date anniversaire</span><span class="ft-value" id="q-date-anniversaire">—</span></div>
+<div style="margin-top:12px;">
+  <button class="btn btn-ghost btn-sm" onclick="showPage('settings');setTimeout(()=>{document.getElementById('are-droits-card')?.scrollIntoView({behavior:'smooth'})},300)">📋 Voir l'historique complet</button>
+</div>
             <div class="progress-wrap">
               <div class="progress-label"><span>Progression vers les 507h</span><span id="q-heures-prog">0 / 507 h</span></div>
               <div class="progress-bar"><div class="progress-fill" id="q-heures-fill" style="width:0%"></div></div>
