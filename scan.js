@@ -422,6 +422,31 @@ function confirmScanInline() {
     if (fileQueue.length > 0) nextInQueue();
     return;
   }
+
+  // Documents France Travail et autres — pas des contrats
+  if (['courrier_csg', 'courrier_ft', 'document_ft'].includes(d.type || docType)) {
+    if (d.type === 'courrier_csg' && d.taux_csg !== undefined) {
+      state.config.tauxCsg = d.taux_csg;
+      toast('✅ Taux CSG mis à jour : ' + d.taux_csg + '%');
+      saveState();
+    } else {
+      toast('📋 Document FT archivé — ' + (d.sous_type || d.type));
+    }
+    pendingScanData = null;
+    document.getElementById('scan-result-card').style.display = 'none';
+    if (fileQueue.length > 0) nextInQueue();
+    return;
+  }
+
+  // Droits d'auteur
+  if (['droits_auteur', 'releve_conges'].includes(d.type || docType)) {
+    toast('📋 Document archivé : ' + (d.organisme || d.type) + (d.montant_ttc ? ' — ' + fmt(d.montant_ttc) : ''));
+    // TODO : future section droits d'auteur
+    pendingScanData = null;
+    document.getElementById('scan-result-card').style.display = 'none';
+    if (fileQueue.length > 0) nextInQueue();
+    return;
+  }
    
   if (docType === 'contrat') {
     const dateDebut = parseDate(d.date_debut) || parseDate(d.date_travail) || new Date().toISOString().slice(0,10);
