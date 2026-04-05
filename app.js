@@ -172,7 +172,7 @@ function saveState() {
   // Sync vers extension Chrome
   if (typeof chrome !== 'undefined' && chrome.runtime) {
     try {
-      const EXT_ID = 'COLLE_TON_ID_ICI'; // ← remplace par l'ID copié
+      const EXT_ID = 'mejfcengoaljnkeplgbkfooifabhhfio'; 
       chrome.runtime.sendMessage(EXT_ID, { type: 'sync', state }, () => {});
     } catch(e) {}
   }
