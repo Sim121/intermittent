@@ -592,6 +592,26 @@ function handleNotificationFT(d) {
   }
 }
 
+function toggleCardLock(btn) {
+  const card = btn.closest('.card');
+  const locked = card.classList.toggle('card-locked');
+  btn.textContent = locked ? '🔒' : '🔓';
+}
+
+function initCardLocks() {
+  document.querySelectorAll('.card[data-lockable]').forEach(card => {
+    card.classList.add('card-locked');
+    const head = card.querySelector('.card-head');
+    if (head) {
+      const btn = document.createElement('button');
+      btn.className = 'btn btn-ghost btn-sm';
+      btn.textContent = '🔒';
+      btn.onclick = () => toggleCardLock(btn);
+      head.appendChild(btn);
+    }
+  });
+}
+
 // ============================================================
 // RESPONSIVE
 // ============================================================
@@ -706,6 +726,7 @@ function init() {
 
   loadSession();
   loadConfig();
+   initCardLocks();
 
   if (!getAppsScriptUrl() || !isSessionValid()) {
     showLogin();
