@@ -370,7 +370,7 @@
           </div>
 
           <!-- PROFIL -->
-          <div class="card">
+          <div class="card" data-lockable>
             <div class="card-head"><div class="card-head-title">Profil</div></div>
             <div class="field"><label>Prénom</label><input type="text" id="cfg-prenom" placeholder="Ex: Simon" oninput="saveConfig()"></div>
             <div class="field"><label>Annexe intermittence</label>
@@ -382,7 +382,7 @@
           </div>
 
           <!-- SITUATION FAMILIALE -->
-          <div class="card">
+          <div class="card" data-lockable>
             <div class="card-head"><div class="card-head-title">Situation familiale</div></div>
             <div class="field"><label>Statut</label>
               <select id="cfg-statut-familial" onchange="updateFamilialUI();saveConfig()">
@@ -406,13 +406,13 @@
           </div>
 
           <!-- FISCAL -->
-          <div class="card">
+          <div class="card" data-lockable>
             <div class="card-head"><div class="card-head-title">Paramètres fiscaux</div></div>
             <div class="field"><label>Taux PAS actuel (%)</label><input type="number" id="cfg-taux-pas" placeholder="Ex: 14.6" step="0.1" oninput="saveConfig()"></div>
           </div>
 
           <!-- DROITS ARE -->
-          <div class="card" id="are-droits-card">
+          <div class="card" id="are-droits-card" data-lockable>
             <div class="card-head">
               <div class="card-head-title">Droits ARE en cours</div>
               <button class="btn btn-ghost btn-sm" onclick="document.getElementById('file-input-ft').click()">📄 Importer notification</button>
