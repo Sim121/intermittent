@@ -127,10 +127,10 @@ function renderBilan() {
   }
 
   // Foyer
-  const areAnnuelle = state.config.areReel || (areJ * 30 * 12);
+  const areAnnuelle = state.config.areReel || (areJour * 30 * 12);
   set('foyer-simon',   fmt(tNet));
-  set('foyer-mathilde', state.config.conjoint ? fmt(state.config.conjoint) : '—');
-  set('foyer-reste',   fmt(tNet + (state.config.conjoint||0) + (state.config.areReel||0) * 12));
+  set('foyer-conjoint', state.config.conjoint ? fmt(state.config.conjoint) : '—');
+  set('foyer-reste',    fmt(tNet + (state.config.conjoint||0) + (state.config.areReel||0) * 12));
 }
 
 // ── CALCUL IMPÔTS (barème 2024) ──
