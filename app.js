@@ -319,6 +319,18 @@ function loadConfig() {
   updateSituationFiscale();
   const url = localStorage.getItem('apps-script-url');
   if (url) { const el = document.getElementById('apps-script-url'); if (el) el.value = url; }
+
+  // Historique ARE
+  const histEl = document.getElementById('are-historique');
+  if (histEl && state.config.historiqueAre?.length) {
+    histEl.innerHTML = '<div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:8px;">Historique des droits</div>'
+      + [...state.config.historiqueAre].reverse().map(h => `
+        <div style="padding:8px 0;border-bottom:1px solid var(--border2);font-size:12px;">
+          <div style="font-weight:600;">${fmtDate(h.date)} → ${fmtDate(h.finDroits)}</div>
+          <div style="color:var(--muted);">${fmt(h.areJour)}/j · ${h.nht}h · SR ${fmt(h.sr)}</div>
+        </div>`
+      ).join('');
+  } 
 }
 
 function saveConfig() {
@@ -512,6 +524,72 @@ function renderAll() {
   renderBilan();
   renderContrats();
   renderFrais();
+}
+
+function handleNotificationFT(d) {
+  const dateOuverture = parseDate(d.date_ouverture);
+  const actuelle      = state.config.areDebut;
+
+  // Historique des notifications
+  if (!state.config.historiqueAre) state.config.historiqueAre = [];
+
+  // Vérifie si c'est plus récent
+  const isNewer = !actuelle || (dateOuverture && dateOuverture > actuelle);
+
+  const resume = `ARE ${fmt(d.are_jour)}/j · ${d.nht}h · SR ${fmt(d.sr)} · du ${fmtDate(d.date_ouverture)} au ${fmtDate(d.date_anniversaire)}`;
+
+  if (isNewer) {
+    // Propose la mise à jour
+    const confirm = window.confirm(
+      `📄 Notification ARE détectée :\n${resume}\n\nCette notification est plus récente que vos droits actuels. Mettre à jour votre profil ?`
+    );
+    if (confirm) {
+      // Archive l'ancienne
+      if (state.config.areJour) {
+        state.config.historiqueAre.push({
+          date:         actuelle,
+          areJour:      state.config.areJour,
+          sr:           state.config.sr,
+          nht:          state.config.nht,
+          sjr:          state.config.sjr,
+          finDroits:    state.config.finDroits,
+          franchiseCp:  state.config.franchiseCp,
+          franchiseSal: state.config.franchiseSal
+        });
+      }
+      // Met à jour
+      if (d.are_jour)          state.config.areJour     = d.are_jour;
+      if (d.sr)                state.config.sr           = d.sr;
+      if (d.nht)               state.config.nht          = d.nht;
+      if (d.sjr)               state.config.sjr          = d.sjr;
+      if (d.date_ouverture)    state.config.areDebut     = d.date_ouverture;
+      if (d.date_anniversaire) state.config.finDroits    = d.date_anniversaire;
+      if (d.franchise_cp)      state.config.franchiseCp  = d.franchise_cp;
+      if (d.franchise_sal)     state.config.franchiseSal = d.franchise_sal;
+      if (d.annexe)            state.config.annexe       = d.annexe;
+      saveState();
+      loadConfig();
+      renderBilan();
+      toast('✅ Droits ARE mis à jour depuis la notification');
+    }
+  } else {
+    // Notification plus ancienne — archive seulement
+    const alreadyStored = state.config.historiqueAre.some(h => h.date === dateOuverture);
+    if (!alreadyStored) {
+      state.config.historiqueAre.push({
+        date:         d.date_ouverture,
+        areJour:      d.are_jour,
+        sr:           d.sr,
+        nht:          d.nht,
+        sjr:          d.sjr,
+        finDroits:    d.date_anniversaire,
+        franchiseCp:  d.franchise_cp,
+        franchiseSal: d.franchise_sal
+      });
+      saveState();
+    }
+    toast(`ℹ️ Notification archivée — moins récente que vos droits actuels (${fmtDate(actuelle)})`);
+  }
 }
 
 // ============================================================
