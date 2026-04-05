@@ -10,7 +10,7 @@ const APP_DATE    = '2026-04-03';
 let state = {
   contrats: [],
   frais: [],
-  config: { tauxPas:14.6, situation:2, conjoint:0, sjr:0, areReel:0, finDroits:'', annexe:8 }
+  config: { tauxPas:0, situation:0, conjoint:0, sjr:0, areReel:0, finDroits:'', annexe:0, tauxCsg:6.2, rfr:0 }
 };
 
 let session = { token: null, expiresAt: null };
@@ -321,17 +321,22 @@ function loadConfig() {
   if (url) { const el = document.getElementById('apps-script-url'); if (el) el.value = url; }
 
   // Historique ARE
-  const histEl = document.getElementById('are-historique');
-  if (histEl && state.config.historiqueAre?.length) {
-    histEl.innerHTML = '<div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:8px;">Historique des droits</div>'
-      + [...state.config.historiqueAre].reverse().map(h => `
-        <div style="padding:8px 0;border-bottom:1px solid var(--border2);font-size:12px;">
-          <div style="font-weight:600;">${fmtDate(h.date)} → ${fmtDate(h.finDroits)}</div>
-          <div style="color:var(--muted);">${fmt(h.areJour)}/j · ${h.nht}h · SR ${fmt(h.sr)}</div>
-        </div>`
-      ).join('');
-  } 
-}
+  setTimeout(() => {
+    const histEl = document.getElementById('are-historique');
+    if (histEl) {
+      const hist = state.config.historiqueAre || [];
+      if (hist.length) {
+        histEl.innerHTML = '<div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:8px;">Historique des droits</div>'
+          + [...hist].reverse().map(h => `
+            <div style="padding:8px 0;border-bottom:1px solid var(--border2);font-size:12px;">
+              <div style="font-weight:600;">${fmtDate(h.date)} → ${fmtDate(h.finDroits)}</div>
+              <div style="color:var(--muted);">${fmt(h.areJour)}/j · ${h.nht}h · SR ${fmt(h.sr)}</div>
+            </div>`).join('');
+      } else {
+        histEl.innerHTML = '<div style="font-size:12px;color:var(--muted);">Aucun historique — importe ta première notification FT</div>';
+      }
+    }
+  }, 100);
 
 function saveConfig() {
   const g = (id, def) => { const el = document.getElementById(id); return el ? el.value : def; };
