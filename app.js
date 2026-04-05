@@ -3,7 +3,7 @@
    Core : state, auth, sync, navigation, settings, init
    ============================================================ */
 
-const APP_VERSION = '3.5.11';
+const APP_VERSION = '3.5.12';
 const APP_DATE    = '2026-0s4-03';
 
 // ── STATE GLOBAL ──
@@ -794,6 +794,7 @@ function confirmNotifFT(d, updateCurrent) {
   saveState();
   loadConfig();
   renderBilan();
+  if (fileQueue.length > 0) nextInQueue();
   document.getElementById('ft-notif-confirm-panel')?.remove();
 }
 function toggleCardLock(btn) {
