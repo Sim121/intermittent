@@ -169,6 +169,10 @@ function saveLocal() { localStorage.setItem('intermittent-v2', JSON.stringify(st
 
 function saveState() {
   saveLocal();
+  // Sync vers l'extension Chrome si disponible
+  if (typeof chrome !== 'undefined' && chrome.storage) {
+    chrome.storage.local.set({ intermittent_state: state });
+  }
   if (getAppsScriptUrl() && isSessionValid()) {
     clearTimeout(syncDebounce);
     syncDebounce = setTimeout(() => syncToServer(false), 3000);
