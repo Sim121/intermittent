@@ -3,7 +3,7 @@
    Core : state, auth, sync, navigation, settings, init
    ============================================================ */
 
-const APP_VERSION = '3.5.6.1';
+const APP_VERSION = '3.5.6.b';
 const APP_DATE    = '2026-0s4-03';
 
 // ── STATE GLOBAL ──
@@ -602,11 +602,10 @@ function handleNotificationFT(d) {
   }
 }
 
-function toggleCardLock(btn) {
-  const card = btn.closest('.card');
-  const locked = card.classList.toggle('card-locked');
-  btn.textContent = locked ? '🔒' : '🔓';
-}
+btn.className = 'btn btn-ghost btn-sm card-lock-btn';
+      btn.textContent = '🔒';
+      btn.style.cssText = 'opacity:1;pointer-events:auto;font-size:14px;';
+      btn.onclick = (e) => { e.stopPropagation(); toggleCardLock(btn); };
 
 function initCardLocks() {
   document.querySelectorAll('.card[data-lockable]').forEach(card => {
@@ -614,9 +613,10 @@ function initCardLocks() {
     const head = card.querySelector('.card-head');
     if (head) {
       const btn = document.createElement('button');
-      btn.className = 'btn btn-ghost btn-sm';
+      btn.className = 'btn btn-ghost btn-sm card-lock-btn';
       btn.textContent = '🔒';
-      btn.onclick = () => toggleCardLock(btn);
+      btn.style.cssText = 'opacity:1;pointer-events:auto;font-size:14px;';
+      btn.onclick = (e) => { e.stopPropagation(); toggleCardLock(btn); };
       head.appendChild(btn);
     }
   });
