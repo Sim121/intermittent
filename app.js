@@ -3,14 +3,14 @@
    Core : state, auth, sync, navigation, settings, init
    ============================================================ */
 
-const APP_VERSION = '3.5.7';
+const APP_VERSION = '3.5.8';
 const APP_DATE    = '2026-0s4-03';
 
 // ── STATE GLOBAL ──
 let state = {
   contrats: [],
   frais: [],
-  config: { tauxPas:0, situation:0, conjoint:0, sjr:0, areReel:0, finDroits:'', annexe:0, tauxCsg:6.2, rfr:0 }
+  config: { tauxPas:0, situation:0, conjoint:0, sjr:0, areReel:0, finDroits:'', annexe:0, tauxCsg:6.2, rfr:0, historiqueAre:[] }
 };
 
 let session = { token: null, expiresAt: null };
@@ -570,6 +570,7 @@ function migrateData() {
       }
     }
   });
+  if (!state.config.historiqueAre) { state.config.historiqueAre = []; changed = true; }
   if (changed) saveLocal();
 }
 
