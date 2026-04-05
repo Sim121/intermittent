@@ -478,7 +478,7 @@ function forceMigrateAreToHistorique() {
   
   // Vérifie si déjà dans l'historique
   const alreadyIn = state.config.historiqueAre.some(h => 
-    h.date === state.config.areDebut && h.areJour === state.config.areJour
+    h.date === state.config.areDebut
   );
   if (alreadyIn) { toast('ℹ️ Ces droits sont déjà dans l\'historique'); return; }
 
