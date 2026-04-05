@@ -193,3 +193,31 @@ Les documents peuvent venir de logiciels différents — ne jamais hardcoder des
 
 ### Principe général
 L'IA doit raisonner sur le contenu du document, pas chercher des chaînes de caractères fixes. Chaque nouveau format rencontré enrichit la compréhension sans annuler les règles précédentes.
+
+---
+
+## 15. TYPES DE DOCUMENTS ÉTENDUS
+
+### Droits d'auteur
+- SACEM : relevés semestriels/annuels de droits musicaux
+- SACD : droits audiovisuels et dramatiques  
+- ADAMI : droits des artistes-interprètes
+- SPEDIDAM : droits des musiciens interprètes
+→ Ces montants sont CUMULABLES avec l'ARE (pas à déclarer à FT)
+→ Champ `organisme` pour identifier la source
+
+### Les Congés Spectacles
+- Certificat d'emploi (déjà géré : type `conges`)
+- Relevé de compte / avis de paiement : type `releve_conges`
+- Demande de congés : futur
+
+### Courriers France Travail
+- Ouverture de droits : `notification_ft`
+- CSG : `courrier_csg`
+- Trop-perçu : `courrier_ft` avec `sous_type:"trop-percu"`
+- Franchise : `courrier_ft` avec `sous_type:"franchise"`
+- Convocation : `courrier_ft` avec `sous_type:"convocation"`
+
+### Régime général (futur)
+- Contrats RG à distinguer des contrats intermittence
+- Ne comptent pas pour les 507h annexe 8/10
