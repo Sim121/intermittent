@@ -9,39 +9,6 @@ const AJ_MIN    = 31.96;
 const AJ_PLAF   = 174.80; // plafond depuis 1er janvier 2024
 const AJ_PLANCH = { 8: 38, 10: 44 }; // planchers par annexe
 
-function calcAREJournaliere(srBrut, nht, annexe) {
-  const ann = parseInt(annexe) || 8;
-  if (!srBrut || !nht || nht < 507) return 0;
-
-  let partA, partB, partC;
-
-  if (ann === 8) {
-    // Annexe 8 — Techniciens/Ouvriers
-    const srA = Math.min(srBrut, 14400) * 0.42 + Math.max(0, srBrut - 14400) * 0.05;
-    partA = (AJ_MIN * srA) / 5000;
-    const nhtB = Math.min(nht, 720) * 0.26 + Math.max(0, nht - 720) * 0.08;
-    partB = (AJ_MIN * nhtB) / 507;
-    partC = AJ_MIN * 0.40;
-  } else {
-    // Annexe 10 — Artistes
-    const srA = Math.min(srBrut, 13700) * 0.36 + Math.max(0, srBrut - 13700) * 0.05;
-    partA = (AJ_MIN * srA) / 5000;
-    const nhtB = Math.min(nht, 690) * 0.26 + Math.max(0, nht - 690) * 0.08;
-    partB = (AJ_MIN * nhtB) / 507;
-    partC = AJ_MIN * 0.70;
-  }
-
-  const brute = partA + partB + partC;
-  return Math.min(AJ_PLAF, Math.max(AJ_PLANCH[ann] || 38, brute));
-}
-
-// SJR officiel : SR / (NHT/8) pour annexe 8, SR / (NHT/10) pour annexe 10
-function calcSJR(srBrut, nht, annexe) {
-  const ann = parseInt(annexe) || 8;
-  if (!nht) return 0;
-  return srBrut / (nht / (ann === 10 ? 10 : 8));
-}
-
 // ── RENDER BILAN ──
 function renderBilan() {
   const selectedYear = parseInt(document.getElementById('bilan-year-select')?.value) || new Date().getFullYear();
@@ -131,6 +98,57 @@ function renderBilan() {
 }
 
 // ── CALCUL IMPÔTS (barème 2024) ──
+function calcAREJournaliere(srBrut, nht, annexe) {
+  const ann = parseInt(annexe) || 8;
+  if (!srBrut || !nht || nht < 507) return 0;
+
+  let partA, partB, partC;
+
+  if (ann === 8) {
+    // Annexe 8 — Techniciens/Ouvriers
+    const srA = Math.min(srBrut, 14400) * 0.42 + Math.max(0, srBrut - 14400) * 0.05;
+    partA = (AJ_MIN * srA) / 5000;
+    const nhtB = Math.min(nht, 720) * 0.26 + Math.max(0, nht - 720) * 0.08;
+    partB = (AJ_MIN * nhtB) / 507;
+    partC = AJ_MIN * 0.40;
+  } else {
+    // Annexe 10 — Artistes
+    const srA = Math.min(srBrut, 13700) * 0.36 + Math.max(0, srBrut - 13700) * 0.05;
+    partA = (AJ_MIN * srA) / 5000;
+    const nhtB = Math.min(nht, 690) * 0.26 + Math.max(0, nht - 690) * 0.08;
+    partB = (AJ_MIN * nhtB) / 507;
+    partC = AJ_MIN * 0.70;
+  }
+
+  const brute = partA + partB + partC;
+  return Math.min(AJ_PLAF, Math.max(AJ_PLANCH[ann] || 38, brute));
+}
+
+function calcARENet(areJourBrut, sjr, tauxCsg, tauxPas) {
+  const assiette    = areJourBrut * 0.9825; // abattement 1.75%
+  const csg         = assiette * (tauxCsg / 100);
+  const crds        = tauxCsg > 0 ? assiette * 0.005 : 0;
+  const retraiteC   = sjr * 0.03;
+  const netAvantPas = areJourBrut - csg - crds - retraiteC;
+  const pas         = netAvantPas * ((tauxPas || 0) / 100);
+  return {
+    brut:       areJourBrut,
+    csg,
+    crds,
+    retraiteC,
+    netAvantPas,
+    pas,
+    net:        netAvantPas - pas
+  };
+}
+
+// SJR officiel : SR / (NHT/8) pour annexe 8, SR / (NHT/10) pour annexe 10
+function calcSJR(srBrut, nht, annexe) {
+  const ann = parseInt(annexe) || 8;
+  if (!nht) return 0;
+  return srBrut / (nht / (ann === 10 ? 10 : 8));
+}
+
 function calcImpots(n, f, p) {
   if (!n) return 0;
   const a  = Math.min(n * 0.1, 14171);
@@ -246,22 +264,4 @@ function deleteFrais(id) {
   state.frais = state.frais.filter(f => f.id !== id);
   saveState(); renderFrais(); renderBilan();
   toast('🗑️ Supprimé');
-}
-
-function calcARENet(areJourBrut, sjr, tauxCsg, tauxPas) {
-  const assiette    = areJourBrut * 0.9825; // abattement 1.75%
-  const csg         = assiette * (tauxCsg / 100);
-  const crds        = tauxCsg > 0 ? assiette * 0.005 : 0;
-  const retraiteC   = sjr * 0.03;
-  const netAvantPas = areJourBrut - csg - crds - retraiteC;
-  const pas         = netAvantPas * ((tauxPas || 0) / 100);
-  return {
-    brut:       areJourBrut,
-    csg,
-    crds,
-    retraiteC,
-    netAvantPas,
-    pas,
-    net:        netAvantPas - pas
-  };
 }
