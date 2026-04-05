@@ -414,6 +414,15 @@ function confirmScanInline() {
   const docType = d.type || currentDocType;
   const linkedId = document.getElementById('scan-contrat-select')?.value || '';
 
+  // Détecte notification FT en priorité
+  if (d.type === 'notification_ft' || docType === 'notification_ft') {
+    handleNotificationFT(d);
+    pendingScanData = null;
+    document.getElementById('scan-result-card').style.display = 'none';
+    if (fileQueue.length > 0) nextInQueue();
+    return;
+  }
+   
   if (docType === 'contrat') {
     const dateDebut = parseDate(d.date_debut) || parseDate(d.date_travail) || new Date().toISOString().slice(0,10);
     const dateFin   = parseDate(d.date_fin) || dateDebut;
@@ -526,15 +535,6 @@ function confirmScanInline() {
       }
     }
   });
-
-  // Détecte si c'est une notification FT
-  if (d.type === 'notification_ft') {
-    handleNotificationFT(d);
-    pendingScanData = null;
-    document.getElementById('scan-result-card').style.display = 'none';
-    if (fileQueue.length > 0) nextInQueue();
-    return;
-  }
    
   saveState();
   pendingScanData = null;
