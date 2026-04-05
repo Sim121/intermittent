@@ -369,21 +369,85 @@ function loadConfig() {
   // Historique ARE
   setTimeout(() => {
     const histEl = document.getElementById('are-historique');
-    if (histEl) {
-      const hist = state.config.historiqueAre || [];
-      if (hist.length) {
-        histEl.innerHTML = '<div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:8px;">Historique des droits</div>'
-          + [...hist].reverse().map(h => `
-            <div style="padding:8px 0;border-bottom:1px solid var(--border2);font-size:12px;">
-              <div style="font-weight:600;">${fmtDate(h.date)} → ${fmtDate(h.finDroits)}</div>
-              <div style="color:var(--muted);">${fmt(h.areJour)}/j · ${h.nht}h · SR ${fmt(h.sr)}</div>
-            </div>`).join('');
-      } else {
-        histEl.innerHTML = '<div style="font-size:12px;color:var(--muted);">Aucun historique — importe ta première notification FT</div>';
-      }
+    if (!histEl) return;
+    const hist = state.config.historiqueAre || [];
+    if (!hist.length) {
+      histEl.innerHTML = '<div style="font-size:12px;color:var(--muted);">Aucun historique — importe ta première notification FT</div>';
+      return;
     }
+
+    // Détecte les renouvellements anticipés
+    const sorted = [...hist].sort((a, b) => (a.date||'').localeCompare(b.date||''));
+    const withFlags = sorted.map((h, i) => {
+      let flag = '';
+      if (i > 0) {
+        const prev = sorted[i-1];
+        // Si la nouvelle ouverture est avant la date anniversaire précédente → anticipé
+        if (prev.finDroits && h.date && h.date < prev.finDroits) {
+          flag = `<span class="tag tag-orange" style="font-size:10px;margin-left:6px;">↩ Renouvellement anticipé</span>`;
+        }
+      }
+      return { ...h, flag };
+    });
+
+    histEl.innerHTML = '<div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:8px;">Historique des droits</div>'
+      + [...withFlags].reverse().map((h, i) => {
+        const realIdx = hist.length - 1 - i; // index dans le tableau original
+        return `
+          <div style="padding:10px 0;border-bottom:1px solid var(--border2);">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+              <div style="font-size:13px;font-weight:700;">${fmtDate(h.date)} → ${fmtDate(h.finDroits)} ${h.flag||''}</div>
+              <button onclick="removeHistoriqueAre(${realIdx})" style="background:none;border:none;cursor:pointer;color:var(--red);font-size:14px;padding:2px 6px;" title="Supprimer">✕</button>
+            </div>
+            <div style="font-size:12px;color:var(--muted);font-family:'JetBrains Mono',monospace;">
+              ${fmt(h.areJour)}/j · ${h.nht||'—'}h · SR ${fmt(h.sr)}
+              ${h.franchiseCp ? ` · CP ${h.franchiseCp}j` : ''}
+              ${h.franchiseSal ? ` · Sal. ${h.franchiseSal}j` : ''}
+            </div>
+          </div>`;
+      }).join('');
   }, 100);
 } // fermeture loadConfig
+
+function removeHistoriqueAre(index) {
+  if (!confirm('Supprimer cette entrée de l\'historique ?')) return;
+  state.config.historiqueAre.splice(index, 1);
+  saveState();
+  loadConfig();
+  toast('🗑️ Entrée supprimée');
+}
+
+function clearDroitsARE() {
+  if (!confirm('Supprimer les droits ARE actuels ?\nIls seront archivés dans l\'historique.')) return;
+  // Archive avant de supprimer
+  if (state.config.areJour) {
+    if (!state.config.historiqueAre) state.config.historiqueAre = [];
+    state.config.historiqueAre.push({
+      date:         state.config.areDebut,
+      areJour:      state.config.areJour,
+      sr:           state.config.sr,
+      nht:          state.config.nht,
+      sjr:          state.config.sjr,
+      finDroits:    state.config.finDroits,
+      franchiseCp:  state.config.franchiseCp,
+      franchiseSal: state.config.franchiseSal
+    });
+  }
+  // Remet à zéro
+  state.config.areJour     = 0;
+  state.config.sr          = 0;
+  state.config.nht         = 0;
+  state.config.sjr         = 0;
+  state.config.areDebut    = '';
+  state.config.finDroits   = '';
+  state.config.areReel     = 0;
+  state.config.franchiseCp  = 0;
+  state.config.franchiseSal = 0;
+  saveState();
+  loadConfig();
+  renderBilan();
+  toast('🗑️ Droits ARE supprimés — archivés dans l\'historique');
+}
 
 function saveConfig() {
   const g = (id, def) => { const el = document.getElementById(id); return el ? el.value : def; };
@@ -575,7 +639,7 @@ function handleNotificationFT(d) {
 
   const panel = document.createElement('div');
   panel.id = 'ft-notif-confirm-panel';
-  panel.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:900;width:calc(100% - 32px);max-width:520px;';
+  panel.style.cssText = 'margin-top:16px;';
   panel.innerHTML = `
     <div class="card" style="background:var(--surface);border:2px solid var(--accent);box-shadow:0 8px 32px rgba(0,0,0,0.15);">
       <div class="card-head">
@@ -619,7 +683,16 @@ function handleNotificationFT(d) {
       </div>
     </div>`;
 
-  document.body.appendChild(panel);
+  // Insère dans le div ARE des réglages si visible, sinon en bas de page
+  const areCard = document.getElementById('are-droits-card');
+  if (areCard) {
+    const existing = areCard.querySelector('#ft-notif-confirm-panel');
+    if (existing) existing.remove();
+    areCard.appendChild(panel);
+    areCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  } else {
+    document.body.appendChild(panel);
+  }
 }
 
 function confirmNotifFT(d, updateCurrent) {
