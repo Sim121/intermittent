@@ -3,8 +3,8 @@
    Core : state, auth, sync, navigation, settings, init
    ============================================================ */
 
-const APP_VERSION = '3.5.6';
-const APP_DATE    = '2026-04-03';
+const APP_VERSION = '3.5.6.1';
+const APP_DATE    = '2026-0s4-03';
 
 // ── STATE GLOBAL ──
 let state = {
@@ -315,6 +315,8 @@ function loadConfig() {
   s('cfg-are-reel',        state.config.areReel||'');
   s('cfg-franchise-cp',    state.config.franchiseCp||'');
   s('cfg-franchise-sal',   state.config.franchiseSal||'');
+  s('cfg-taux-csg', state.config.tauxCsg || 6.2);
+  s('cfg-rfr',      state.config.rfr || '');
   updateFamilialUI();
   updateSituationFiscale();
   const url = localStorage.getItem('apps-script-url');
@@ -359,6 +361,8 @@ function saveConfig() {
   state.config.areReel        = gf('cfg-are-reel', 0);
   state.config.franchiseCp    = gi('cfg-franchise-cp', 0);
   state.config.franchiseSal   = gi('cfg-franchise-sal', 0);
+  state.config.tauxCsg = parseFloat(g('cfg-taux-csg', 6.2)) || 6.2;
+  state.config.rfr     = gf('cfg-rfr', 0);
 
   // Calcule les parts fiscales depuis la situation réelle
   updateSituationFiscale();
@@ -615,6 +619,32 @@ function initCardLocks() {
       head.appendChild(btn);
     }
   });
+}
+
+   async function importCourrierCSG(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  toast('⏳ Analyse du courrier CSG…');
+  try {
+    const base64 = await fileToBase64(file);
+    const res = await appsScriptPost({
+      action: 'scanDoc',
+      docType: 'courrier_csg',
+      base64Data: base64,
+      mediaType: 'application/pdf'
+    });
+    if (res.ok && res.data?.taux_csg !== undefined) {
+      state.config.tauxCsg = res.data.taux_csg;
+      document.getElementById('cfg-taux-csg').value = res.data.taux_csg;
+      saveState();
+      toast('✅ Taux CSG mis à jour : ' + res.data.taux_csg + '%');
+    } else {
+      toast('ℹ️ Courrier CSG archivé — mets à jour le taux manuellement');
+    }
+  } catch(e) {
+    toast('❌ ' + e.message);
+  }
+  event.target.value = '';
 }
 
 // ============================================================
