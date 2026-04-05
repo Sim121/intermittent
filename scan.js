@@ -532,9 +532,10 @@ function confirmScanInline() {
     handleNotificationFT(d);
     pendingScanData = null;
     document.getElementById('scan-result-card').style.display = 'none';
+    if (fileQueue.length > 0) nextInQueue();
     return;
   }
-
+   
   saveState();
   pendingScanData = null;
 
