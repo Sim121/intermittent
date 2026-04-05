@@ -3,7 +3,7 @@
    Core : state, auth, sync, navigation, settings, init
    ============================================================ */
 
-const APP_VERSION = '3.5.8A';
+const APP_VERSION = '3.5.8B';
 const APP_DATE    = '2026-0s4-03';
 
 // ── STATE GLOBAL ──
@@ -582,54 +582,99 @@ function renderAll() {
 }
 
 function handleNotificationFT(d) {
-  const dateOuverture = parseDate(d.date_ouverture);
-  const actuelle      = state.config.areDebut;
-
-  // Historique des notifications
   if (!state.config.historiqueAre) state.config.historiqueAre = [];
 
-  // Vérifie si c'est plus récent
-  const isNewer = !actuelle || (dateOuverture && dateOuverture > actuelle);
+  const dateOuverture = parseDate(d.date_ouverture);
+  const actuelle      = state.config.areDebut;
+  const isNewer       = !actuelle || (dateOuverture && dateOuverture > actuelle);
 
-  const resume = `ARE ${fmt(d.are_jour)}/j · ${d.nht}h · SR ${fmt(d.sr)} · du ${fmtDate(d.date_ouverture)} au ${fmtDate(d.date_anniversaire)}`;
+  // Vérifie doublon
+  const alreadyStored = state.config.historiqueAre.some(h => h.date === d.date_ouverture);
 
-  if (isNewer) {
-    // Propose la mise à jour
-    const confirm = window.confirm(
-      `📄 Notification ARE détectée :\n${resume}\n\nCette notification est plus récente que vos droits actuels. Mettre à jour votre profil ?`
-    );
-    if (confirm) {
-      // Archive l'ancienne
-      if (state.config.areJour) {
-        state.config.historiqueAre.push({
-          date:         actuelle,
-          areJour:      state.config.areJour,
-          sr:           state.config.sr,
-          nht:          state.config.nht,
-          sjr:          state.config.sjr,
-          finDroits:    state.config.finDroits,
-          franchiseCp:  state.config.franchiseCp,
-          franchiseSal: state.config.franchiseSal
-        });
-      }
-      // Met à jour
-      if (d.are_jour)          state.config.areJour     = d.are_jour;
-      if (d.sr)                state.config.sr           = d.sr;
-      if (d.nht)               state.config.nht          = d.nht;
-      if (d.sjr)               state.config.sjr          = d.sjr;
-      if (d.date_ouverture)    state.config.areDebut     = d.date_ouverture;
-      if (d.date_anniversaire) state.config.finDroits    = d.date_anniversaire;
-      if (d.franchise_cp)      state.config.franchiseCp  = d.franchise_cp;
-      if (d.franchise_sal)     state.config.franchiseSal = d.franchise_sal;
-      if (d.annexe)            state.config.annexe       = d.annexe;
-      saveState();
-      loadConfig();
-      renderBilan();
-      toast('✅ Droits ARE mis à jour depuis la notification');
+  // Crée un encart de confirmation visuel
+  const existingPanel = document.getElementById('ft-notif-confirm-panel');
+  if (existingPanel) existingPanel.remove();
+
+  const panel = document.createElement('div');
+  panel.id = 'ft-notif-confirm-panel';
+  panel.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:900;width:calc(100% - 32px);max-width:520px;';
+  panel.innerHTML = `
+    <div class="card" style="background:var(--surface);border:2px solid var(--accent);box-shadow:0 8px 32px rgba(0,0,0,0.15);">
+      <div class="card-head">
+        <div class="card-head-title" style="color:var(--accent);">🏛️ Notification ARE détectée</div>
+        <button class="btn btn-ghost btn-sm" onclick="document.getElementById('ft-notif-confirm-panel').remove()">✕</button>
+      </div>
+      ${isNewer ? '<div class="alert alert-ok" style="font-size:12px;margin-bottom:12px;">✅ Cette notification est plus récente que vos droits actuels</div>' : '<div class="alert alert-warn" style="font-size:12px;margin-bottom:12px;">⚠️ Cette notification semble moins récente que vos droits actuels</div>'}
+      ${alreadyStored ? '<div class="alert alert-warn" style="font-size:12px;margin-bottom:12px;">⚠️ Cette notification semble déjà archivée</div>' : ''}
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;font-size:13px;">
+        <div style="background:var(--bg);padding:10px;border-radius:8px;">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);margin-bottom:4px;">ALLOCATION/JOUR</div>
+          <div style="font-weight:800;font-size:18px;color:var(--accent);">${fmt(d.are_jour)}</div>
+        </div>
+        <div style="background:var(--bg);padding:10px;border-radius:8px;">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);margin-bottom:4px;">SALAIRE DE RÉFÉRENCE</div>
+          <div style="font-weight:800;font-size:18px;">${fmt(d.sr)}</div>
+        </div>
+        <div style="background:var(--bg);padding:10px;border-radius:8px;">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);margin-bottom:4px;">HEURES</div>
+          <div style="font-weight:700;">${d.nht} h</div>
+        </div>
+        <div style="background:var(--bg);padding:10px;border-radius:8px;">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);margin-bottom:4px;">SJR</div>
+          <div style="font-weight:700;">${fmt(d.sjr)}/j</div>
+        </div>
+        <div style="background:var(--bg);padding:10px;border-radius:8px;">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);margin-bottom:4px;">OUVERTURE</div>
+          <div style="font-weight:700;">${fmtDate(d.date_ouverture)}</div>
+        </div>
+        <div style="background:var(--bg);padding:10px;border-radius:8px;">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);margin-bottom:4px;">DATE ANNIVERSAIRE</div>
+          <div style="font-weight:700;">${fmtDate(d.date_anniversaire)}</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;">
+        ${isNewer
+          ? `<button class="btn btn-primary" style="flex:2;" onclick="confirmNotifFT(${JSON.stringify(d).replace(/"/g,'&quot;')}, true)">✓ Mettre à jour mes droits</button>`
+          : `<button class="btn btn-primary" style="flex:2;" onclick="confirmNotifFT(${JSON.stringify(d).replace(/"/g,'&quot;')}, false)">📥 Ajouter à l'historique</button>`
+        }
+        <button class="btn btn-ghost" style="flex:1;" onclick="document.getElementById('ft-notif-confirm-panel').remove()">Non merci</button>
+      </div>
+    </div>`;
+
+  document.body.appendChild(panel);
+}
+
+function confirmNotifFT(d, updateCurrent) {
+  if (!state.config.historiqueAre) state.config.historiqueAre = [];
+
+  if (updateCurrent) {
+    // Archive les droits actuels s'ils existent
+    if (state.config.areJour) {
+      state.config.historiqueAre.push({
+        date:         state.config.areDebut,
+        areJour:      state.config.areJour,
+        sr:           state.config.sr,
+        nht:          state.config.nht,
+        sjr:          state.config.sjr,
+        finDroits:    state.config.finDroits,
+        franchiseCp:  state.config.franchiseCp,
+        franchiseSal: state.config.franchiseSal
+      });
     }
+    // Met à jour les droits courants
+    if (d.are_jour)          state.config.areJour     = d.are_jour;
+    if (d.sr)                state.config.sr           = d.sr;
+    if (d.nht)               state.config.nht          = d.nht;
+    if (d.sjr)               state.config.sjr          = d.sjr;
+    if (d.date_ouverture)    state.config.areDebut     = d.date_ouverture;
+    if (d.date_anniversaire) state.config.finDroits    = d.date_anniversaire;
+    if (d.franchise_cp)      state.config.franchiseCp  = d.franchise_cp;
+    if (d.franchise_sal)     state.config.franchiseSal = d.franchise_sal;
+    if (d.annexe)            state.config.annexe       = d.annexe;
+    toast('✅ Droits ARE mis à jour');
   } else {
-    // Notification plus ancienne — archive seulement
-    const alreadyStored = state.config.historiqueAre.some(h => h.date === dateOuverture);
+    // Ajoute seulement à l'historique
+    const alreadyStored = state.config.historiqueAre.some(h => h.date === d.date_ouverture);
     if (!alreadyStored) {
       state.config.historiqueAre.push({
         date:         d.date_ouverture,
@@ -641,12 +686,17 @@ function handleNotificationFT(d) {
         franchiseCp:  d.franchise_cp,
         franchiseSal: d.franchise_sal
       });
-      saveState();
+      toast('📥 Notification ajoutée à l\'historique');
+    } else {
+      toast('ℹ️ Notification déjà dans l\'historique');
     }
-    toast(`ℹ️ Notification archivée — moins récente que vos droits actuels (${fmtDate(actuelle)})`);
   }
-}
 
+  saveState();
+  loadConfig();
+  renderBilan();
+  document.getElementById('ft-notif-confirm-panel')?.remove();
+}
 function toggleCardLock(btn) {
   const card = btn.closest('.card');
   const locked = card.classList.toggle('card-locked');
