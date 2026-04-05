@@ -516,9 +516,18 @@ function confirmScanInline() {
     }
   });
 
+  // Détecte si c'est une notification FT
+  if (d.type === 'notification_ft') {
+    handleNotificationFT(d);
+    pendingScanData = null;
+    document.getElementById('scan-result-card').style.display = 'none';
+    return;
+  }
+
   saveState();
   pendingScanData = null;
-   // Traite les documents supplémentaires détectés dans le même fichier
+
+  // Traite les documents supplémentaires détectés dans le même fichier
   if (pendingExtraDocs.length > 0) {
     const next = pendingExtraDocs.shift();
     setTimeout(() => {
@@ -528,6 +537,7 @@ function confirmScanInline() {
     }, 500);
     return;
   }
+
   document.getElementById('scan-result-card').style.display = 'none';
   renderBilan();
   if (fileQueue.length > 0) nextInQueue();
