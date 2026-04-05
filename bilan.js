@@ -51,6 +51,10 @@ function renderBilan() {
   const sjrVal   = state.config.sjr || 0;
   const areCalc  = calcARENet(areJour, sjrVal, tauxCsg, tauxPas);
 
+  // Alerte si pas de droits renseignés
+  const noAre = document.getElementById('q-are-alerte');
+  if (noAre) noAre.style.display = (!state.config.areJour && !state.config.areDebut) ? 'block' : 'none';
+
   if (tH >= 507 || state.config.areJour > 0) {
     set('q-are-jour',     fmt(areCalc.brut) + ' brut');
     set('q-are-jour-net', fmt(areCalc.netAvantPas) + ' net (avant PAS)');
