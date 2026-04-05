@@ -90,11 +90,16 @@ function renderBilan() {
     tag.className   = tH >= 507 ? 'tag tag-green' : 'tag tag-gold';
   }
 
-  // Foyer
-  const areAnnuelle = state.config.areReel || (areJour * 30 * 12);
-  set('foyer-simon',   fmt(tNet));
-  set('foyer-conjoint', state.config.conjoint ? fmt(state.config.conjoint) : '—');
-  set('foyer-reste',    fmt(tNet + (state.config.conjoint||0) + (state.config.areReel||0) * 12));
+   // Dates ARE
+  if (state.config.areDebut) set('q-date-ouverture', fmtDate(state.config.areDebut));
+  if (state.config.finDroits) {
+    const fin = new Date(state.config.finDroits + 'T12:00:00');
+    const today = new Date();
+    const jRestants = Math.ceil((fin - today) / 86400000);
+    const dateAnnivEl = document.getElementById('q-date-anniversaire');
+    if (dateAnnivEl) dateAnnivEl.textContent = fmtDate(state.config.finDroits)
+      + (jRestants > 0 ? ` (dans ${jRestants}j)` : ' ⚠️ expiré');
+  }
 }
 
 // ── CALCUL IMPÔTS (barème 2024) ──
