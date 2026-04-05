@@ -3,7 +3,7 @@
    Core : state, auth, sync, navigation, settings, init
    ============================================================ */
 
-const APP_VERSION = '3.5.8B';
+const APP_VERSION = '3.5.9';
 const APP_DATE    = '2026-0s4-03';
 
 // ── STATE GLOBAL ──
@@ -457,41 +457,19 @@ async function importNotificationFT(event) {
   const file = event.target.files[0];
   if (!file) return;
   const statusEl = document.getElementById('are-import-status');
-  statusEl.style.display = 'block';
-  statusEl.className = 'alert alert-info';
-  statusEl.textContent = '⏳ Analyse de la notification en cours…';
+  if (statusEl) { statusEl.style.display = 'block'; statusEl.className = 'alert alert-info'; statusEl.textContent = '⏳ Analyse en cours…'; }
 
   try {
     const base64 = await fileToBase64(file);
-    const res = await appsScriptPost({
-      action: 'scanDoc',
-      docType: 'notification_ft',
-      base64Data: base64,
-      mediaType: 'application/pdf'
-    });
-
+    const res = await appsScriptPost({ action: 'scanDoc', docType: 'notification_ft', base64Data: base64, mediaType: 'application/pdf' });
     if (res.ok && res.data) {
-      const d = res.data;
-      // Met à jour la config avec les données extraites
-      if (d.are_jour)       { state.config.areJour    = d.are_jour;    document.getElementById('cfg-are-jour').value    = d.are_jour; }
-      if (d.sr)             { state.config.sr          = d.sr;          document.getElementById('cfg-sr').value          = d.sr; }
-      if (d.nht)            { state.config.nht         = d.nht;         document.getElementById('cfg-nht').value         = d.nht; }
-      if (d.sjr)            { state.config.sjr         = d.sjr;         document.getElementById('cfg-sjr').value         = d.sjr; }
-      if (d.date_ouverture) { state.config.areDebut    = d.date_ouverture; document.getElementById('cfg-are-debut').value = d.date_ouverture; }
-      if (d.date_anniversaire) { state.config.finDroits = d.date_anniversaire; document.getElementById('cfg-fin-droits').value = d.date_anniversaire; }
-      if (d.franchise_cp)   { state.config.franchiseCp  = d.franchise_cp;  document.getElementById('cfg-franchise-cp').value  = d.franchise_cp; }
-      if (d.franchise_sal)  { state.config.franchiseSal = d.franchise_sal; document.getElementById('cfg-franchise-sal').value = d.franchise_sal; }
-      saveState();
-      statusEl.className = 'alert alert-ok';
-      statusEl.textContent = '✅ Notification importée — droits mis à jour';
-      renderBilan();
+      if (statusEl) statusEl.style.display = 'none';
+      handleNotificationFT(res.data);
     } else {
-      statusEl.className = 'alert alert-err';
-      statusEl.textContent = '❌ ' + (res.error || 'Erreur d\'analyse');
+      if (statusEl) { statusEl.className = 'alert alert-err'; statusEl.textContent = '❌ ' + (res.error||'Erreur'); }
     }
   } catch(e) {
-    statusEl.className = 'alert alert-err';
-    statusEl.textContent = '❌ ' + e.message;
+    if (statusEl) { statusEl.className = 'alert alert-err'; statusEl.textContent = '❌ ' + e.message; }
   }
   event.target.value = '';
 }
