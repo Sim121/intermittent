@@ -3,7 +3,7 @@
    Core : state, auth, sync, navigation, settings, init
    ============================================================ */
 
-const APP_VERSION = '3.5.13';
+const APP_VERSION = '3.5.14';
 const APP_DATE    = '2026-0s4-03';
 
 // ── STATE GLOBAL ──
@@ -169,9 +169,12 @@ function saveLocal() { localStorage.setItem('intermittent-v2', JSON.stringify(st
 
 function saveState() {
   saveLocal();
-  // Sync vers l'extension Chrome si disponible
-  if (typeof chrome !== 'undefined' && chrome.storage) {
-    chrome.storage.local.set({ intermittent_state: state });
+  // Sync vers extension Chrome
+  if (typeof chrome !== 'undefined' && chrome.runtime) {
+    try {
+      const EXT_ID = 'COLLE_TON_ID_ICI'; // ← remplace par l'ID copié
+      chrome.runtime.sendMessage(EXT_ID, { type: 'sync', state }, () => {});
+    } catch(e) {}
   }
   if (getAppsScriptUrl() && isSessionValid()) {
     clearTimeout(syncDebounce);
