@@ -646,6 +646,15 @@ function handleNotificationFT(d) {
   }
 }
 
+function toggleCardLock(btn) {
+  const card = btn.closest('.card');
+  const locked = card.classList.toggle('card-locked');
+  btn.textContent = locked ? '🔒' : '🔓';
+  btn.style.background = locked ? '' : 'var(--accent-light)';
+  btn.style.borderColor = locked ? '' : 'var(--accent)';
+  btn.style.color       = locked ? '' : 'var(--accent)';
+}
+
 function initCardLocks() {
   document.querySelectorAll('.card[data-lockable]').forEach(card => {
     card.classList.add('card-locked');
