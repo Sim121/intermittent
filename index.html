@@ -140,18 +140,21 @@
           </div>
           <div class="card">
             <div class="card-head"><div class="card-head-title">ARE estimée</div><span class="tag tag-gray" id="are-status-tag">non calculé</span></div>
-            <div style="display:flex;gap:16px;align-items:flex-end;">
-              <div>
-                <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);margin-bottom:4px;">JOURNALIÈRE</div>
-                <div style="font-family:'Playfair Display',serif;font-size:28px;font-weight:700;color:var(--gold);" id="q-are-jour">— €</div>
-              </div>
-              <div>
-                <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);margin-bottom:4px;">MENSUELLE ≈</div>
-                <div style="font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:var(--ink2);" id="q-are-mois">— €</div>
-              </div>
-              <div id="are-historique" style="margin-top:12px;"></div>   
-            </div>
-            <div class="ft-row"><span class="ft-label">Date anniversaire</span><span class="ft-value" id="q-date-anniversaire">—</span></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+  <div>
+    <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);margin-bottom:4px;">JOURNALIÈRE BRUTE</div>
+    <div style="font-size:24px;font-weight:800;color:var(--orange);" id="q-are-jour">— €</div>
+  </div>
+  <div>
+    <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);margin-bottom:4px;">AVANT PAS</div>
+    <div style="font-size:20px;font-weight:700;color:var(--ink2);" id="q-are-jour-net">— €</div>
+  </div>
+</div>
+<div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);margin-bottom:4px;">APRÈS PAS · MENSUELLE</div>
+<div style="font-size:20px;font-weight:700;color:var(--green);" id="q-are-jour-pas">— €</div>
+<div style="font-size:13px;color:var(--muted);margin-top:4px;">≈ <span id="q-are-mois">— €</span>/mois</div>
+<div class="ft-row" style="margin-top:12px;"><span class="ft-label">Ouverture des droits</span><span class="ft-value" id="q-date-ouverture">—</span></div>
+<div class="ft-row"><span class="ft-label">Date anniversaire</span><span class="ft-value" id="q-date-anniversaire">—</span></div>
             <div class="progress-wrap">
               <div class="progress-label"><span>Progression vers les 507h</span><span id="q-heures-prog">0 / 507 h</span></div>
               <div class="progress-bar"><div class="progress-fill" id="q-heures-fill" style="width:0%"></div></div>
