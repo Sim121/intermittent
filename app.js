@@ -3,7 +3,7 @@
    Core : state, auth, sync, navigation, settings, init
    ============================================================ */
 
-const APP_VERSION = '3.5.12';
+const APP_VERSION = '3.5.13';
 const APP_DATE    = '2026-0s4-03';
 
 // ── STATE GLOBAL ──
@@ -692,7 +692,7 @@ function handleNotificationFT(d) {
     <div class="card" style="background:var(--surface);border:2px solid var(--accent);box-shadow:0 8px 32px rgba(0,0,0,0.15);">
       <div class="card-head">
         <div class="card-head-title" style="color:var(--accent);">🏛️ Notification ARE détectée</div>
-        <button class="btn btn-ghost btn-sm" onclick="document.getElementById('ft-notif-confirm-panel').remove()">✕</button>
+        <button class="btn btn-ghost btn-sm" onclick="document.getElementById('ft-notif-confirm-panel').remove();if(fileQueue.length>0)nextInQueue();">✕</button>
       </div>
       ${isNewer ? '<div class="alert alert-ok" style="font-size:12px;margin-bottom:12px;">✅ Cette notification est plus récente que vos droits actuels</div>' : '<div class="alert alert-warn" style="font-size:12px;margin-bottom:12px;">⚠️ Cette notification semble moins récente que vos droits actuels</div>'}
       ${alreadyStored ? '<div class="alert alert-warn" style="font-size:12px;margin-bottom:12px;">⚠️ Cette notification semble déjà archivée</div>' : ''}
@@ -727,7 +727,7 @@ function handleNotificationFT(d) {
           ? `<button class="btn btn-primary" style="flex:2;" onclick="confirmNotifFT(${JSON.stringify(d).replace(/"/g,'&quot;')}, true)">✓ Mettre à jour mes droits</button>`
           : `<button class="btn btn-primary" style="flex:2;" onclick="confirmNotifFT(${JSON.stringify(d).replace(/"/g,'&quot;')}, false)">📥 Ajouter à l'historique</button>`
         }
-        <button class="btn btn-ghost" style="flex:1;" onclick="document.getElementById('ft-notif-confirm-panel').remove()">Non merci</button>
+        <button class="btn btn-ghost" style="flex:1;" onclick="document.getElementById('ft-notif-confirm-panel').remove();if(fileQueue.length>0)nextInQueue();">Non merci</button>
       </div>
     </div>`;
 
