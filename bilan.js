@@ -42,6 +42,10 @@ function renderBilan() {
   set('b-impots-reste',  fmt(Math.max(0, ie - tPas)));
 
   // ARE — utilise les droits réels si disponibles, sinon calcule
+  const annexe   = parseInt(state.config.annexe) || 8;
+  const areJour  = state.config.areJour > 0
+    ? state.config.areJour
+    : calcAREJournaliere(tBrut, tH, annexe);
   const tauxCsg  = state.config.tauxCsg || 6.2;
   const tauxPas  = state.config.tauxPas || 0;
   const sjrVal   = state.config.sjr || 0;
