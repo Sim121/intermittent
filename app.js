@@ -602,11 +602,6 @@ function handleNotificationFT(d) {
   }
 }
 
-btn.className = 'btn btn-ghost btn-sm card-lock-btn';
-      btn.textContent = '🔒';
-      btn.style.cssText = 'opacity:1;pointer-events:auto;font-size:14px;';
-      btn.onclick = (e) => { e.stopPropagation(); toggleCardLock(btn); };
-
 function initCardLocks() {
   document.querySelectorAll('.card[data-lockable]').forEach(card => {
     card.classList.add('card-locked');
