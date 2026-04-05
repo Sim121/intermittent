@@ -377,7 +377,11 @@ body {
   color: var(--muted);
   border-color: var(--border2);
 }
-.card-locked .btn { pointer-events: none; opacity: 0.5; }
+
+.card-locked .field input,
+.card-locked .field select,
+.card-locked .field textarea { pointer-events: none; }
+.card-locked .btn:not(.card-lock-btn) { pointer-events: none; opacity: 0.5; }
 
 /* ── COLLAPSIBLE ── */
 .card-collapsible .card-body {
