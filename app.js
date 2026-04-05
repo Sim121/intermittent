@@ -339,6 +339,7 @@ function loadConfig() {
       }
     }
   }, 100);
+} // fermeture loadConfig
 
 function saveConfig() {
   const g = (id, def) => { const el = document.getElementById(id); return el ? el.value : def; };
