@@ -445,7 +445,10 @@
           <div class="card" id="are-droits-card" data-lockable>
             <div class="card-head">
               <div class="card-head-title">Droits ARE en cours</div>
-              <button class="btn btn-ghost btn-sm" onclick="document.getElementById('file-input-ft').click()">📄 Importer notification</button>
+              <div style="display:flex;gap:6px;">
+                <button class="btn btn-ghost btn-sm" onclick="document.getElementById('file-input-ft').click()">📄 Importer</button>
+                <button class="btn btn-danger btn-sm" onclick="clearDroitsARE()" title="Supprimer les droits actuels">🗑️</button>
+              </div>
               <input type="file" id="file-input-ft" accept=".pdf" style="display:none;" onchange="importNotificationFT(event)">
             </div>
             <div id="are-import-status" style="display:none;" class="alert alert-ok" style="margin-bottom:12px;"></div>
