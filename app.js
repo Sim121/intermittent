@@ -3,7 +3,7 @@
    Core : state, auth, sync, navigation, settings, init
    ============================================================ */
 
-const APP_VERSION = '3.5.6.c';
+const APP_VERSION = '3.5.7';
 const APP_DATE    = '2026-0s4-03';
 
 // ── STATE GLOBAL ──
@@ -218,6 +218,50 @@ async function loadFromServer() {
   } catch(e) {
     setSyncStatus('error', 'Erreur');
     toast('❌ Chargement : ' + e.message);
+  }
+}
+
+async function listBackups() {
+  const el = document.getElementById('backups-list');
+  el.style.display = 'block';
+  el.innerHTML = '<div class="loading-block"><div class="loader"></div></div>';
+  try {
+    const res = await appsScriptGet({ action: 'listBackups', token: session.token });
+    if (!res.ok) { el.innerHTML = '<div class="alert alert-err">❌ ' + res.error + '</div>'; return; }
+    if (!res.backups.length) { el.innerHTML = '<div style="font-size:13px;color:var(--muted);">Aucune sauvegarde trouvée</div>'; return; }
+    el.innerHTML = res.backups.map(b => {
+      const date = new Date(b.date).toLocaleString('fr-FR', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
+      const size = (b.size / 1024).toFixed(0) + ' Ko';
+      return `<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border2);">
+        <div style="flex:1;">
+          <div style="font-size:13px;font-weight:600;">${date}</div>
+          <div style="font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace;">${size} · ${b.name}</div>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="loadBackup('${b.id}','${date}')">📥 Charger</button>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    el.innerHTML = '<div class="alert alert-err">❌ ' + e.message + '</div>';
+  }
+}
+
+async function loadBackup(fileId, dateLabel) {
+  if (!confirm(`Restaurer la sauvegarde du ${dateLabel} ?\nCela remplacera toutes les données actuelles.`)) return;
+  toast('⏳ Chargement de la sauvegarde…');
+  try {
+    const res = await appsScriptPost({ action: 'loadBackup', fileId });
+    if (res.ok && res.data) {
+      if (res.data.contrats) state.contrats = res.data.contrats;
+      if (res.data.frais)    state.frais    = res.data.frais;
+      if (res.data.config)   state.config   = { ...state.config, ...res.data.config };
+      migrateData(); saveLocal(); renderAll(); loadConfig();
+      toast('✅ Sauvegarde restaurée');
+      document.getElementById('backups-list').style.display = 'none';
+    } else {
+      toast('❌ ' + (res.error || 'Erreur'));
+    }
+  } catch(e) {
+    toast('❌ ' + e.message);
   }
 }
 
