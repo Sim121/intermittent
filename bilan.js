@@ -75,19 +75,16 @@ function renderBilan() {
   set('b-impots-reste',  fmt(Math.max(0, ie - tPas)));
 
   // ARE — utilise les droits réels si disponibles, sinon calcule
-  const annexe  = parseInt(state.config.annexe) || 8;
-  const areJour = state.config.areJour > 0
-    ? state.config.areJour  // droits réels depuis notification FT
-    : calcAREJournaliere(tBrut, tH, annexe); // estimation
-
-  const areSource = state.config.areJour > 0 ? '(notification FT)' : '(estimation)';
+  const tauxCsg  = state.config.tauxCsg || 6.2;
+  const tauxPas  = state.config.tauxPas || 0;
+  const sjrVal   = state.config.sjr || 0;
+  const areCalc  = calcARENet(areJour, sjrVal, tauxCsg, tauxPas);
 
   if (tH >= 507 || state.config.areJour > 0) {
-    set('q-are-jour', fmt(areJour) + ' ' + areSource);
-    set('q-are-mois', fmt(state.config.areReel || areJour * 30));
-  } else {
-    set('q-are-jour', '— (507h non atteintes)');
-    set('q-are-mois', '—');
+    set('q-are-jour',     fmt(areCalc.brut) + ' brut');
+    set('q-are-jour-net', fmt(areCalc.netAvantPas) + ' net (avant PAS)');
+    set('q-are-jour-pas', fmt(areCalc.net) + ' net (après PAS ' + tauxPas + '%)');
+    set('q-are-mois',     fmt(state.config.areReel || areCalc.net * 30));
   }
 
   // Date anniversaire
@@ -249,4 +246,22 @@ function deleteFrais(id) {
   state.frais = state.frais.filter(f => f.id !== id);
   saveState(); renderFrais(); renderBilan();
   toast('🗑️ Supprimé');
+}
+
+function calcARENet(areJourBrut, sjr, tauxCsg, tauxPas) {
+  const assiette    = areJourBrut * 0.9825; // abattement 1.75%
+  const csg         = assiette * (tauxCsg / 100);
+  const crds        = tauxCsg > 0 ? assiette * 0.005 : 0;
+  const retraiteC   = sjr * 0.03;
+  const netAvantPas = areJourBrut - csg - crds - retraiteC;
+  const pas         = netAvantPas * ((tauxPas || 0) / 100);
+  return {
+    brut:       areJourBrut,
+    csg,
+    crds,
+    retraiteC,
+    netAvantPas,
+    pas,
+    net:        netAvantPas - pas
+  };
 }
