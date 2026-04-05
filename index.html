@@ -366,10 +366,12 @@
           <!-- SAUVEGARDE -->
           <div class="card">
             <div class="card-head"><div class="card-head-title">Sauvegarde Drive</div><span class="tag tag-gray" id="last-sync-label">—</span></div>
-            <div style="display:flex;gap:8px;">
+            <div style="display:flex;gap:8px;margin-bottom:12px;">
               <button class="btn btn-primary" style="flex:1;" onclick="syncToServer(true)">☁️ Sauvegarder</button>
-              <button class="btn btn-ghost" style="flex:1;" onclick="loadFromServer()">📥 Restaurer</button>
+              <button class="btn btn-ghost" style="flex:1;" onclick="loadFromServer()">📥 Restaurer dernière</button>
             </div>
+            <button class="btn btn-ghost" style="width:100%;margin-bottom:8px;" onclick="listBackups()">📋 Voir l'historique des sauvegardes</button>
+            <div id="backups-list" style="display:none;margin-top:8px;"></div>
           </div>
 
           <!-- PROFIL -->
