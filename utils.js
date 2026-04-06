@@ -25,16 +25,45 @@ function fmtDate(s) {
 
 function parseDate(dateStr) {
   if (!dateStr) return null;
-  if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr;
-  if (/^\d{2}\/\d{2}\/\d{4}$/.test(dateStr)) {
-    const [d, m, y] = dateStr.split('/');
+  const s = String(dateStr).trim();
+
+  // YYYY-MM-DD déjà bon
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+
+  // DD/MM/YYYY
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(s)) {
+    const [d, m, y] = s.split('/');
     return `${y}-${m}-${d}`;
   }
-  if (/^\d{2}-\d{2}-\d{4}$/.test(dateStr)) {
-    const [d, m, y] = dateStr.split('-');
+
+  // DD/MM/YY (année 2 chiffres)
+  if (/^\d{2}\/\d{2}\/\d{2}$/.test(s)) {
+    const [d, m, y] = s.split('/');
+    const fullY = parseInt(y) < 50 ? '20' + y : '19' + y;
+    return `${fullY}-${m}-${d}`;
+  }
+
+  // DD-MM-YYYY
+  if (/^\d{2}-\d{2}-\d{4}$/.test(s)) {
+    const [d, m, y] = s.split('-');
     return `${y}-${m}-${d}`;
   }
-  return dateStr;
+
+  // "18/12/2023 au 20/12/2023" → prend la première date
+  const rangeMatch = s.match(/(\d{2}\/\d{2}\/\d{4})/);
+  if (rangeMatch) {
+    const [d, m, y] = rangeMatch[1].split('/');
+    return `${y}-${m}-${d}`;
+  }
+
+  // "18/12/2023 au 20/12/2023" avec tirets
+  const rangeDash = s.match(/(\d{2}-\d{2}-\d{4})/);
+  if (rangeDash) {
+    const [d, m, y] = rangeDash[1].split('-');
+    return `${y}-${m}-${d}`;
+  }
+
+  return null;
 }
 
 function toast(msg) {
