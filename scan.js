@@ -124,7 +124,6 @@ async function processFile(file) {
       } else {
         pendingExtraDocs = [];
       }
-      }
       showScanResult(res.data);
     } else {
       document.getElementById('scan-result-card').style.display  = 'block';
