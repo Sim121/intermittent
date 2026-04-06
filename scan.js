@@ -176,6 +176,8 @@ function showScanResult(d) {
       + '<button class="btn btn-primary btn-sm" style="width:100%;margin-top:8px;" onclick="keepNew()">↑ Remplacer</button>'
       + '</div>'
       + '</div>'
+      + '</div>'
+      + '<button class="btn btn-ghost btn-sm" style="width:100%;margin-top:8px;" onclick="forceNewContrat()">➕ Forcer la création d\'un nouveau contrat</button>'
       + '</div>';
     // Cache le bouton Enregistrer jusqu'au choix
     setTimeout(() => { const btn = document.getElementById('btn-confirm-scan'); if (btn) btn.style.display = 'none'; }, 50);
@@ -240,6 +242,14 @@ function showScanResult(d) {
     + '<button class="btn btn-primary" id="btn-confirm-scan" onclick="confirmScanInline()" style="margin-top:16px;">✓ Enregistrer comme ' + (typeLabels[d.type]||d.type) + '</button>'
     + '<button class="btn btn-ghost" style="margin-top:8px;width:100%;" onclick="cancelScan()">Annuler</button>'
     + '</div>';
+}
+
+function forceNewContrat() {
+  const sel = document.getElementById('scan-contrat-select');
+  if (sel) sel.value = '';
+  const banner = document.querySelector('.alert-warn');
+  if (banner) banner.style.display = 'none';
+  toast('➕ Nouveau contrat sera créé à la validation');
 }
 
 // ── ACTIONS ──
@@ -379,7 +389,6 @@ function updateScanField(key, value) {
 }
 
 function findDuplicateContrat(d, docType) {
-  // Cherche un contrat qui a déjà ce type de document avec le même employeur/période
   const dateStr = parseDate(d.date_travail) || parseDate(d.date_debut) || parseDate(d.date_fin) || (() => {
     const mi = MONTHS.indexOf(d.mois);
     const an = parseInt(d.annee);
@@ -388,20 +397,33 @@ function findDuplicateContrat(d, docType) {
   if (!dateStr) return null;
 
   const empNorm = (d.employeur||'').toUpperCase().replace(/\s+/g,'');
-  const [y, m]  = dateStr.split('-').map(Number);
+  const [y, m, day] = dateStr.split('-').map(Number);
+  const hasExactDay = day && day > 1; // Si jour précis (pas juste un 1er du mois par défaut)
 
   return state.contrats.find(c => {
     if (!c.dateDebut) return false;
-    const cd = new Date(c.dateDebut + 'T12:00:00');
-    if (cd.getFullYear() !== y || cd.getMonth() !== m-1) return false;
+    const cd    = new Date(c.dateDebut + 'T12:00:00');
     const cNorm = c.employeur.toUpperCase().replace(/\s+/g,'');
-    const sameEmp = cNorm === empNorm || cNorm.includes(empNorm.slice(0,6)) || empNorm.includes(cNorm.slice(0,6));
+
+    const sameEmp = cNorm === empNorm ||
+      cNorm.includes(empNorm.slice(0,6)) ||
+      empNorm.includes(cNorm.slice(0,6));
     if (!sameEmp) return false;
+
+    // Si on a une date exacte → compare date exacte
+    if (hasExactDay) {
+      const sameDateExact = c.dateDebut === dateStr;
+      if (!sameDateExact) return false;
+    } else {
+      // Sinon compare par mois
+      if (cd.getFullYear() !== y || cd.getMonth() !== m - 1) return false;
+    }
+
     // Vérifie si ce type de document est déjà présent
-    if (docType === 'bulletin' && c.hasBulletin) return true;
-    if (docType === 'aem'      && c.hasAEM)      return true;
-    if (docType === 'conges'   && c.hasCS)        return true;
-    if (docType === 'contrat'  && c.hasContrat)   return true;
+    if (docType === 'bulletin' && c.sources?.bulletin) return true;
+    if (docType === 'aem'      && c.sources?.aem)      return true;
+    if (docType === 'conges'   && c.sources?.conges)   return true;
+    if (docType === 'contrat'  && c.sources?.contrat)  return true;
     return false;
   });
 }
