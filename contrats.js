@@ -253,8 +253,8 @@ function renderDetailBody(c) {
     ${c.paiementAuto ? '<div class="alert alert-info" style="font-size:12px;margin-top:8px;">ℹ️ Ce contrat date de plus d\'un an — règlement estimé à J+30 après la fin du contrat. Modifie la date si nécessaire.</div>' : ''}
     </div>
     ${card('📎 Documents rattachés', docsContent, `id="docs-card-${c.id}"`)}
-    ${card('ℹ️ Informations', infoContent)}
-    ${card('💰 Rémunération', remuContent)}
+    ${card('ℹ️ Informations', infoContent, '', true)}
+    ${card('💰 Rémunération', remuContent, '', true)}
     ${card('🏛️ France Travail', ftContent)}
     ${card('🧾 Frais affiliés', fraisContent + `<button class="btn btn-ghost btn-sm" style="margin-top:8px;width:100%;" onclick="closeDetail();setTimeout(()=>{openSheet('sheet-add-frais');document.getElementById('f-contrat-link').value='${c.id}'},150)">＋ Ajouter un frais</button>`)}
     ${c.comment ? card('💬 Commentaire', `<div style="font-size:13px;line-height:1.6;">${c.comment}</div>`) : ''}
