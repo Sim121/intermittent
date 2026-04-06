@@ -893,7 +893,7 @@ function initGlobalDrop() {
 
     const files = Array.from(e.dataTransfer.files)
       .filter(f => /\.(pdf|jpg|jpeg|png|heic|heif|webp|tiff|bmp)$/i.test(f.name))
-      .slice(0, 4);
+      .slice(0, 20);
 
     if (!files.length) { toast('❌ Format non supporté'); return; }
     globalDropFiles = files;
@@ -911,8 +911,8 @@ function showGlobalDropModal(files) {
       <button onclick="removeGlobalDropFile(${i})" style="background:none;border:none;cursor:pointer;color:var(--red);font-size:14px;flex-shrink:0;">✕</button>
     </div>
   `).join('');
-  if (files.length > 4) {
-    list.innerHTML += `<div style="font-size:12px;color:var(--orange);margin-top:4px;">⚠️ Maximum 4 fichiers — seuls les 4 premiers sont listés</div>`;
+  if (files.length > 20) {
+    list.innerHTML += `<div style="font-size:12px;color:var(--orange);margin-top:4px;">⚠️ Maximum 20 fichiers — seuls les 20 premiers sont listés</div>`;
   }
   document.getElementById('global-drop-modal').style.display = 'flex';
 }
