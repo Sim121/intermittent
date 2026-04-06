@@ -489,14 +489,40 @@ function confirmScanInline() {
     const dateFin   = parseDate(d.date_fin) || dateDebut;
     const match     = linkedId ? state.contrats.find(x => x.id === linkedId) : findMatchingContrat(d.employeur, dateDebut);
     if (match) {
-      if (!match.sources) match.sources = {};
-      match.sources.contrat = { brutV: d.cachet_brut_total||0, salaireBase: d.salaire_base||0, droits: d.droits_complementaires||0, cachets: d.cachets||0, heures: d.h_prevues||0, poste: d.poste||d.nature_contrat||'', dateDebut, dateFin };
+      if (!match.sources) match.sources = {};match.sources.contrat = { 
+        brutV:       d.cachet_brut_total || d.salaire_brut || 0,
+        salaireBase: d.salaire_base      || 0,
+        droits:      d.droits_complementaires || 0,
+        cachets:     d.cachets           || 0,
+        heures:      d.h_prevues || d.h_totales || d.nb_heures || 0,
+        poste:       d.poste || d.nature_contrat || '',
+        dateDebut,
+        dateFin
+      };
       if (!match.dateDebut) match.dateDebut = dateDebut;
       if (!match.dateFin)   match.dateFin   = dateFin;
       recalcContrat(match);
       toast('✅ Contrat rattaché à : ' + match.employeur);
-    } else {
-      const c = { id: Date.now().toString(), employeur: (d.employeur||'').toUpperCase().trim(), poste: d.poste||d.nature_contrat||'', dateDebut, dateFin, paye:false, ref:'', comment:'', docs:[], sources: { contrat: { brutV: d.cachet_brut_total||0, salaireBase: d.salaire_base||0, droits: d.droits_complementaires||0, cachets: d.cachets||0, heures: d.h_prevues||0, poste: d.poste||d.nature_contrat||'' }, bulletin:null, aem:null, conges:null } };
+    } else {const c = { 
+  id: Date.now().toString(), 
+  employeur: (d.employeur||'').toUpperCase().trim(), 
+  poste: d.poste||d.nature_contrat||'', 
+  dateDebut, dateFin, 
+  paye:false, ref:'', comment:'', docs:[],
+  sources: { 
+    contrat: { 
+      brutV:       d.cachet_brut_total || d.salaire_brut || 0,
+      salaireBase: d.salaire_base      || 0,
+      droits:      d.droits_complementaires || 0,
+      cachets:     d.cachets           || 0,
+      heures:      d.h_prevues || d.h_totales || d.nb_heures || 0,
+      poste:       d.poste || d.nature_contrat || '',
+      dateDebut,
+      dateFin
+    }, 
+    bulletin: null, aem: null, conges: null 
+  } 
+};
       recalcContrat(c);
       state.contrats.push(c);
       toast('✅ Contrat enregistré');
@@ -508,12 +534,42 @@ function confirmScanInline() {
     const dateStr  = parseDate(d.date_debut) || fallback;
     const match   = linkedId ? state.contrats.find(x => x.id === linkedId) : findMatchingContrat(d.employeur, dateStr);
     if (match) {
-      if (!match.sources) match.sources = {};
-      match.sources.bulletin = { brutV: d.salaire_brut||0, netImp: d.net_imposable||0, netV: d.net_percu||0, pasV: d.pas_preleve||0, tauxPas: d.taux_pas||0, heures: d.h_totales||0, cachets: d.cachets||0, poste: d.emploi_aem||d.poste||'', datePaie: parseDate(d.date_paiement)||'' };
+      if (!match.sources) match.sources = {};match.sources.bulletin = { 
+  brutV:   d.salaire_brut    || 0,
+  netImp:  d.net_imposable   || 0,
+  netV:    d.net_percu       || 0,
+  pasV:    d.pas_preleve     || 0,
+  tauxPas: d.taux_pas        || 0,
+  heures:  d.h_totales       || d.nb_heures || 0,
+  cachets: d.cachets         || d.nb_cachets || 0,
+  poste:   d.emploi_aem || d.poste || '',
+  datePaie: parseDate(d.date_paiement) || ''
+};
       recalcContrat(match);
       toast('✅ Bulletin rattaché à : ' + match.employeur);
-    } else {
-      const c = { id: Date.now().toString(), employeur: (d.employeur||'').toUpperCase().trim(), poste:'', dateDebut: dateStr, dateFin: dateStr, paye:false, ref:'', comment:'', docs:[], sources: { contrat:null, bulletin: { brutV: d.salaire_brut||0, netImp: d.net_imposable||0, netV: d.net_percu||0, pasV: d.pas_preleve||0, tauxPas: d.taux_pas||0, heures: d.h_totales||0, cachets: d.cachets||0 }, aem:null, conges:null } };
+    } else {const c = { 
+  id: Date.now().toString(), 
+  employeur: (d.employeur||'').toUpperCase().trim(), 
+  poste: d.emploi_aem || d.poste || '',
+  dateDebut: parseDate(d.date_debut) || dateStr, 
+  dateFin:   parseDate(d.date_fin)   || dateStr, 
+  paye:false, ref:'', comment:'', docs:[],
+  sources: { 
+    contrat: null, 
+    bulletin: { 
+      brutV:   d.salaire_brut  || 0,
+      netImp:  d.net_imposable || 0,
+      netV:    d.net_percu     || 0,
+      pasV:    d.pas_preleve   || 0,
+      tauxPas: d.taux_pas      || 0,
+      heures:  d.h_totales     || d.nb_heures || 0,
+      cachets: d.cachets       || d.nb_cachets || 0,
+      poste:   d.emploi_aem || d.poste || '',
+      datePaie: parseDate(d.date_paiement) || ''
+    }, 
+    aem: null, conges: null 
+  } 
+};
       recalcContrat(c);
       state.contrats.push(c);
       toast('✅ Bulletin → nouveau contrat');
