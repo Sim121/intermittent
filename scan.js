@@ -152,6 +152,42 @@ function showScanResult(d) {
 
   // Correspondance contrat existant
   let matchInfo = '';
+
+  // Bouton multi-dates pour les contrats — affiché en haut
+  if (d.type === 'contrat') {
+    const datesDetectees = [];
+    if (parseDate(d.date_debut)) datesDetectees.push(parseDate(d.date_debut));
+    if (parseDate(d.date_fin) && parseDate(d.date_fin) !== parseDate(d.date_debut)) datesDetectees.push(parseDate(d.date_fin));
+    // Dates supplémentaires éventuellement détectées par l'IA
+    if (d.dates_supplementaires && Array.isArray(d.dates_supplementaires)) {
+      d.dates_supplementaires.forEach(dt => {
+        const p = parseDate(dt);
+        if (p && !datesDetectees.includes(p)) datesDetectees.push(p);
+      });
+    }
+    const datesInputs = datesDetectees.map(dt => `
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
+        <input type="date" class="multi-date-input" value="${dt}" style="flex:1;padding:8px;border:1.5px solid var(--border);border-radius:6px;font-size:13px;background:var(--surface);">
+        <button onclick="this.parentElement.remove()" style="background:none;border:none;cursor:pointer;color:var(--red);font-size:16px;">✕</button>
+      </div>`).join('');
+
+    matchInfo += `
+      <div class="card" style="background:var(--accent-light);border:1.5px solid var(--accent);margin-bottom:12px;">
+        <div class="card-head" onclick="toggleMultiDatesPanel()" style="cursor:pointer;">
+          <div class="card-head-title" style="color:var(--accent);">📅 Ce contrat couvre plusieurs dates ?</div>
+          <span style="font-size:11px;color:var(--accent);">▼</span>
+        </div>
+        <div id="multi-dates-panel" style="display:none;margin-top:8px;">
+          <div style="font-size:12px;color:var(--muted);margin-bottom:12px;">
+            Un contrat séparé sera créé pour chaque date avec les mêmes infos employeur/poste/montant.
+          </div>
+          <div id="multi-dates-list">${datesInputs}</div>
+          <button class="btn btn-ghost btn-sm" style="width:100%;margin-top:4px;" onclick="addMultiDate()">＋ Ajouter une date</button>
+          <button class="btn btn-primary" style="width:100%;margin-top:8px;" onclick="confirmMultiDates()">✓ Créer les contrats</button>
+        </div>
+      </div>`;
+  }
+
   // Vérifie d'abord si c'est un doublon
   const docTypeForDup = d.type || currentDocType;
   const duplicate = findDuplicateContrat(d, docTypeForDup);
@@ -240,10 +276,14 @@ function showScanResult(d) {
     + matchInfo
     + rows
     + '<button class="btn btn-primary" id="btn-confirm-scan" onclick="confirmScanInline()" style="margin-top:16px;">✓ Enregistrer comme ' + (typeLabels[d.type]||d.type) + '</button>'
-    + (d.type === 'contrat' ? '<button class="btn btn-ghost" style="margin-top:8px;width:100%;" onclick="showMultiDatesPanel()">📅 Ce contrat couvre plusieurs dates</button>' : '')
-    + '<div id="multi-dates-panel" style="display:none;margin-top:12px;"></div>'
     + '<button class="btn btn-ghost" style="margin-top:8px;width:100%;" onclick="cancelScan()">Annuler</button>'
     + '</div>';
+}
+
+function toggleMultiDatesPanel() {
+  const panel = document.getElementById('multi-dates-panel');
+  if (!panel) return;
+  panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
 }
 
 function forceNewContrat() {
@@ -284,21 +324,7 @@ function cancelScan() {
 }
 
 function showMultiDatesPanel() {
-  const panel = document.getElementById('multi-dates-panel');
-  if (!panel) return;
-  panel.style.display = 'block';
-  panel.innerHTML = `
-    <div class="card" style="background:var(--accent-light);border:1.5px solid var(--accent);">
-      <div class="card-head"><div class="card-head-title" style="color:var(--accent);">📅 Dates multiples</div></div>
-      <div style="font-size:12px;color:var(--muted);margin-bottom:12px;">
-        Ajoute chaque date de représentation. Un contrat séparé sera créé pour chaque date, avec les mêmes informations employeur/poste/montant.
-      </div>
-      <div id="multi-dates-list"></div>
-      <button class="btn btn-ghost btn-sm" style="width:100%;margin-top:8px;" onclick="addMultiDate()">＋ Ajouter une date</button>
-      <button class="btn btn-primary" style="width:100%;margin-top:8px;" onclick="confirmMultiDates()">✓ Créer les contrats</button>
-    </div>`;
-  // Ajoute une première date par défaut
-  addMultiDate();
+  toggleMultiDatesPanel();
 }
 
 function addMultiDate() {
