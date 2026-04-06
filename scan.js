@@ -167,36 +167,35 @@ function showScanResult(d) {
   let matchInfo = '';
 
   // Bouton multi-dates pour les contrats — affiché en haut
-  if (d.type === 'contrat') {
-    const datesDetectees = [];
-    if (parseDate(d.date_debut)) datesDetectees.push(parseDate(d.date_debut));
-    if (parseDate(d.date_fin) && parseDate(d.date_fin) !== parseDate(d.date_debut)) datesDetectees.push(parseDate(d.date_fin));
-    // Dates supplémentaires éventuellement détectées par l'IA
-    if (d.dates_supplementaires && Array.isArray(d.dates_supplementaires)) {
-      d.dates_supplementaires.forEach(dt => {
-        const p = parseDate(dt);
-        if (p && !datesDetectees.includes(p)) datesDetectees.push(p);
-      });
-    }
-    const datesInputs = datesDetectees.map(dt => `
+  if (d.type === 'contrat' && d.dates_supplementaires?.length > 1) {
+    const datesInputs = d.dates_supplementaires.map(dt => `
       <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
         <input type="date" class="multi-date-input" value="${dt}" style="flex:1;padding:8px;border:1.5px solid var(--border);border-radius:6px;font-size:13px;background:var(--surface);">
         <button onclick="this.parentElement.remove()" style="background:none;border:none;cursor:pointer;color:var(--red);font-size:16px;">✕</button>
       </div>`).join('');
 
     matchInfo += `
-      <div class="card" style="background:var(--accent-light);border:1.5px solid var(--accent);margin-bottom:12px;">
-        <div class="card-head" onclick="toggleMultiDatesPanel()" style="cursor:pointer;">
-          <div class="card-head-title" style="color:var(--accent);">📅 Ce contrat couvre plusieurs dates ?</div>
-          <span style="font-size:11px;color:var(--accent);">▼</span>
+      <div class="card" style="background:var(--gold-light);border:1.5px solid var(--gold);margin-bottom:12px;">
+        <div class="card-head">
+          <div class="card-head-title" style="color:var(--gold);">📅 Contrat multi-dates détecté</div>
         </div>
-        <div id="multi-dates-panel" style="display:none;margin-top:8px;">
-          <div style="font-size:12px;color:var(--muted);margin-bottom:12px;">
-            Un contrat séparé sera créé pour chaque date avec les mêmes infos employeur/poste/montant.
-          </div>
+        <div style="font-size:13px;margin-bottom:12px;">
+          Ce contrat indique <strong>${d.dates_supplementaires.length} dates</strong> de représentation.<br>
+          <span style="font-size:12px;color:var(--muted);">Chaque date aura-t-elle son propre bulletin de salaire et AEM ?</span>
+        </div>
+        <div style="display:flex;gap:8px;margin-bottom:16px;">
+          <button class="btn btn-primary" style="flex:1;" onclick="choixMultiDates('separate')">
+            ✂️ Oui — créer un contrat par date
+          </button>
+          <button class="btn btn-ghost" style="flex:1;" onclick="choixMultiDates('single')">
+            📋 Non — un seul contrat
+          </button>
+        </div>
+        <div id="multi-dates-confirm" style="display:none;">
+          <div style="font-size:12px;color:var(--muted);margin-bottom:8px;">Dates détectées — modifie si nécessaire :</div>
           <div id="multi-dates-list">${datesInputs}</div>
           <button class="btn btn-ghost btn-sm" style="width:100%;margin-top:4px;" onclick="addMultiDate()">＋ Ajouter une date</button>
-          <button class="btn btn-primary" style="width:100%;margin-top:8px;" onclick="confirmMultiDates()">✓ Créer les contrats</button>
+          <button class="btn btn-primary" style="width:100%;margin-top:8px;" onclick="confirmMultiDates()">✓ Créer ${d.dates_supplementaires.length} contrats</button>
         </div>
       </div>`;
   }
@@ -291,6 +290,28 @@ function showScanResult(d) {
     + '<button class="btn btn-primary" id="btn-confirm-scan" onclick="confirmScanInline()" style="margin-top:16px;">✓ Enregistrer comme ' + (typeLabels[d.type]||d.type) + '</button>'
     + '<button class="btn btn-ghost" style="margin-top:8px;width:100%;" onclick="cancelScan()">Annuler</button>'
     + '</div>';
+}
+
+function choixMultiDates(mode) {
+  if (mode === 'separate') {
+    // Affiche le formulaire de confirmation des dates
+    document.getElementById('multi-dates-confirm').style.display = 'block';
+    // Cache le bouton enregistrer normal
+    const btn = document.getElementById('btn-confirm-scan');
+    if (btn) btn.style.display = 'none';
+  } else {
+    // Mode single — enregistre comme un seul contrat
+    // Ajoute une note dans le commentaire
+    const dates = pendingScanData?.dates_supplementaires || [];
+    if (pendingScanData) {
+      pendingScanData.comment_multi = `Ce contrat indiquait plusieurs dates : ${dates.map(d => fmtDate(d)).join(', ')}`;
+    }
+    // Cache le panneau et réaffiche le bouton
+    document.querySelector('.card[style*="gold"]').style.display = 'none';
+    const btn = document.getElementById('btn-confirm-scan');
+    if (btn) btn.style.display = 'block';
+    toast('📋 Un seul contrat sera créé avec la note des dates multiples');
+  }
 }
 
 function toggleMultiDatesPanel() {
@@ -665,6 +686,12 @@ function confirmScanInline() {
     bulletin: null, aem: null, conges: null 
   } 
 };
+            // Ajoute la note multi-dates si présente
+      if (d.comment_multi) {
+        c.comment = d.comment_multi;
+      } else if (d.dates_supplementaires?.length > 1) {
+        c.comment = `Ce contrat indiquait plusieurs dates : ${d.dates_supplementaires.map(dt => fmtDate(dt)).join(', ')}`;
+      }
       recalcContrat(c);
       state.contrats.push(c);
       toast('✅ Contrat enregistré');
