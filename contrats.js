@@ -195,26 +195,37 @@ function renderDetailBody(c) {
       <span class="tag ${c.hasCS?'tag-green':'tag-gray'}" style="${!c.hasCS?'cursor:pointer':''}" onclick="${!c.hasCS?`openInlineUpload('${c.id}','conges')`:''}">🌴 ${c.hasCS?`CS ✓ <span onclick="event.stopPropagation();removeSourceAndSave('${c.id}','conges')" style="margin-left:4px;opacity:.6;cursor:pointer;">✕</span>`:'CS + Ajouter'}</span>
     </div>`;
 
+  const field = (label, key, value, type='text') => `
+    <div class="ft-row" style="align-items:center;">
+      <span class="ft-label">${label}</span>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <span id="detail-val-${key}" style="font-size:13px;font-weight:600;">${value||'—'}</span>
+        <input id="detail-inp-${key}" type="${type}" value="${value||''}" 
+          style="display:none;padding:4px 8px;border:1.5px solid var(--accent);border-radius:6px;font-size:13px;width:120px;background:var(--surface);"
+          onchange="saveDetailField('${c.id}','${key}',this.value)">
+        <button onclick="toggleDetailField('${key}')" style="background:none;border:none;cursor:pointer;font-size:12px;padding:2px;">✏️</button>
+      </div>
+    </div>`;
+
   const infoContent = `
     ${c.hasManualEdits ? `<div class="alert alert-warn" style="font-size:12px;padding:8px 12px;margin-bottom:10px;">✏️ Données modifiées manuellement à l'import : <strong>${(c.manualEditFields||[]).join(', ')}</strong></div>` : ''}
-    <div class="ft-row"><span class="ft-label">Employeur</span><span class="ft-value">${c.employeur||'—'}</span></div>
-    <div class="ft-row"><span class="ft-label">Poste</span><span class="ft-value">${c.poste||'—'}</span></div>
-    <div class="ft-row"><span class="ft-label">Début</span><span class="ft-value">${fmtDate(c.dateDebut)}</span></div>
-    <div class="ft-row"><span class="ft-label">Fin</span><span class="ft-value">${fmtDate(c.dateFin)}</span></div>
+    ${field('Employeur',  'employeur',  c.employeur)}
+    ${field('Poste',      'poste',      c.poste)}
+    ${field('Début',      'dateDebut',  c.dateDebut, 'date')}
+    ${field('Fin',        'dateFin',    c.dateFin,   'date')}
     <div class="ft-row"><span class="ft-label">Durée</span><span class="ft-value">${nbJours} jour${nbJours>1?'s':''}</span></div>`;
 
   const remuContent = `
-    <div class="ft-row"><span class="ft-label">Cachets</span><span class="ft-value">${c.cachets||0}</span></div>
-    <div class="ft-row"><span class="ft-label">Heures FT</span><span class="ft-value">${heuresFT(c)} h</span></div>
-    <div class="ft-row"><span class="ft-label">Salaire brut total</span><span class="ft-value" style="color:var(--orange)">${fmt(c.brutV)}</span></div>
-    ${c.sources?.contrat?.salaireBase ? `<div class="ft-row"><span class="ft-label">└ Salaire base</span><span class="ft-value">${fmt(c.sources.contrat.salaireBase)}</span></div>` : ''}
-    ${c.sources?.contrat?.droits ? `<div class="ft-row"><span class="ft-label">└ Droits complémentaires</span><span class="ft-value">${fmt(c.sources.contrat.droits)}</span></div>` : ''}
+    ${field('Cachets',       'cachets', c.cachets||0, 'number')}
+    ${field('Heures',        'heures',  c.heures||0,  'number')}
+    ${field('Salaire brut',  'brutV',   c.brutV||0,   'number')}
+    ${c.sources?.contrat?.salaireBase ? field('└ Salaire base', 'sources.contrat.salaireBase', c.sources.contrat.salaireBase, 'number') : ''}
+    ${c.sources?.contrat?.droits      ? field('└ Droits complémentaires', 'sources.contrat.droits', c.sources.contrat.droits, 'number') : ''}
     ${c.isEstimated ? '<div class="alert alert-warn" style="font-size:11px;padding:8px 12px;margin-bottom:8px;">⚠️ Valeurs estimées — seront mises à jour une fois le bulletin scanné</div>' : ''}
-    <div class="ft-row"><span class="ft-label">Net imposable</span><span class="ft-value">${fmt(c.netImp)}${c.isEstimated?' <span style="font-size:10px;color:var(--orange);">~</span>':''}</span></div>
-    <div class="ft-row"><span class="ft-label">${c.paye===true ? 'Net perçu' : 'Net à percevoir'}</span><span class="ft-value" style="color:var(--green)">${fmt(c.netV)}${c.isEstimated?' <span style="font-size:10px;color:var(--orange);">~</span>':''}</span></div>
-    <div class="ft-row"><span class="ft-label">PAS prélevé</span><span class="ft-value" style="color:var(--red)">${fmt(c.pasV)}${c.isEstimated?' <span style="font-size:10px;color:var(--orange);">~</span>':''}</span></div>
-    ${c.tauxPas ? `<div class="ft-row"><span class="ft-label">Taux PAS</span><span class="ft-value">${c.tauxPas} %</span></div>` : ''}`;
-
+    ${field('Net imposable',  'netImp', c.netImp||0, 'number')}
+    ${field('Net perçu',      'netV',   c.netV||0,   'number')}
+    ${field('PAS prélevé',    'pasV',   c.pasV||0,   'number')}
+    ${c.tauxPas ? field('Taux PAS', 'tauxPas', c.tauxPas, 'number') : ''}`;
   const ftContent = `
     <div class="ft-row"><span class="ft-label">Déclarer en</span><span class="ft-value" style="color:var(--accent)">${getMoisDeclaration(c.dateDebut)}</span></div>
     <div class="ft-row"><span class="ft-label">Heures</span><span class="ft-value">${heuresFT(c)} h</span></div>
@@ -243,7 +254,6 @@ function renderDetailBody(c) {
     ${card('🏛️ France Travail', ftContent)}
     ${card('🧾 Frais affiliés', fraisContent + `<button class="btn btn-ghost btn-sm" style="margin-top:8px;width:100%;" onclick="closeDetail();setTimeout(()=>{openSheet('sheet-add-frais');document.getElementById('f-contrat-link').value='${c.id}'},150)">＋ Ajouter un frais</button>`)}
     ${c.comment ? card('💬 Commentaire', `<div style="font-size:13px;line-height:1.6;">${c.comment}</div>`) : ''}
-    <button class="btn btn-ghost" onclick="editContrat('${c.id}')" style="width:100%;margin-bottom:8px;">✏️ Modifier</button>
     <button class="btn btn-ghost" onclick="openMergeContrat('${c.id}')" style="width:100%;margin-bottom:10px;">🔀 Fusionner</button>`;
 
   document.getElementById('detail-body').innerHTML = html;
@@ -272,6 +282,59 @@ function togglePaiement(id, paye) {
   saveState();
   renderDetailBody(c);
   toast(paye ? '✅ Marqué comme payé' : '⏳ Marqué en attente');
+}
+
+function toggleDetailField(key) {
+  const val = document.getElementById('detail-val-' + key);
+  const inp = document.getElementById('detail-inp-' + key);
+  if (!val || !inp) return;
+  const isEditing = inp.style.display !== 'none';
+  val.style.display = isEditing ? '' : 'none';
+  inp.style.display = isEditing ? 'none' : '';
+  if (!isEditing) inp.focus();
+}
+
+function saveDetailField(contratId, key, value) {
+  const c = state.contrats.find(x => x.id === contratId);
+  if (!c) return;
+
+  // Gère les clés imbriquées (ex: sources.contrat.salaireBase)
+  if (key.includes('.')) {
+    const parts = key.split('.');
+    let obj = c;
+    for (let i = 0; i < parts.length - 1; i++) {
+      if (!obj[parts[i]]) obj[parts[i]] = {};
+      obj = obj[parts[i]];
+    }
+    const lastKey = parts[parts.length - 1];
+    obj[lastKey] = isNaN(value) ? value : parseFloat(value) || 0;
+  } else {
+    // Clés numériques
+    const numKeys = ['cachets','heures','brutV','netImp','netV','pasV','tauxPas'];
+    c[key] = numKeys.includes(key) ? (parseFloat(value) || 0) : value;
+    // Employeur toujours en majuscules
+    if (key === 'employeur') c[key] = value.toUpperCase().trim();
+  }
+
+  // Marque comme édité manuellement
+  c.hasManualEdits = true;
+  if (!c.manualEditFields) c.manualEditFields = [];
+  if (!c.manualEditFields.includes(key)) c.manualEditFields.push(key);
+
+  // Recalcule si nécessaire
+  recalcContrat(c);
+  saveState();
+
+  // Met à jour l'affichage
+  const val = document.getElementById('detail-val-' + key);
+  const inp = document.getElementById('detail-inp-' + key);
+  if (val) val.textContent = ['cachets','heures','brutV','netImp','netV','pasV','tauxPas'].includes(key)
+    ? fmt(parseFloat(value)||0) : value;
+  if (val) val.style.display = '';
+  if (inp) inp.style.display = 'none';
+
+  toast('✅ Modifié');
+  renderBilan();
 }
 
 function deleteCurrentContrat() {
