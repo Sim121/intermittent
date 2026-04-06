@@ -106,10 +106,24 @@ async function processFile(file) {
     if (res.ok) {
       pendingScanData = res.data;
       if (res.extraDocs && res.extraDocs.length > 0) {
-        toast(`📄 ${1 + res.extraDocs.length} documents détectés dans ce fichier`);
-        pendingExtraDocs = res.extraDocs;
+        // Si tous les docs sont des contrats → contrat multi-dates
+        const allContrats = res.extraDocs.every(d => d.type === 'contrat') && res.data?.type === 'contrat';
+        if (allContrats) {
+          res.data.dates_supplementaires = [
+            parseDate(res.data.date_debut),
+            ...res.extraDocs.map(d => parseDate(d.date_debut))
+          ].filter(Boolean);
+          res.data.cachets = 1;
+          res.data.cachet_brut_total = res.data.cachet_brut_total || res.data.salaire_brut || 0;
+          pendingExtraDocs = [];
+          toast(`📅 Contrat multi-dates détecté — ${res.data.dates_supplementaires.length} dates`);
+        } else {
+          toast(`📄 ${1 + res.extraDocs.length} documents détectés dans ce fichier`);
+          pendingExtraDocs = res.extraDocs;
+        }
       } else {
         pendingExtraDocs = [];
+      }
       }
       showScanResult(res.data);
     } else {
