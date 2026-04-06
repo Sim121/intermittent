@@ -240,6 +240,8 @@ function showScanResult(d) {
     + matchInfo
     + rows
     + '<button class="btn btn-primary" id="btn-confirm-scan" onclick="confirmScanInline()" style="margin-top:16px;">✓ Enregistrer comme ' + (typeLabels[d.type]||d.type) + '</button>'
+    + (d.type === 'contrat' ? '<button class="btn btn-ghost" style="margin-top:8px;width:100%;" onclick="showMultiDatesPanel()">📅 Ce contrat couvre plusieurs dates</button>' : '')
+    + '<div id="multi-dates-panel" style="display:none;margin-top:12px;"></div>'
     + '<button class="btn btn-ghost" style="margin-top:8px;width:100%;" onclick="cancelScan()">Annuler</button>'
     + '</div>';
 }
@@ -279,6 +281,107 @@ function cancelScan() {
     fileQueueIndex = 0;
     toast('❌ File d\'attente annulée');
   }
+}
+
+function showMultiDatesPanel() {
+  const panel = document.getElementById('multi-dates-panel');
+  if (!panel) return;
+  panel.style.display = 'block';
+  panel.innerHTML = `
+    <div class="card" style="background:var(--accent-light);border:1.5px solid var(--accent);">
+      <div class="card-head"><div class="card-head-title" style="color:var(--accent);">📅 Dates multiples</div></div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:12px;">
+        Ajoute chaque date de représentation. Un contrat séparé sera créé pour chaque date, avec les mêmes informations employeur/poste/montant.
+      </div>
+      <div id="multi-dates-list"></div>
+      <button class="btn btn-ghost btn-sm" style="width:100%;margin-top:8px;" onclick="addMultiDate()">＋ Ajouter une date</button>
+      <button class="btn btn-primary" style="width:100%;margin-top:8px;" onclick="confirmMultiDates()">✓ Créer les contrats</button>
+    </div>`;
+  // Ajoute une première date par défaut
+  addMultiDate();
+}
+
+function addMultiDate() {
+  const list = document.getElementById('multi-dates-list');
+  if (!list) return;
+  const i = list.children.length;
+  const div = document.createElement('div');
+  div.style.cssText = 'display:flex;gap:8px;align-items:center;margin-bottom:8px;';
+  div.innerHTML = `
+    <input type="date" class="multi-date-input" style="flex:1;padding:8px;border:1.5px solid var(--border);border-radius:6px;font-size:13px;background:var(--surface);">
+    <button onclick="this.parentElement.remove()" style="background:none;border:none;cursor:pointer;color:var(--red);font-size:16px;">✕</button>`;
+  list.appendChild(div);
+}
+
+function confirmMultiDates() {
+  const d = pendingScanData;
+  if (!d) return;
+
+  const inputs = document.querySelectorAll('.multi-date-input');
+  const dates  = Array.from(inputs)
+    .map(inp => inp.value)
+    .filter(v => v && /^\d{4}-\d{2}-\d{2}$/.test(v))
+    .sort();
+
+  if (!dates.length) { toast('❌ Ajoute au moins une date'); return; }
+
+  // Crée un contrat par date
+  let created = 0;
+  dates.forEach(date => {
+    const existing = state.contrats.find(c =>
+      c.employeur === (d.employeur||'').toUpperCase().trim() &&
+      c.dateDebut === date
+    );
+    if (existing) {
+      // Rattache le contrat scanné à l'existant
+      if (!existing.sources) existing.sources = {};
+      existing.sources.contrat = {
+        brutV:       d.cachet_brut_total || d.salaire_brut || 0,
+        salaireBase: d.salaire_base      || 0,
+        droits:      d.droits_complementaires || 0,
+        cachets:     d.cachets           || 0,
+        heures:      d.h_prevues || d.h_totales || 0,
+        poste:       d.poste || d.nature_contrat || '',
+        dateDebut:   date,
+        dateFin:     date
+      };
+      recalcContrat(existing);
+    } else {
+      // Crée un nouveau contrat
+      const c = {
+        id:        Date.now().toString() + Math.random().toString(36).slice(2,6),
+        employeur: (d.employeur||'').toUpperCase().trim(),
+        poste:     d.poste || d.nature_contrat || '',
+        dateDebut: date,
+        dateFin:   date,
+        paye: false, ref: '', comment: '', docs: [],
+        sources: {
+          contrat: {
+            brutV:       d.cachet_brut_total || d.salaire_brut || 0,
+            salaireBase: d.salaire_base      || 0,
+            droits:      d.droits_complementaires || 0,
+            cachets:     d.cachets           || 0,
+            heures:      d.h_prevues || d.h_totales || 0,
+            poste:       d.poste || d.nature_contrat || '',
+            dateDebut:   date,
+            dateFin:     date
+          },
+          bulletin: null, aem: null, conges: null
+        }
+      };
+      recalcContrat(c);
+      state.contrats.push(c);
+      created++;
+    }
+  });
+
+  saveState();
+  pendingScanData = null;
+  document.getElementById('scan-result-card').style.display = 'none';
+  renderContrats();
+  renderBilan();
+  toast(`✅ ${created} contrat${created > 1 ? 's' : ''} créé${created > 1 ? 's' : ''} — rattache maintenant les bulletins et AEM`);
+  if (fileQueue.length > 0) nextInQueue();
 }
 
 function confirmRattachement(id) {
