@@ -178,10 +178,11 @@ function renderDetailBody(c) {
   const nbJours    = c.dateDebut && c.dateFin
     ? Math.ceil((new Date(c.dateFin+'T12:00:00') - new Date(c.dateDebut+'T12:00:00')) / 86400000) + 1 : 0;
 
-  const card = (title, content, extra='') => `
+  const card = (title, content, extra='', editable=false) => `
     <div class="card card-collapsible" ${extra}>
       <div class="card-head" onclick="toggleCard(this)" style="cursor:pointer;user-select:none;">
         <div class="card-head-title" style="flex:1;">${title}</div>
+        ${editable ? `<button class="card-edit-btn" onclick="event.stopPropagation();toggleCardEdit(this)" style="background:none;border:1.5px solid var(--border);border-radius:6px;padding:3px 8px;font-size:13px;cursor:pointer;color:var(--muted);">✏️</button>` : ''}
         <span style="font-size:11px;color:var(--muted);margin-left:8px;">−</span>
       </div>
       <div class="card-body">${content}</div>
@@ -195,17 +196,20 @@ function renderDetailBody(c) {
       <span class="tag ${c.hasCS?'tag-green':'tag-gray'}" style="${!c.hasCS?'cursor:pointer':''}" onclick="${!c.hasCS?`openInlineUpload('${c.id}','conges')`:''}">🌴 ${c.hasCS?`CS ✓ <span onclick="event.stopPropagation();removeSourceAndSave('${c.id}','conges')" style="margin-left:4px;opacity:.6;cursor:pointer;">✕</span>`:'CS + Ajouter'}</span>
     </div>`;
 
-  const field = (label, key, value, type='text') => `
-    <div class="ft-row" style="align-items:center;">
-      <span class="ft-label">${label}</span>
-      <div style="display:flex;align-items:center;gap:6px;">
-        <span id="detail-val-${key}" style="font-size:13px;font-weight:600;">${value||'—'}</span>
-        <input id="detail-inp-${key}" type="${type}" value="${value||''}" 
-          style="display:none;padding:4px 8px;border:1.5px solid var(--accent);border-radius:6px;font-size:13px;width:120px;background:var(--surface);"
-          onchange="saveDetailField('${c.id}','${key}',this.value)">
-        <button onclick="toggleDetailField('${key}')" style="background:none;border:none;cursor:pointer;font-size:12px;padding:2px;">✏️</button>
-      </div>
-    </div>`;
+  const field = (label, key, value, type='text') => {
+    const isMonetary = ['brutV','netImp','netV','pasV','sources.contrat.salaireBase','sources.contrat.droits'].includes(key);
+    const displayVal = isMonetary ? fmt(parseFloat(value)||0) : (value||'—');
+    return `
+      <div class="ft-row detail-editable-row" style="align-items:center;">
+        <span class="ft-label">${label}</span>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span id="detail-val-${key}" style="font-size:13px;font-weight:600;">${displayVal}${isMonetary?' <span style="font-size:10px;color:var(--muted);">€</span>':''}</span>
+          <input id="detail-inp-${key}" type="${type}" value="${value||''}" 
+            style="display:none;padding:4px 8px;border:1.5px solid var(--accent);border-radius:6px;font-size:13px;width:120px;background:var(--surface);"
+            onchange="saveDetailField('${c.id}','${key}',this.value)">
+        </div>
+      </div>`;
+  };
 
   const infoContent = `
     ${c.hasManualEdits ? `<div class="alert alert-warn" style="font-size:12px;padding:8px 12px;margin-bottom:10px;">✏️ Données modifiées manuellement à l'import : <strong>${(c.manualEditFields||[]).join(', ')}</strong></div>` : ''}
@@ -259,6 +263,22 @@ function renderDetailBody(c) {
   document.getElementById('detail-body').innerHTML = html;
   const dp = document.getElementById('desktop-detail-body');
   if (dp) dp.innerHTML = html;
+}
+
+function toggleCardEdit(btn) {
+  const card = btn.closest('.card');
+  const isEditing = btn.classList.toggle('editing');
+  btn.textContent = isEditing ? '🔒' : '✏️';
+  btn.style.color = isEditing ? 'var(--accent)' : 'var(--muted)';
+  btn.style.borderColor = isEditing ? 'var(--accent)' : 'var(--border)';
+
+  // Affiche/cache tous les inputs de la card
+  card.querySelectorAll('.detail-editable-row').forEach(row => {
+    const val = row.querySelector('[id^="detail-val-"]');
+    const inp = row.querySelector('[id^="detail-inp-"]');
+    if (val) val.style.display = isEditing ? 'none' : '';
+    if (inp) inp.style.display = isEditing ? '' : 'none';
+  });
 }
 
 function getMoisDeclaration(dateStr) {
