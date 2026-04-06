@@ -301,31 +301,45 @@ function revenirRattachement() {
 // ── CORRESPONDANCE ──
 function findMatchingContrat(employeur, dateStr) {
   if (!employeur) return null;
-  const empNorm = employeur.toUpperCase().replace(/\s+/g, '').trim();
+  const empNorm  = employeur.toUpperCase().replace(/\s+/g, '').trim();
   if (!empNorm || empNorm.length < 3) return null;
-
   const parsedDate = parseDate(dateStr);
   if (!parsedDate) return null;
+
+  // 1. Cherche d'abord un match EXACT sur employeur + date exacte
+  const exactMatch = state.contrats.find(c => {
+    if (!c.dateDebut) return false;
+    const cNorm = c.employeur.toUpperCase().replace(/\s+/g, '').trim();
+    const sameEmp = cNorm === empNorm ||
+      cNorm.includes(empNorm.slice(0,6)) ||
+      empNorm.includes(cNorm.slice(0,6));
+    return sameEmp && c.dateDebut === parsedDate;
+  });
+  if (exactMatch) return exactMatch;
+
+  // 2. Cherche un match sur employeur + même mois UNIQUEMENT si le contrat
+  //    n'a pas encore de bulletin/AEM rattaché (évite d'écraser un contrat complet)
   const [y, m] = parsedDate.split('-').map(Number);
   if (!y || !m || isNaN(y) || isNaN(m)) return null;
 
   const candidates = state.contrats.filter(c => {
     if (!c.dateDebut) return false;
-    const cd = new Date(c.dateDebut + 'T12:00:00');
-    return cd.getFullYear() === y && cd.getMonth() === m - 1;
+    const cd   = new Date(c.dateDebut + 'T12:00:00');
+    const cNorm = c.employeur.toUpperCase().replace(/\s+/g, '').trim();
+    const sameEmp = cNorm === empNorm ||
+      cNorm.includes(empNorm.slice(0,6)) ||
+      empNorm.includes(cNorm.slice(0,6));
+    const sameMois = cd.getFullYear() === y && cd.getMonth() === m - 1;
+    // N'accepte que les contrats sans bulletin ET sans AEM déjà rattachés
+    const isEmpty = !c.sources?.bulletin && !c.sources?.aem;
+    return sameEmp && sameMois && isEmpty;
   });
 
   if (!candidates.length) return null;
 
-  return candidates.map(c => {
-    const cNorm = c.employeur.toUpperCase().replace(/\s+/g, '').trim();
-    let score = 0;
-    if (cNorm === empNorm) score += 10;
-    else if (cNorm.includes(empNorm.slice(0,6)) || empNorm.includes(cNorm.slice(0,6))) score += 5;
-    return { c, score };
-  })
-  .filter(x => x.score > 0)
-  .sort((a,b) => b.score - a.score)[0]?.c || null;
+  return candidates.sort((a, b) =>
+    (a.dateDebut||'').localeCompare(b.dateDebut||'')
+  )[0];
 }
 
 // ── ENREGISTREMENT ──
