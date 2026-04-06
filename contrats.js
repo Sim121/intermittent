@@ -341,7 +341,22 @@ function saveDetailField(contratId, key, value) {
   if (!c.manualEditFields) c.manualEditFields = [];
   if (!c.manualEditFields.includes(key)) c.manualEditFields.push(key);
 
-  // Recalcule si nécessaire
+  // Met aussi à jour la source correspondante pour que recalcContrat ne l'écrase pas
+  const numKeys = ['brutV','netImp','netV','pasV','cachets','heures'];
+  if (numKeys.includes(key)) {
+    const val = parseFloat(value) || 0;
+    // Priorité : met à jour la source la plus haute disponible
+    if (key === 'brutV' || key === 'cachets' || key === 'heures') {
+      if (c.sources?.aem)      c.sources.aem[key === 'cachets' ? 'cachets' : key === 'heures' ? 'heures' : 'brutV'] = val;
+      else if (c.sources?.bulletin) c.sources.bulletin[key === 'cachets' ? 'cachets' : key === 'heures' ? 'heures' : 'brutV'] = val;
+      else if (c.sources?.contrat)  c.sources.contrat[key === 'cachets' ? 'cachets' : key === 'heures' ? 'heures' : 'brutV'] = val;
+      else c[key] = val;
+    }
+    if (key === 'netImp' || key === 'netV' || key === 'pasV') {
+      if (!c.sources.bulletin) c.sources.bulletin = {};
+      c.sources.bulletin[key] = val;
+    }
+  }
   recalcContrat(c);
   saveState();
 
