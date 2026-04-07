@@ -127,7 +127,10 @@ async function processFile(file) {
       showScanResult(res.data);
     } else {
       document.getElementById('scan-result-card').style.display  = 'block';
-      document.getElementById('scan-result-card').innerHTML = '<div class="alert alert-err">❌ ' + (res.error||'Erreur scan') + '</div>';
+      const errMsg = res.error === 'CREDITS_EPUISES'
+        ? '💳 Crédits API Anthropic épuisés — recharge sur <a href="https://console.anthropic.com" target="_blank" style="color:var(--red);font-weight:700;">console.anthropic.com</a>'
+        : '❌ ' + (res.error||'Erreur scan');
+      document.getElementById('scan-result-card').innerHTML = '<div class="alert alert-err">' + errMsg + '</div>';
     }
   } catch(e) {
     document.getElementById('scan-loading').style.display = 'none';
