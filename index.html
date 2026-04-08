@@ -256,29 +256,46 @@
         <button class="btn btn-ghost btn-sm" onclick="openSheet('sheet-add-contrat')" style="flex-shrink:0;">＋ Ajouter</button>
       </div>
          <!-- Filtres -->
-      <div class="filter-bar" id="filter-bar" style="margin:0 16px 16px;">
-        <span class="filter-label">Filtres</span>
-        <select id="filter-annee" onchange="applyFilters()">
-          <option value="">Toutes les années</option>
-        </select>
-        <select id="filter-mois" onchange="applyFilters()">
-          <option value="">Tous les mois</option>
-        </select>
-        <select id="filter-employeur" onchange="applyFilters()">
-          <option value="">Tous les employeurs</option>
-        </select>
-        <select id="filter-statut" onchange="applyFilters()">
-          <option value="">Tous statuts</option>
-          <option value="attente">⏳ En attente</option>
-          <option value="paye">✅ Payés</option>
-        </select>
-        <select id="filter-docs" onchange="applyFilters()">
-          <option value="">Tous documents</option>
-          <option value="sans-bulletin">Sans bulletin</option>
-          <option value="sans-aem">Sans AEM</option>
-          <option value="complet">Complets</option>
-        </select>
-        <button class="btn btn-ghost btn-sm" onclick="resetFilters()">✕ Réinitialiser</button>
+      <div style="margin:0 0 20px;">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:600;white-space:nowrap;">Filtrer par</span>
+
+          <select id="filter-annee" onchange="applyFilters()" style="padding:7px 14px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-weight:600;background:var(--surface);color:var(--ink);font-family:'DM Sans',sans-serif;appearance:none;cursor:pointer;min-width:0;">
+            <option value="">Toutes les années</option>
+          </select>
+
+          <select id="filter-mois" onchange="applyFilters()" style="padding:7px 14px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-weight:600;background:var(--surface);color:var(--ink);font-family:'DM Sans',sans-serif;appearance:none;cursor:pointer;min-width:0;">
+            <option value="">Tous les mois</option>
+            <option value="01">Janvier</option><option value="02">Février</option>
+            <option value="03">Mars</option><option value="04">Avril</option>
+            <option value="05">Mai</option><option value="06">Juin</option>
+            <option value="07">Juillet</option><option value="08">Août</option>
+            <option value="09">Septembre</option><option value="10">Octobre</option>
+            <option value="11">Novembre</option><option value="12">Décembre</option>
+          </select>
+
+          <select id="filter-employeur" onchange="applyFilters()" style="padding:7px 14px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-weight:600;background:var(--surface);color:var(--ink);font-family:'DM Sans',sans-serif;appearance:none;cursor:pointer;min-width:0;max-width:200px;">
+            <option value="">Tous les employeurs</option>
+          </select>
+
+          <select id="filter-statut" onchange="applyFilters()" style="padding:7px 14px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-weight:600;background:var(--surface);color:var(--ink);font-family:'DM Sans',sans-serif;appearance:none;cursor:pointer;min-width:0;">
+            <option value="">Tous statuts</option>
+            <option value="attente">⏳ En attente</option>
+            <option value="paye">✅ Payés</option>
+          </select>
+
+          <select id="filter-docs" onchange="applyFilters()" style="padding:7px 14px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-weight:600;background:var(--surface);color:var(--ink);font-family:'DM Sans',sans-serif;appearance:none;cursor:pointer;min-width:0;">
+            <option value="">Tous documents</option>
+            <option value="sans-bulletin">Sans bulletin</option>
+            <option value="sans-aem">Sans AEM</option>
+            <option value="complet">Complets ✓</option>
+          </select>
+
+          <button onclick="resetFilters()" style="padding:7px 14px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-weight:700;background:var(--surface);color:var(--muted);cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap;transition:all .15s;" onmouseover="this.style.borderColor='var(--red)';this.style.color='var(--red)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">✕ Reset</button>
+        </div>
+
+        <!-- Chips actifs -->
+        <div id="filter-chips" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;"></div>
       </div>
       <!-- Desktop : layout 2 colonnes -->
       <div class="contracts-layout" id="contracts-layout" style="margin-top:16px;">
