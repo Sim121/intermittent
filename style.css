@@ -916,3 +916,105 @@ tr:hover td { background: var(--bg); }
   border: 1.5px solid rgba(0,200,150,.3);
   display: inline-flex; align-items: center; gap: 6px;
 }
+
+/* ── SIDEBAR labels plus lisibles ── */
+.sidebar-section-label {
+  font-size: 11px !important;
+  letter-spacing: 1px !important;
+  padding: 18px 20px 6px !important;
+}
+.sidebar-item {
+  font-size: 15px !important;
+  padding: 12px 20px !important;
+}
+
+/* ── Séparateurs nets entre zones ── */
+.sidebar-nav > .sidebar-section-label:not(:first-child) {
+  border-top: 1px solid var(--navy-border);
+  margin-top: 4px;
+}
+
+/* ── Cards avec icône style DUB APP ── */
+.dashboard-card {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--r);
+  padding: 20px;
+  cursor: pointer;
+  transition: box-shadow .15s, border-color .15s, transform .1s;
+  box-shadow: 0 1px 4px rgba(26,32,53,.04);
+}
+.dashboard-card:hover {
+  border-color: var(--accent);
+  box-shadow: 0 4px 20px rgba(108,99,255,.12);
+  transform: translateY(-2px);
+}
+.dashboard-card .dc-icon {
+  width: 52px; height: 52px; border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 24px; margin-bottom: 14px;
+}
+.dashboard-card .dc-icon.blue   { background: #EEF2FF; }
+.dashboard-card .dc-icon.green  { background: #E6FAF5; }
+.dashboard-card .dc-icon.orange { background: #FFF8E8; }
+.dashboard-card .dc-icon.purple { background: var(--accent-light); }
+.dashboard-card .dc-icon.red    { background: #FFF0F0; }
+.dashboard-card .dc-title {
+  font-size: 16px; font-weight: 800; color: var(--ink);
+  margin-bottom: 6px; letter-spacing: -.2px;
+}
+.dashboard-card .dc-sub {
+  font-size: 13px; color: var(--muted); line-height: 1.5; font-weight: 400;
+}
+
+/* ── Dashboard grid ── */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px; margin-bottom: 24px;
+}
+
+/* ── Contrat cards plus larges ── */
+@media (min-width: 768px) {
+  .contrat-card { padding: 20px 24px; }
+  .contrat-employeur { font-size: 16px; }
+  .month-contracts { padding: 0; }
+}
+
+/* ── Filtre contrats ── */
+.filter-bar {
+  display: flex; gap: 10px; flex-wrap: wrap;
+  padding: 14px 16px; background: var(--surface);
+  border: 1.5px solid var(--border); border-radius: var(--r);
+  margin-bottom: 16px; align-items: center;
+}
+.filter-bar select, .filter-bar input {
+  padding: 7px 12px; border: 1.5px solid var(--border);
+  border-radius: 6px; font-size: 13px; font-weight: 600;
+  background: var(--bg); color: var(--ink);
+  font-family: 'DM Sans', sans-serif;
+  appearance: none; -webkit-appearance: none;
+  cursor: pointer; min-width: 140px;
+}
+.filter-bar select:focus, .filter-bar input:focus {
+  outline: none; border-color: var(--accent);
+}
+.filter-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; text-transform: uppercase; letter-spacing: 1px;
+  color: var(--muted); font-weight: 600; white-space: nowrap;
+}
+.filter-chip {
+  padding: 6px 12px; border-radius: 6px; font-size: 12px;
+  font-weight: 700; cursor: pointer;
+  border: 1.5px solid var(--border); background: var(--surface);
+  color: var(--ink2); transition: all .15s; white-space: nowrap;
+  font-family: 'JetBrains Mono', monospace; text-transform: uppercase; letter-spacing: .3px;
+}
+.filter-chip.active { background: var(--accent); color: #fff; border-color: var(--accent-dark); }
+
+/* ── Mois enroulable ── */
+.month-header { cursor: pointer; user-select: none; }
+.month-header:hover { background: var(--bg); }
+.month-toggle { font-size: 11px; color: var(--muted); transition: transform .2s; }
+.month-contracts.collapsed { display: none; }
