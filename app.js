@@ -3,7 +3,7 @@
    Core : state, auth, sync, navigation, settings, init
    ============================================================ */
 
-const APP_VERSION = '3.6.0';
+const APP_VERSION = '3.6.1';
 const APP_DATE    = '2026-0s4-03';
 
 // ── STATE GLOBAL ──
@@ -299,7 +299,7 @@ function showPage(id) {
   if (navBtn)   navBtn.classList.add('active');
   if (sideItem) sideItem.classList.add('active');
   if (id === 'bilan')    { populateYearSelect(); renderBilan(); }
-  if (id === 'contrats') renderContrats();
+  if (id === 'contrats') { populateFilterSelects(); renderContrats(); }
   if (id === 'frais')    renderFrais();
   if (id === 'ft')       renderFTPage();
   if (id === 'dashboard') renderDashboard();
