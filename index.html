@@ -191,6 +191,55 @@
         </div>
       </div>
     </div>
+<!-- ═══ PAGE DASHBOARD ═══ -->
+    <div class="page" id="page-dashboard">
+      <div class="page-wrap">
+        <div class="section" style="padding-top:20px;">
+
+          <div style="margin-bottom:24px;">
+            <div class="section-title">Tableau de <span class="accent">bord</span></div>
+            <div class="section-sub" id="dashboard-greeting">Bonjour · Vue d'ensemble</div>
+          </div>
+
+          <!-- Cards accès rapide -->
+          <div class="dashboard-grid">
+            <div class="dashboard-card" onclick="showPage('bilan')">
+              <div class="dc-icon blue">📊</div>
+              <div class="dc-title">Bilan</div>
+              <div class="dc-sub">Revenus, impôts et progression ARE</div>
+            </div>
+            <div class="dashboard-card" onclick="showPage('contrats')">
+              <div class="dc-icon purple">📁</div>
+              <div class="dc-title">Contrats</div>
+              <div class="dc-sub">Gérer et scanner les contrats</div>
+            </div>
+            <div class="dashboard-card" onclick="showPage('scan')">
+              <div class="dc-icon green">📄</div>
+              <div class="dc-title">Scanner un doc</div>
+              <div class="dc-sub">Analyse IA automatique</div>
+            </div>
+            <div class="dashboard-card" onclick="showPage('ft')">
+              <div class="dc-icon orange">🏛️</div>
+              <div class="dc-title">France Travail</div>
+              <div class="dc-sub">Déclaration mensuelle</div>
+            </div>
+            <div class="dashboard-card" onclick="showPage('frais')">
+              <div class="dc-icon red">🧾</div>
+              <div class="dc-title">Frais réels</div>
+              <div class="dc-sub">Déductibles · Comparaison forfait</div>
+            </div>
+          </div>
+
+          <!-- Résumé rapide -->
+          <div id="dashboard-summary"></div>
+
+          <!-- Alertes / À faire -->
+          <div id="dashboard-alerts"></div>
+
+        </div>
+      </div>
+    </div>
+       
 
     <!-- ═══ PAGE CONTRATS ═══ -->
     <div class="page" id="page-contrats">
