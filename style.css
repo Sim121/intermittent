@@ -340,9 +340,18 @@ body {
   .contracts-layout {
     display: grid;
     grid-template-columns: 1fr 440px;
-    gap: 24px; padding: 0 40px;
+    gap: 24px; padding: 0 32px;
     align-items: start;
   }
+
+  .month-contracts { padding: 0; }
+  .month-header { margin: 0 0 8px; }
+
+  .contrat-card {
+    padding: 20px 24px;
+    margin-bottom: 10px;
+  }
+  .contrat-employeur { font-size: 17px; }
 
   .contracts-layout .contract-panel {
     position: sticky; top: 24px; display: none;
