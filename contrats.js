@@ -50,12 +50,15 @@ function renderContrats() {
       const contrats  = grouped[y][m].sort((a,b) => (b.dateDebut||'').localeCompare(a.dateDebut||''));
       const totalBrut = contrats.reduce((s,c) => s+(c.brutV||0), 0);
       const totalH    = contrats.reduce((s,c) => s+(c.heures||0), 0);
-      html += `<div class="month-group">
-        <div class="month-header">
-          <div class="month-header-name">${MONTHS[m]}</div>
-          <div class="month-header-total">${totalH}h · ${fmt(totalBrut)}</div>
+      const monthHtml = `
+        <div class="month-header" onclick="toggleMonth(this)">
+          <div class="month-header-name">${MONTHS[month-1]} ${year}</div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span class="month-header-total">${moisContrats.length} contrat${moisContrats.length>1?'s':''} · ${fmt(totalMois)}</span>
+            <span class="month-toggle">▼</span>
+          </div>
         </div>
-        <div class="month-contracts">`;
+        <div class="month-contracts">${moisContrats.map(renderContratCard).join('')}</div>`;
       contrats.forEach(c => {
         const sc = c.paye === true ? 'paye' : c.paye === false ? 'en-attente' : 'inconnu';
         const st = c.paye === true
@@ -89,6 +92,13 @@ function renderContrats() {
   });
 
   el.innerHTML = html;
+}
+
+function toggleMonth(header) {
+  const contracts = header.nextElementSibling;
+  const toggle    = header.querySelector('.month-toggle');
+  const collapsed = contracts.classList.toggle('collapsed');
+  toggle.style.transform = collapsed ? 'rotate(-90deg)' : '';
 }
 
 // ── AJOUTER / MODIFIER ──
