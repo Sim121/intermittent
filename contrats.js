@@ -185,6 +185,20 @@ function applyFilters() {
     docs:      document.getElementById('filter-docs')?.value      || '',
   };
   renderContrats();
+   // Chips visuels des filtres actifs
+  const chips = [];
+  if (activeFilters.annee)     chips.push(activeFilters.annee);
+  if (activeFilters.mois)      chips.push(MONTHS[parseInt(activeFilters.mois)-1]);
+  if (activeFilters.employeur) chips.push(activeFilters.employeur);
+  if (activeFilters.statut)    chips.push(activeFilters.statut === 'paye' ? '✅ Payés' : '⏳ En attente');
+  if (activeFilters.docs)      chips.push(activeFilters.docs.replace('-', ' '));
+
+  const chipsEl = document.getElementById('filter-chips');
+  if (chipsEl) {
+    chipsEl.innerHTML = chips.map(c =>
+      `<span style="padding:4px 10px;background:var(--accent-light);color:var(--accent);border:1.5px solid var(--accent);border-radius:6px;font-size:11px;font-weight:700;font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.3px;">${c}</span>`
+    ).join('');
+  }
 }
 
 function resetFilters() {
