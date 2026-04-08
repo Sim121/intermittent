@@ -113,10 +113,18 @@ async function processFile(file) {
             parseDate(res.data.date_debut),
             ...res.extraDocs.map(d => parseDate(d.date_debut))
           ].filter(Boolean);
-          const nbDates  = res.data.dates_supplementaires.length;
-          const totalBrut = res.data.cachet_brut_total || res.data.salaire_brut || 0;
-          res.data.cachet_brut_total = nbDates > 0 ? Math.round((totalBrut / nbDates) * 100) / 100 : totalBrut;
-          res.data.salaire_brut = res.data.cachet_brut_total;
+          // Prend le montant du premier extradoc — c'est le montant par représentation
+            const brutParRepresentation = res.extraDocs[0]?.cachet_brut_total
+              || res.extraDocs[0]?.salaire_brut
+              || res.data.cachet_brut_total
+              || res.data.salaire_brut
+              || 0;
+            // Si le total est nettement supérieur au montant unitaire → on prend l'unitaire
+            const totalBrut = res.data.cachet_brut_total || res.data.salaire_brut || 0;
+            const nbDates   = res.data.dates_supplementaires.length;
+            const unitaire  = brutParRepresentation > 0 ? brutParRepresentation : Math.round((totalBrut / nbDates) * 100) / 100;
+            res.data.cachet_brut_total = unitaire;
+            res.data.salaire_brut      = unitaire;
           res.data.cachets = 1;
           pendingExtraDocs = [];
           toast(`📅 Contrat multi-dates détecté — ${res.data.dates_supplementaires.length} dates`);
@@ -166,7 +174,7 @@ function showScanResult(d) {
   };
 
   const typeSelector = '<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;padding:10px 14px;background:var(--bg2);border-radius:var(--r-sm);">'
-    + '<span style="font-family:\'DM Mono\',monospace;font-size:10px;color:var(--muted);text-transform:uppercase;">Type détecté</span>'
+    + '<span style="font-family:\'JetBrains Mono\',monospace;font-size:10px;color:var(--muted);text-transform:uppercase;">Type détecté</span>'
     + '<select onchange="overrideDocType(this.value)" style="flex:1;padding:6px 10px;border-radius:8px;border:1.5px solid var(--border);background:var(--surface);font-size:13px;font-weight:600;">'
     + Object.entries(typeLabels).map(([v,l]) => '<option value="' + v + '"' + (v === d.type ? ' selected' : '') + '>' + l + '</option>').join('')
     + '</select>'
@@ -257,33 +265,62 @@ function showScanResult(d) {
     }
   }
 
-  // ── TABLEAU DES DONNÉES ──
-  const numF = ['salaire_brut','net_imposable','net_percu','pas_preleve','montant_ttc','montant_ht','cachet_brut'];
-  const intF = ['cachets','nb_cachets','nb_jours_cachets','nb_heures','h_totales','h_cachets','annee'];
-  const rows = '<div style="padding:8px 0;border-bottom:1px solid var(--border2);display:flex;justify-content:space-between;">'
-    + '<span style="font-family:\'DM Mono\',monospace;font-size:10px;color:var(--muted);text-transform:uppercase;">Type détecté</span>'
+  // ── DONNÉES : essentielles + voir plus ──
+  const champsEssentiels = {
+    contrat:         ['employeur','poste','date_debut','date_fin','cachets','cachet_brut_total','salaire_brut'],
+    bulletin:        ['employeur','date_debut','date_fin','salaire_brut','net_imposable','net_percu','pas_preleve','taux_pas','h_totales','cachets'],
+    aem:             ['employeur','mois','annee','nb_cachets','nb_heures','salaire_brut','date_debut','date_fin'],
+    conges:          ['employeur','date_debut','date_fin','nb_jours_cachets','salaire_brut'],
+    frais:           ['date','nature','fournisseur','montant_ttc','categorie'],
+    notification_ft: ['are_jour','sr','nht','sjr','date_ouverture','date_anniversaire','franchise_cp','franchise_sal'],
+    courrier_csg:    ['taux_csg','date_notification','annee'],
+    default:         ['employeur','date_debut','date_fin','salaire_brut','montant_ttc']
+  };
+
+  const type = d.type || currentDocType || 'default';
+  const essentiels = champsEssentiels[type] || champsEssentiels.default;
+
+  const allEntries = Object.entries(d).filter(([k,v]) =>
+    !['type','_manualEdits','dates_supplementaires','comment_multi'].includes(k)
+    && v !== null && v !== '' && v !== 0 && !Array.isArray(v)
+  );
+
+  const essentielsEntries = allEntries.filter(([k]) => essentiels.includes(k));
+  const autresEntries     = allEntries.filter(([k]) => !essentiels.includes(k));
+
+  const makeRow = ([k,v]) => {
+    const isNum = ['salaire_brut','net_imposable','net_percu','pas_preleve','montant_ttc','montant_ht','cachet_brut_total','are_jour','sr','sjr'].some(n => k === n);
+    const intF  = ['cachets','nb_cachets','nb_jours_cachets','nb_heures','h_totales','annee','nht','franchise_cp','franchise_sal'];
+    const inputType = k === 'mois' ? 'select' : (k.includes('date') ? 'date' : (intF.includes(k) || isNum ? 'number' : 'text'));
+    const displayVal = (isNum && !intF.includes(k)) ? fmt(v) + ' €' : v;
+    return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border2);">'
+      + '<span style="font-family:\'JetBrains Mono\',monospace;font-size:10px;color:var(--muted);text-transform:uppercase;flex:1;">' + k.replace(/_/g,' ') + '</span>'
+      + '<div style="display:flex;align-items:center;gap:6px;">'
+      + '<span id="scan-val-' + k + '" style="font-size:13px;font-weight:700;">' + displayVal + '</span>'
+      + (k === 'mois'
+        ? '<select id="scan-input-' + k + '" style="display:none;padding:4px 8px;border:1.5px solid var(--accent);border-radius:6px;font-size:13px;background:var(--surface);" onchange="updateScanField(\'' + k + '\',this.value)">'
+          + MONTHS.map(m => '<option value="' + m + '"' + (m === v ? ' selected' : '') + '>' + m + '</option>').join('')
+          + '</select>'
+        : '<input id="scan-input-' + k + '" type="' + inputType + '" value="' + (k.includes('date') ? parseDate(v)||v : v) + '" step="0.01" style="display:none;padding:4px 8px;border:1.5px solid var(--accent);border-radius:6px;font-size:13px;width:120px;background:var(--surface);" onchange="updateScanField(\'' + k + '\',this.value)">')
+      + '<button onclick="toggleScanField(\'' + k + '\')" style="background:none;border:none;cursor:pointer;padding:2px;font-size:12px;" title="Modifier">'
+      + (d._manualEdits?.includes(k) ? '✏️🔵' : '✏️')
+      + '</button>'
+      + '</div></div>';
+  };
+
+  const rowsHeader = '<div style="padding:8px 0;border-bottom:1px solid var(--border2);display:flex;justify-content:space-between;margin-bottom:4px;">'
+    + '<span style="font-family:\'JetBrains Mono\',monospace;font-size:10px;color:var(--muted);text-transform:uppercase;">Type détecté</span>'
     + '<span style="font-size:13px;font-weight:700;">' + (typeLabels[d.type]||d.type||'—') + '</span>'
-    + '</div>'
-    + Object.entries(d)
-      .filter(([k,v]) => !['type','nb_cachets','_manualEdits','dates_supplementaires','comment_multi'].includes(k) && v !== null && v !== '' && v !== 0 && !Array.isArray(v))
-      .map(([k,v]) => {
-        const isNum = intF.includes(k) || numF.some(n => k.includes(n.split('_')[0])) || k.includes('brut') || k.includes('net') || k.includes('montant');
-        const inputType = k === 'mois' ? 'select' : (k.includes('date') ? 'date' : (intF.includes(k) || isNum ? 'number' : 'text'));
-        const displayVal = (isNum && !intF.includes(k)) ? fmt(v) + ' €' : v;
-        return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border2);">'
-          + '<span style="font-family:\'JetBrains Mono\',monospace;font-size:10px;color:var(--muted);text-transform:uppercase;flex:1;">' + k.replace(/_/g,' ') + '</span>'
-          + '<div style="display:flex;align-items:center;gap:6px;">'
-          + '<span id="scan-val-' + k + '" style="font-size:13px;font-weight:600;">' + displayVal + '</span>'
-          + (k === 'mois'
-            ? '<select id="scan-input-' + k + '" style="display:none;padding:4px 8px;border:1.5px solid var(--accent);border-radius:6px;font-size:13px;background:var(--surface);" onchange="updateScanField(\'' + k + '\',this.value)">'
-              + MONTHS.map(m => '<option value="' + m + '"' + (m === v ? ' selected' : '') + '>' + m + '</option>').join('')
-              + '</select>'
-            : '<input id="scan-input-' + k + '" type="' + inputType + '" value="' + (k.includes('date') ? parseDate(v)||v : v) + '" step="0.01" style="display:none;padding:4px 8px;border:1.5px solid var(--accent);border-radius:6px;font-size:13px;width:120px;background:var(--surface);" onchange="updateScanField(\'' + k + '\',this.value)">')
-          + '<button onclick="toggleScanField(\'' + k + '\')" style="background:none;border:none;cursor:pointer;padding:2px;font-size:12px;" title="Modifier">'
-          + (d._manualEdits?.includes(k) ? '✏️🔵' : '✏️')
-          + '</button>'
-          + '</div></div>';
-      }).join('');
+    + '</div>';
+
+  const rowsEssentiels = essentielsEntries.map(makeRow).join('');
+
+  const rowsAutres = autresEntries.length > 0
+    ? '<div id="scan-rows-extra" style="display:none;">' + autresEntries.map(makeRow).join('') + '</div>'
+      + '<button onclick="toggleScanExtra()" id="btn-scan-extra" style="width:100%;background:none;border:1.5px solid var(--border);border-radius:6px;cursor:pointer;padding:9px;font-size:11px;color:var(--muted);font-family:\'JetBrains Mono\',monospace;text-transform:uppercase;letter-spacing:.5px;font-weight:600;margin-top:8px;">▼ Voir ' + autresEntries.length + ' autre' + (autresEntries.length > 1 ? 's' : '') + ' champ' + (autresEntries.length > 1 ? 's' : '') + '</button>'
+    : '';
+
+  const rows = rowsHeader + rowsEssentiels + rowsAutres;
 
   card.innerHTML = '<div class="card">'
     + '<div class="card-head"><div class="card-head-title">Extraction IA</div><span class="tag tag-green">✓ OK</span></div>'
@@ -291,6 +328,28 @@ function showScanResult(d) {
     + '<button class="btn btn-primary" id="btn-confirm-scan" onclick="confirmScanInline()" style="margin-top:16px;">✓ Enregistrer comme ' + (typeLabels[d.type]||d.type||'document') + '</button>'
     + '<button class="btn btn-ghost" style="margin-top:8px;width:100%;" onclick="cancelScan()">Annuler</button>'
     + '</div>';
+}
+
+function toggleScanExtra() {
+  const el  = document.getElementById('scan-rows-extra');
+  const btn = document.getElementById('btn-scan-extra');
+  if (!el || !btn) return;
+  const open = el.style.display !== 'none';
+  el.style.display = open ? 'none' : 'block';
+  btn.textContent  = open
+    ? '▼ Voir les autres champs'
+    : '▲ Masquer les champs supplémentaires';
+}
+
+function toggleScanExtra() {
+  const el  = document.getElementById('scan-rows-extra');
+  const btn = document.getElementById('btn-scan-extra');
+  if (!el || !btn) return;
+  const open = el.style.display !== 'none';
+  el.style.display  = open ? 'none' : 'block';
+  btn.textContent   = open
+    ? '▼ Voir les autres champs'
+    : '▲ Masquer';
 }
 
 function choixMultiDates(mode) {
