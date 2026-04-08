@@ -25,6 +25,16 @@ function setDatePaiement(id, date) {
   toast('📅 Date de règlement mise à jour');
 }
 
+function populateFilterSelects() {
+  const annees     = [...new Set(state.contrats.map(c => c.dateDebut?.slice(0,4)).filter(Boolean))].sort().reverse();
+  const employeurs = [...new Set(state.contrats.map(c => c.employeur).filter(Boolean))].sort();
+
+  const selA = document.getElementById('filter-annee');
+  const selE = document.getElementById('filter-employeur');
+  if (selA) selA.innerHTML = '<option value="">Toutes les années</option>' + annees.map(a => `<option value="${a}">${a}</option>`).join('');
+  if (selE) selE.innerHTML = '<option value="">Tous les employeurs</option>' + employeurs.map(e => `<option value="${e}">${e}</option>`).join('');
+}
+
 function renderContrats() {
   populateFilterSelects();
   const el = document.getElementById('contrats-list');
