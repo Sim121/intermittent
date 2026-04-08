@@ -153,6 +153,40 @@ function addContrat() {
 }
 
 // ── DÉTAIL ──
+let activeFilters = {};
+
+function applyFilters() {
+  activeFilters = {
+    annee:     document.getElementById('filter-annee')?.value     || '',
+    mois:      document.getElementById('filter-mois')?.value      || '',
+    employeur: document.getElementById('filter-employeur')?.value || '',
+    statut:    document.getElementById('filter-statut')?.value    || '',
+    docs:      document.getElementById('filter-docs')?.value      || '',
+  };
+  renderContrats();
+}
+
+function resetFilters() {
+  ['filter-annee','filter-mois','filter-employeur','filter-statut','filter-docs'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value = '';
+  });
+  activeFilters = {};
+  renderContrats();
+}
+
+function getFilteredContrats() {
+  let cs = state.contrats;
+  if (activeFilters.annee)     cs = cs.filter(c => c.dateDebut?.startsWith(activeFilters.annee));
+  if (activeFilters.mois)      cs = cs.filter(c => c.dateDebut?.slice(5,7) === activeFilters.mois);
+  if (activeFilters.employeur) cs = cs.filter(c => c.employeur === activeFilters.employeur);
+  if (activeFilters.statut === 'attente') cs = cs.filter(c => !c.paye);
+  if (activeFilters.statut === 'paye')    cs = cs.filter(c =>  c.paye);
+  if (activeFilters.docs === 'sans-bulletin') cs = cs.filter(c => !c.sources?.bulletin);
+  if (activeFilters.docs === 'sans-aem')      cs = cs.filter(c => !c.sources?.aem);
+  if (activeFilters.docs === 'complet')       cs = cs.filter(c => c.sources?.bulletin && c.sources?.aem);
+  return cs;
+}
+
 function openDetail(id) {
   currentContratId = id;
   const c = state.contrats.find(x => x.id === id);
