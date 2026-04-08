@@ -302,6 +302,69 @@ function showPage(id) {
   if (id === 'contrats') renderContrats();
   if (id === 'frais')    renderFrais();
   if (id === 'ft')       renderFTPage();
+  if (id === 'dashboard') renderDashboard();
+}
+
+function renderDashboard() {
+  const year = new Date().getFullYear();
+  const cs   = state.contrats.filter(c => c.dateDebut && new Date(c.dateDebut + 'T12:00:00').getFullYear() === year);
+
+  const tBrut   = cs.reduce((s,c) => s + (c.brutV||0), 0);
+  const tH      = cs.reduce((s,c) => s + heuresFT(c), 0);
+  const tC      = cs.reduce((s,c) => s + (c.cachets||0), 0);
+  const nbAttente = state.contrats.filter(c => !c.paye && c.brutV > 0).length;
+  const nbSansBulletin = state.contrats.filter(c => !c.sources?.bulletin && c.dateDebut && new Date(c.dateDebut + 'T12:00:00').getFullYear() === year).length;
+
+  const prenom = state.config.prenom || 'Simon';
+  const h = new Date().getHours();
+  const salut = h < 12 ? 'Bonjour' : h < 18 ? 'Bon après-midi' : 'Bonsoir';
+  const greet = document.getElementById('dashboard-greeting');
+  if (greet) greet.textContent = `${salut} ${prenom} · ${year}`;
+
+  // Résumé
+  const sumEl = document.getElementById('dashboard-summary');
+  if (sumEl) sumEl.innerHTML = `
+    <div class="card" style="margin-bottom:16px;">
+      <div class="card-head"><div class="card-head-title">Résumé ${year}</div></div>
+      <div class="stat-row three">
+        <div class="stat-card">
+          <div class="lbl">Brut total</div>
+          <div class="val gold">${fmt(tBrut)}</div>
+          <div class="sub">${tC} cachet${tC>1?'s':''}</div>
+        </div>
+        <div class="stat-card">
+          <div class="lbl">Heures FT</div>
+          <div class="val">${tH} h</div>
+          <div class="sub">${Math.round(tH/507*100)}% des 507h</div>
+        </div>
+        <div class="stat-card">
+          <div class="lbl">ARE / jour</div>
+          <div class="val ${state.config.areJour > 0 ? 'green' : ''}">${state.config.areJour > 0 ? fmt(state.config.areJour) : '—'}</div>
+          <div class="sub">${state.config.finDroits ? 'jusqu\'au ' + fmtDate(state.config.finDroits) : 'Non renseigné'}</div>
+        </div>
+      </div>
+    </div>`;
+
+  // Alertes
+  const alerts = [];
+  if (nbAttente > 0) alerts.push({ type:'warn', icon:'⏳', msg: `${nbAttente} contrat${nbAttente>1?'s':''} en attente de paiement`, action: "showPage('contrats')" });
+  if (nbSansBulletin > 0) alerts.push({ type:'warn', icon:'📄', msg: `${nbSansBulletin} contrat${nbSansBulletin>1?'s':''} sans bulletin en ${year}`, action: "showPage('contrats')" });
+  if (state.config.finDroits) {
+    const jRestants = Math.ceil((new Date(state.config.finDroits + 'T12:00:00') - new Date()) / 86400000);
+    if (jRestants > 0 && jRestants < 60) alerts.push({ type:'warn', icon:'🏛️', msg: `Date anniversaire ARE dans ${jRestants} jours (${fmtDate(state.config.finDroits)})`, action: "showPage('settings')" });
+    if (jRestants <= 0) alerts.push({ type:'err', icon:'⚠️', msg: 'Droits ARE expirés — renouvelle dès que possible', action: "showPage('settings')" });
+  }
+  if (tH >= 507) alerts.push({ type:'ok', icon:'✅', msg: `507h atteintes (${tH}h) — renouvellement possible`, action: "showPage('bilan')" });
+
+  const alertEl = document.getElementById('dashboard-alerts');
+  if (alertEl) {
+    alertEl.innerHTML = alerts.length ? alerts.map(a =>
+      `<div class="alert alert-${a.type}" style="cursor:pointer;flex-direction:row;align-items:center;justify-content:space-between;" onclick="${a.action}">
+        <span>${a.icon} ${a.msg}</span>
+        <span style="font-size:12px;opacity:.6;flex-shrink:0;">→</span>
+      </div>`
+    ).join('') : '';
+  }
 }
 
 function openSheet(id) {
