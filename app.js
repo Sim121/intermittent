@@ -184,7 +184,11 @@ function saveState() {
 
 async function syncToServer(showToast = false) {
   if (!getAppsScriptUrl() || !isSessionValid()) return;
-  setSyncStatus('syncing', 'Sync…');
+  // Sécurité : ne jamais envoyer un state vide
+  if (!state.contrats) {
+    if (showToast) toast('⚠️ State invalide — sync annulée');
+    return;
+  }
   try {
     const res = await appsScriptPost({ action: 'saveData', data: state });
     if (res.ok) {
