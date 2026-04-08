@@ -144,7 +144,7 @@ function showLogin() {
 function showApp() {
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('app-shell').style.display    = 'block';
-  showPage('bilan');
+  showPage('dashboard');
   const sVel = document.getElementById('sidebar-version');
   if (sVel) sVel.textContent = 'v' + APP_VERSION;
   const lVel = document.getElementById('login-version');
