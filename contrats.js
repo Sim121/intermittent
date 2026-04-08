@@ -26,17 +26,23 @@ function setDatePaiement(id, date) {
 }
 
 function renderContrats() {
+  populateFilterSelects();
   const el = document.getElementById('contrats-list');
-  if (!state.contrats.length) {
-    el.innerHTML = '<div class="empty" style="padding:48px 20px;"><div class="empty-icon">📁</div><div class="empty-text">Aucun contrat enregistré<br>Scanne ou ajoute manuellement</div></div>';
+  if (!el) return;
+
+  const allContrats = getFilteredContrats();
+
+  if (!allContrats.length) {
+    el.innerHTML = '<div class="empty"><div class="empty-icon">📁</div><div class="empty-text">Aucun contrat trouvé</div></div>';
     return;
   }
 
+  // Groupe par année puis par mois
   const grouped = {};
-  state.contrats.forEach(c => {
+  allContrats.forEach(c => {
     const d = new Date((c.dateDebut || '1970-01-01') + 'T12:00:00');
     const y = d.getFullYear();
-    const m = d.getMonth();
+    const m = d.getMonth(); // 0-indexed
     if (isNaN(y)) return;
     if (!grouped[y]) grouped[y] = {};
     if (!grouped[y][m]) grouped[y][m] = [];
@@ -47,34 +53,39 @@ function renderContrats() {
   Object.keys(grouped).sort((a,b) => b-a).forEach(y => {
     html += `<div class="year-group"><div class="year-header">${y}</div>`;
     Object.keys(grouped[y]).sort((a,b) => b-a).forEach(m => {
-      const contrats  = grouped[y][m].sort((a,b) => (b.dateDebut||'').localeCompare(a.dateDebut||''));
-      const totalBrut = contrats.reduce((s,c) => s+(c.brutV||0), 0);
-      const totalH    = contrats.reduce((s,c) => s+(c.heures||0), 0);
-      const monthHtml = `
+      const moisContrats = grouped[y][m].sort((a,b) => (b.dateDebut||'').localeCompare(a.dateDebut||''));
+      const totalMois    = moisContrats.reduce((s,c) => s + (c.brutV||0), 0);
+
+      html += `
         <div class="month-header" onclick="toggleMonth(this)">
-          <div class="month-header-name">${MONTHS[month-1]} ${year}</div>
+          <div class="month-header-name">${MONTHS[parseInt(m)]} ${y}</div>
           <div style="display:flex;align-items:center;gap:8px;">
             <span class="month-header-total">${moisContrats.length} contrat${moisContrats.length>1?'s':''} · ${fmt(totalMois)}</span>
             <span class="month-toggle">▼</span>
           </div>
         </div>
-        <div class="month-contracts">${moisContrats.map(renderContratCard).join('')}</div>`;
-      contrats.forEach(c => {
+        <div class="month-contracts">`;
+
+      moisContrats.forEach(c => {
         const sc = c.paye === true ? 'paye' : c.paye === false ? 'en-attente' : 'inconnu';
         const st = c.paye === true
           ? '<span class="tag tag-green">✓ Payé</span>'
           : c.paye === false
             ? '<span class="tag tag-red">⏳ En attente</span>'
             : '<span class="tag tag-gray">— Paiement ?</span>';
+
         html += `<div class="contrat-card ${sc}" onclick="openDetail('${c.id}')">
           <div class="contrat-header">
-            <div><div class="contrat-employeur">${c.employeur||'Employeur inconnu'}</div>${c.poste?`<div class="contrat-poste">${c.poste}</div>`:''}</div>
+            <div>
+              <div class="contrat-employeur">${c.employeur||'Employeur inconnu'}</div>
+              ${c.poste ? `<div class="contrat-poste">${c.poste}</div>` : ''}
+            </div>
             ${st}
           </div>
           <div class="contrat-dates">${fmtDate(c.dateDebut)}${c.dateFin&&c.dateFin!==c.dateDebut?' → '+fmtDate(c.dateFin):''}</div>
           <div class="contrat-stats">
             <div class="contrat-stat"><strong>${c.cachets||0}</strong> cachet${(c.cachets||0)>1?'s':''}</div>
-            <div class="contrat-stat"><strong>${c.heures||0}h</strong></div>
+            <div class="contrat-stat"><strong>${heuresFT(c)}h</strong> FT</div>
             <div class="contrat-stat"><strong style="color:var(--gold)">${fmt(c.brutV)}</strong> brut</div>
             <div class="contrat-stat"><strong style="color:var(--green)">${fmt(c.netV)}</strong> net</div>
           </div>
@@ -86,14 +97,14 @@ function renderContrats() {
           </div>
         </div>`;
       });
-      html += `</div></div>`;
+
+      html += `</div></div>`; // ferme month-contracts + year-group intérieur
     });
-    html += `</div>`;
+    html += `</div>`; // ferme year-group
   });
 
   el.innerHTML = html;
 }
-
 function toggleMonth(header) {
   const contracts = header.nextElementSibling;
   const toggle    = header.querySelector('.month-toggle');
